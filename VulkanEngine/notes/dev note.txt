@@ -1,0 +1,1 @@
+Handle auto vertex buffer bind id (Currently handle by a macro, VERTEX_BUFFER_BIND_ID 0

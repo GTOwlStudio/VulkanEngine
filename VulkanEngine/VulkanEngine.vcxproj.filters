@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Fichiers sources">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Fichiers de ressources">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Launcher">
+      <UniqueIdentifier>{1f8890ec-f154-41c8-a4d2-fb7f1198a7ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThomasSystem">
+      <UniqueIdentifier>{a453461e-6600-43d0-8774-07ec50593421}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThomasEngine">
+      <UniqueIdentifier>{601a9f23-1b1d-416f-8e4b-aadf2fec29f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vulkanTools">
+      <UniqueIdentifier>{13576b71-87b7-4a84-8d00-f2bbedc7f1c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThomasGui">
+      <UniqueIdentifier>{7eb5aaf6-2b3c-495c-990d-f44168d5489d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Launcher</Filter>
+    </ClCompile>
+    <ClCompile Include="TCore.cpp">
+      <Filter>ThomasSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="vulkantools.cpp">
+      <Filter>vulkanTools</Filter>
+    </ClCompile>
+    <ClCompile Include="vulkandebug.cpp">
+      <Filter>vulkanTools</Filter>
+    </ClCompile>
+    <ClCompile Include="TEngineBase.cpp">
+      <Filter>ThomasEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="TGui.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="TEngine.cpp">
+      <Filter>ThomasEngine</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TCore.h">
+      <Filter>ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkandebug.h">
+      <Filter>vulkanTools</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkanMeshLoader.hpp">
+      <Filter>vulkanTools</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkanswapchain.hpp">
+      <Filter>vulkanTools</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkanTextureLoader.hpp">
+      <Filter>vulkanTools</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkantools.h">
+      <Filter>vulkanTools</Filter>
+    </ClInclude>
+    <ClInclude Include="TEngineBase.h">
+      <Filter>ThomasEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="TGui.h">
+      <Filter>ThomasGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ITGuiObject.h">
+      <Filter>ThomasGui</Filter>
+    </ClInclude>
+    <ClInclude Include="TEngine.h">
+      <Filter>ThomasEngine</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
