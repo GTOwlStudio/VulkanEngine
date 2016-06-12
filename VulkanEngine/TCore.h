@@ -1,6 +1,13 @@
 #pragma once
 
 #include "TEngine.h"
+#include "Input.h"
+#include "TGui.h"
+#include "DO.h"
+
+
+class TGui;
+class DO;
 
 class TCore
 {
@@ -9,11 +16,18 @@ public:
 	~TCore();
 	void init(HINSTANCE hInstance, WNDPROC WndProc);
 	void run();
+	virtual void handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	TEngine* getTEngine() const;
+	Input* getInput() const;
+	TGui* getTGui() const;
+	
 
 protected:
 	void update();
 	TEngine *m_pEngine;
+	Input *m_pInput;
+	TGui *m_pGui;
+	//DO *d;
 
 
 private:

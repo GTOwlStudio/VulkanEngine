@@ -19,6 +19,7 @@ TCore *core;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	if (core != NULL) {
+		core->handleMessages(hWnd, uMsg, wParam, lParam);
 		core->getTEngine()->handleMessages(hWnd, uMsg, wParam, lParam);
 	}
 	return (DefWindowProc(hWnd, uMsg, wParam, lParam));

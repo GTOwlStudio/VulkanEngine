@@ -5,13 +5,22 @@
 TCore::TCore(bool enableValidation)
 {
 	m_pEngine = new TEngine(enableValidation);
+	m_pInput = new Input();
+	m_pGui = new TGui(*this, *m_pInput);
+	//d = new DO(*this);
 }
 
 
 TCore::~TCore()
 {
+	delete m_pGui;
+	delete m_pInput;
 	delete m_pEngine;
+	//delete d;
+	//d = 0;
 	m_pEngine = 0;
+	m_pInput = 0;
+	m_pGui = 0;
 }
 
 void TCore::init(HINSTANCE hInstance, WNDPROC WndProc)
@@ -20,6 +29,7 @@ void TCore::init(HINSTANCE hInstance, WNDPROC WndProc)
 	m_pEngine->initSwapchain();
 	m_pEngine->prepare();
 
+	//m_pGui->load();
 }
 
 void TCore::run()
@@ -38,7 +48,10 @@ void TCore::run()
 				DispatchMessage(&msg);
 			}
 		}
+
+		m_pGui->updateLogic();
 		m_pEngine->render();
+
 		frameCounter++;
 		auto tEnd = std::chrono::high_resolution_clock::now();
 		auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
@@ -62,7 +75,25 @@ void TCore::run()
 #endif
 }
 
+void TCore::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	m_pInput->updateKeys(wParam);
+	m_pInput->updateMouse(lParam);
+	
+	if (m_pInput->getKey(eKI_G)) { exit(0); }
+}
+
 TEngine* TCore::getTEngine() const
 {
 	return m_pEngine;
+}
+
+Input * TCore::getInput() const
+{
+	return m_pInput;
+}
+
+TGui * TCore::getTGui() const
+{
+	return m_pGui;
 }

@@ -45,6 +45,8 @@
 	}																									\
 }	
 
+
+
 namespace vkTools
 {
 	//Return string representation of a vulakn error string

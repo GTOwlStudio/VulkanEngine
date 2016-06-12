@@ -32,6 +32,8 @@
 #include "vulkanandroid.h"
 #endif
 
+
+
 // Macro to get a procedure address based on a vulkan instance
 #define GET_INSTANCE_PROC_ADDR(inst, entrypoint)                        \
 {                                                                       \

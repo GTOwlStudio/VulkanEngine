@@ -915,9 +915,24 @@ void TEngineBase::submitPostPresentBarrier(VkImage image)
 
 }
 
+VkDevice TEngineBase::getDevice() const
+{
+	return device;
+}
+
 const std::string TEngineBase::getAssetPath()
 {
 	return "./data/";
+}
+
+const VkRenderPass TEngineBase::getRenderPass()
+{
+	return renderPass;
+}
+
+const VkPipelineCache TEngineBase::getPipelineCache()
+{
+	return pipelineCache;
 }
 
 VkResult TEngineBase::createInstance(bool enableValidation)

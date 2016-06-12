@@ -36,6 +36,8 @@
 #include <android/asset_manager.h>
 #endif
 
+
+
 namespace vkMeshLoader
 {
 	typedef enum VertexLayout {

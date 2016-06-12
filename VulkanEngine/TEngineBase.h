@@ -148,6 +148,10 @@ public:
 
 	void submitPostPresentBarrier(VkImage image);
 
+	VkDevice getDevice() const;
+	const std::string getAssetPath();
+	const VkRenderPass getRenderPass();
+	const VkPipelineCache getPipelineCache();
 protected:
 	float frameTimer = 1.0f;
 
@@ -201,7 +205,7 @@ protected:
 		VkSemaphore renderComplete;
 	} semaphores;
 
-	const std::string getAssetPath();
+	
 
 private:
 
