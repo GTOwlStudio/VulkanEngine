@@ -144,14 +144,25 @@ public:
 
 	void renderLoop();
 
-	void submitPrePresentBarrier(VkImage image);
+	void buildPresentCommandBuffers();
 
-	void submitPostPresentBarrier(VkImage image);
+	/*void submitPrePresentBarrier(VkImage image);
+
+	void submitPostPresentBarrier(VkImage image);*/
+
+
+
+	//------------------------------\\
+	//-----------GETTER-------------\\
+	//------------------------------\\
 
 	VkDevice getDevice() const;
 	const std::string getAssetPath();
 	const VkRenderPass getRenderPass();
 	const VkPipelineCache getPipelineCache();
+
+
+
 protected:
 	float frameTimer = 1.0f;
 
@@ -177,8 +188,8 @@ protected:
 	VkCommandPool cmdPool;
 	//Command buffer used for setup
 	VkCommandBuffer setupCmdBuffer = VK_NULL_HANDLE;
-	VkCommandBuffer postPresentCmdBuffer = VK_NULL_HANDLE;
-	VkCommandBuffer prePresentCmdBuffer = VK_NULL_HANDLE;
+	std::vector<VkCommandBuffer> postPresentCmdBuffers = { VK_NULL_HANDLE };
+	std::vector<VkCommandBuffer> prePresentCmdBuffers = { VK_NULL_HANDLE };
 	VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
 	VkSubmitInfo submitInfo;
@@ -205,7 +216,8 @@ protected:
 		VkSemaphore renderComplete;
 	} semaphores;
 
-	
+	void prepareFrame();
+	void submitFrame();
 
 private:
 

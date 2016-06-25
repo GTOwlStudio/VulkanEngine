@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="vulkanTools">
-      <UniqueIdentifier>{13576b71-87b7-4a84-8d00-f2bbedc7f1c5}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Common">
       <UniqueIdentifier>{01c74746-fe91-4f3c-8138-9e9ca03ef552}</UniqueIdentifier>
     </Filter>
@@ -36,6 +33,9 @@
     </Filter>
     <Filter Include="DevObjects">
       <UniqueIdentifier>{7b316971-8d4f-439a-820b-29bffdcfb310}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vulkanTools">
+      <UniqueIdentifier>{13576b71-87b7-4a84-8d00-f2bbedc7f1c5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -69,11 +69,11 @@
     <ClCompile Include="TGui.cpp">
       <Filter>Common\ThomasGui</Filter>
     </ClCompile>
-    <ClCompile Include="Input.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
     <ClCompile Include="DO.cpp">
       <Filter>DevObjects</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>Common\ThomasInput</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -119,11 +119,11 @@
     <ClInclude Include="guiButton.h">
       <Filter>Common\ThomasGui</Filter>
     </ClInclude>
-    <ClInclude Include="Input.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="DO.h">
       <Filter>DevObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>Common\ThomasInput</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

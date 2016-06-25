@@ -29,8 +29,8 @@ TEngine::~TEngine()
 
 	vkDestroyBuffer(device, indices.buf, nullptr);
 	vkFreeMemory(device, indices.mem, nullptr);
-	/*
-	vkDestroySemaphore(device, semaphores.presentComplete, nullptr);
+	
+	/*vkDestroySemaphore(device, semaphores.presentComplete, nullptr);
 	vkDestroySemaphore(device, semaphores.renderComplete, nullptr);*/
 
 	vkDestroyBuffer(device, uniformDataVS.buffer, nullptr);
@@ -39,54 +39,52 @@ TEngine::~TEngine()
 
 void TEngine::draw()
 {
-	VkResult err;
-	err = swapChain.acquireNextImage(semaphores.presentComplete, &currentBuffer);
-	assert(!err);
-
-	submitPostPresentBarrier(swapChain.buffers[currentBuffer].image);
+	TEngineBase::prepareFrame();
 
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &drawCmdBuffers[currentBuffer];
+	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
 
-	err = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-	assert(!err);
-
-	submitPrePresentBarrier(swapChain.buffers[currentBuffer].image);
-
-	err = swapChain.queuePresent(queue, currentBuffer, semaphores.renderComplete);
-	assert(!err);
-
-	err = vkQueueWaitIdle(queue);
-	assert(!err);
+	TEngineBase::submitFrame();
 }
 
-void TEngine::setImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkImageAspectFlags ascpectMask, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, uint32_t mipLevel, uint32_t mipLevelCount)
+void TEngine::setImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkImageAspectFlags ascpectMask, VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange)
 {
 
 	VkImageMemoryBarrier imageMemoryBarrier = vkTools::initializers::imageMemoryBarrier();
 	imageMemoryBarrier.oldLayout = oldImageLayout;
 	imageMemoryBarrier.newLayout = newImageLayout;
 	imageMemoryBarrier.image = image;
-	imageMemoryBarrier.subresourceRange.aspectMask = ascpectMask;
-	imageMemoryBarrier.subresourceRange.baseMipLevel = mipLevel;
-	imageMemoryBarrier.subresourceRange.levelCount = mipLevelCount;
-	imageMemoryBarrier.subresourceRange.layerCount = 1;
+	imageMemoryBarrier.subresourceRange = subresourceRange;
+	
+	switch (oldImageLayout)
+	{
+	case VK_IMAGE_LAYOUT_UNDEFINED:
+		imageMemoryBarrier.srcAccessMask = 0;
+		break;
+	
+	case VK_IMAGE_LAYOUT_PREINITIALIZED:
+		imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+		break;
 
-	if (oldImageLayout == VK_IMAGE_LAYOUT_PREINITIALIZED) {
-		imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+	case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+		imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		break;
 	}
 
-	if (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-	}
+	switch (newImageLayout) 
+	{
+	case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		break;
 
-	if (newImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-		imageMemoryBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+	case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		break;
+
+	case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
 		imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	}
-
-	if (newImageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
-		imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+		break;
 	}
 
 	VkPipelineStageFlags srcStageFlags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -286,7 +284,6 @@ void TEngine::loadTexture(std::string filename, VkFormat format, bool forceLinea
 	assert(!tex2D.empty());
 
 	VkFormatProperties formatProperties;
-	VkResult err;
 
 	texture.width = tex2D[0].dimensions().x;
 	texture.height = tex2D[0].dimensions().y;
@@ -361,8 +358,7 @@ void TEngine::loadTexture(std::string filename, VkFormat format, bool forceLinea
 		imageCreateInfo.extent = { texture.width, texture.height, 1 };
 		imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
-		err = vkCreateImage(device, &imageCreateInfo, nullptr, &texture.image);
-		assert(!err);
+		VK_CHECK_RESULT(vkCreateImage(device, &imageCreateInfo, nullptr, &texture.image));
 
 
 		vkGetImageMemoryRequirements(device, texture.image, &memReqs);
@@ -370,17 +366,21 @@ void TEngine::loadTexture(std::string filename, VkFormat format, bool forceLinea
 		memAllocInfo.allocationSize = memReqs.size;
 
 		getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &memAllocInfo.memoryTypeIndex);
-		err = vkAllocateMemory(device, &memAllocInfo, nullptr, &texture.deviceMemory);
-		assert(!err);
-		err = vkBindImageMemory(device, texture.image, texture.deviceMemory, 0);
-		assert(!err);
+		VK_CHECK_RESULT(vkAllocateMemory(device, &memAllocInfo, nullptr, &texture.deviceMemory));
+		VK_CHECK_RESULT(vkBindImageMemory(device, texture.image, texture.deviceMemory, 0));
 
 		VkCommandBuffer copyCmd = TEngineBase::createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+		VkImageSubresourceRange subresourceRange = {};
+		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		subresourceRange.baseMipLevel = 0;
+		subresourceRange.levelCount = texture.mipLevels;
+		subresourceRange.layerCount = 1;
 
 		setImageLayout(copyCmd, texture.image, VK_IMAGE_ASPECT_COLOR_BIT,
 			VK_IMAGE_LAYOUT_PREINITIALIZED,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			0, texture.mipLevels);
+			subresourceRange);
 
 		vkCmdCopyBufferToImage(
 			copyCmd,
@@ -396,8 +396,7 @@ void TEngine::loadTexture(std::string filename, VkFormat format, bool forceLinea
 			VK_IMAGE_ASPECT_COLOR_BIT,
 			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 			texture.imageLayout,
-			0,
-			texture.mipLevels);
+			subresourceRange);
 
 		TEngineBase::flushCommandBuffer(copyCmd, queue, true);
 
@@ -426,8 +425,7 @@ void TEngine::loadTexture(std::string filename, VkFormat format, bool forceLinea
 	sampler.maxAnisotropy = 8;
 	sampler.anisotropyEnable = VK_TRUE;
 	sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-	err = vkCreateSampler(device, &sampler, nullptr, &texture.sampler);
-	assert(!err);
+	VK_CHECK_RESULT(vkCreateSampler(device, &sampler, nullptr, &texture.sampler));
 
 	VkImageViewCreateInfo view = vkTools::initializers::imageViewCreateInfo();
 	view.image = VK_NULL_HANDLE;
@@ -441,8 +439,7 @@ void TEngine::loadTexture(std::string filename, VkFormat format, bool forceLinea
 
 	view.subresourceRange.levelCount = (useStaging) ? texture.mipLevels : 1;
 	view.image = texture.image;
-	err = vkCreateImageView(device, &view, nullptr, &texture.view);
-	assert(!err);
+	VK_CHECK_RESULT(vkCreateImageView(device, &view, nullptr, &texture.view));
 }
 
 
@@ -471,10 +468,10 @@ void TEngine::buildCommandBuffers() {
 	VkResult err;
 
 	for (int32_t i = 0; i < drawCmdBuffers.size(); i++) {
+
 		renderPassBeginInfo.framebuffer = frameBuffers[i];
 
-		err = vkBeginCommandBuffer(drawCmdBuffers[i], &cmdBufInfo);
-		assert(!err);
+		VK_CHECK_RESULT(vkBeginCommandBuffer(drawCmdBuffers[i], &cmdBufInfo));
 
 		vkCmdBeginRenderPass(drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 

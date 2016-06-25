@@ -85,7 +85,7 @@ protected:
 
 	void buildCommandBuffers();
 	void setImageLayout(VkCommandBuffer cmdBuffer, VkImage image, VkImageAspectFlags ascpectMask,
-		VkImageLayout oldImageLayout, VkImageLayout newImageLayout, uint32_t mipLevel, uint32_t mipLevelCount);
+		VkImageLayout oldImageLayout, VkImageLayout newImageLayout, VkImageSubresourceRange subresourceRange);
 
 	void generateCoord(float x, float y, float w, float h, float depth);
 	void setupVertexDescription();

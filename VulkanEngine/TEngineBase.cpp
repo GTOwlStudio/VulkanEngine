@@ -515,7 +515,8 @@ void TEngineBase::setupFrameBuffer()
 
 void TEngineBase::setupRenderPass()
 {
-	VkAttachmentDescription attachments[2];
+	VkAttachmentDescription attachments[2] = {};
+
 	attachments[0].format = colorformat;
 	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
 	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -564,10 +565,7 @@ void TEngineBase::setupRenderPass()
 	renderPassInfo.dependencyCount = 0;
 	renderPassInfo.pDependencies = NULL;
 
-	VkResult err;
-
-	err = vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass);
-	assert(!err);
+	VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass));
 
 
 }
@@ -587,28 +585,24 @@ void TEngineBase::setupSwapchain()
 void TEngineBase::createCommandBuffers()
 {
 	drawCmdBuffers.resize(swapChain.imageCount);
+	prePresentCmdBuffers.resize(swapChain.imageCount);
+	postPresentCmdBuffers.resize(swapChain.imageCount);
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
-		vkTools::initializers::commandBufferAllocateInfo(cmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, (uint32_t)drawCmdBuffers.size());
+		vkTools::initializers::commandBufferAllocateInfo(cmdPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, static_cast<uint32_t>(drawCmdBuffers.size()));
 
-	VkResult vkRes = vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data());
-	assert(!vkRes);
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, drawCmdBuffers.data()));
 
-	cmdBufAllocateInfo.commandBufferCount = 1;
-
-	vkRes = vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &prePresentCmdBuffer);
-	assert(!vkRes);
-
-	vkRes = vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, &postPresentCmdBuffer);
-	assert(!vkRes);
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, prePresentCmdBuffers.data()));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(device, &cmdBufAllocateInfo, postPresentCmdBuffers.data()));
 
 }
 
 void TEngineBase::destroyCommandBuffers()
 {
-	vkFreeCommandBuffers(device, cmdPool, (uint32_t)drawCmdBuffers.size(), drawCmdBuffers.data());
-	vkFreeCommandBuffers(device, cmdPool, 1, &prePresentCmdBuffer);
-	vkFreeCommandBuffers(device, cmdPool, 1, &postPresentCmdBuffer);
+	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), drawCmdBuffers.data());
+	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), prePresentCmdBuffers.data());
+	vkFreeCommandBuffers(device, cmdPool, static_cast<uint32_t>(drawCmdBuffers.size()), postPresentCmdBuffers.data());
 }
 
 void TEngineBase::createSetupCommandBuffer()
@@ -715,6 +709,7 @@ void TEngineBase::prepare()
 	createSetupCommandBuffer();
 	setupSwapchain();
 	createCommandBuffers();
+	buildPresentCommandBuffers();
 	setupDepthStencil();
 	setupRenderPass();
 	createPipelineCache();
@@ -839,79 +834,70 @@ void TEngineBase::renderLoop()
 #endif
 }
 
-void TEngineBase::submitPrePresentBarrier(VkImage image)
+void TEngineBase::buildPresentCommandBuffers()
 {
 	VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
 
-	VkResult vkRes = vkBeginCommandBuffer(prePresentCmdBuffer, &cmdBufInfo);
-	assert(!vkRes);
+	for (uint32_t i = 0; i < swapChain.imageCount;i++) {
 
-	VkImageMemoryBarrier prePresentBarrier = vkTools::initializers::imageMemoryBarrier();
-	prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	prePresentBarrier.dstAccessMask = 0;
-	prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	prePresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-	prePresentBarrier.image = image;
 
-	vkCmdPipelineBarrier(
-		prePresentCmdBuffer,
-		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-		VK_FLAGS_NONE,
-		0, nullptr,
-		0, nullptr,
-		1, &prePresentBarrier);
+		//Command buffer for post presentBarrier
+		// Insert a post present image barrier to transform the image back to a
+		// color attachment that our render pass can write to
+		// We always use undefined image layout as the source as it doesn't actually matter
+		// what is done with the previous image contents
 
-	vkRes = vkEndCommandBuffer(prePresentCmdBuffer);
-	assert(!vkRes);
+		VK_CHECK_RESULT(vkBeginCommandBuffer(postPresentCmdBuffers[i], &cmdBufInfo));
 
-	VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &prePresentCmdBuffer;
+		VkImageMemoryBarrier postPresentBarrier = vkTools::initializers::imageMemoryBarrier();
+		postPresentBarrier.srcAccessMask = 0;
+		postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		postPresentBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+		postPresentBarrier.image = swapChain.buffers[i].image;
 
-	vkRes = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-	assert(!vkRes);
+		vkCmdPipelineBarrier(
+			postPresentCmdBuffers[i],
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+			0,
+			0,nullptr,
+			0,nullptr,
+			1, &postPresentBarrier);
 
-}
+		VK_CHECK_RESULT(vkEndCommandBuffer(postPresentCmdBuffers[i]));
 
-void TEngineBase::submitPostPresentBarrier(VkImage image)
-{
-	VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
+		//Command buffers for pre present barrier
 
-	VkResult err = vkBeginCommandBuffer(postPresentCmdBuffer, &cmdBufInfo);
-	assert(!err);
+		// Submit a pre present image barrier to the queue
+		// Transforms the (framebuffer) image layout from color attachment to present(khr) for presenting to the swap chain
 
-	VkImageMemoryBarrier postPresentBarrier = vkTools::initializers::imageMemoryBarrier();
-	postPresentBarrier.srcAccessMask = 0;
-	postPresentBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	postPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	postPresentBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	postPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	postPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	postPresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-	postPresentBarrier.image = image;
+		VK_CHECK_RESULT(vkBeginCommandBuffer(prePresentCmdBuffers[i], &cmdBufInfo));
 
-	vkCmdPipelineBarrier(
-		postPresentCmdBuffer,
-		VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-		VK_FLAGS_NONE,
-		0, nullptr,
-		0, nullptr,
-		1, &postPresentBarrier);
+		VkImageMemoryBarrier prePresentBarrier = vkTools::initializers::imageMemoryBarrier();
+		prePresentBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		prePresentBarrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		prePresentBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		prePresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		prePresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		prePresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		prePresentBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		prePresentBarrier.image = swapChain.buffers[i].image;
 
-	err = vkEndCommandBuffer(postPresentCmdBuffer);
-	assert(!err);
+		vkCmdPipelineBarrier(
+			prePresentCmdBuffers[i],
+			VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+			VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+			VK_FLAGS_NONE,
+			0, nullptr,
+			0, nullptr,
+			1, &prePresentBarrier);
 
-	VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &postPresentCmdBuffer;
-
-	err = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-	assert(!err);
+		VK_CHECK_RESULT(vkEndCommandBuffer(prePresentCmdBuffers[i]));
+	}
 
 }
 
@@ -933,6 +919,29 @@ const VkRenderPass TEngineBase::getRenderPass()
 const VkPipelineCache TEngineBase::getPipelineCache()
 {
 	return pipelineCache;
+}
+
+void TEngineBase::prepareFrame()
+{
+	VK_CHECK_RESULT(swapChain.acquireNextImage(semaphores.presentComplete, &currentBuffer));
+
+	VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &postPresentCmdBuffers[currentBuffer];
+	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+
+}
+
+void TEngineBase::submitFrame()
+{
+	VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &prePresentCmdBuffers[currentBuffer];
+	VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE));
+
+	VK_CHECK_RESULT(swapChain.queuePresent(queue, currentBuffer, semaphores.renderComplete));
+
+	VK_CHECK_RESULT(vkQueueWaitIdle(queue));
 }
 
 VkResult TEngineBase::createInstance(bool enableValidation)
