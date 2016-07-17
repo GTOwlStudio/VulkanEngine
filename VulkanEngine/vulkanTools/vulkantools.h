@@ -45,7 +45,28 @@
 	}																									\
 }	
 
+namespace vkTools {
+	class CShader {
+	public:
+		CShader(std::string vertexpath, std::string fragmentpath);
+		//CShader();
+		~CShader();
+		void load(VkDevice device);
+		std::vector<VkShaderModule> getShaderModules() const;
 
+	private:
+		std::vector<VkShaderModule> m_shaderModules;
+		std::vector <std::string> m_paths;
+		std::vector <VkShaderStageFlagBits> m_flags;
+
+		VkPipelineVertexInputStateCreateInfo m_inputState;
+
+		void addShader(std::string sPath, VkShaderStageFlagBits flag);
+
+		void setInputState(uint32_t bindingCount, VkVertexInputBindingDescription *bindingDescriptions, uint32_t attributeCount, VkVertexInputAttributeDescription *attributeDescriptions);
+
+	};
+}
 
 namespace vkTools
 {
@@ -87,7 +108,9 @@ namespace vkTools
 		void* mapped = nullptr;
 	};
 
+
 	void destroyUniformData(VkDevice device, vkTools::UniformData *uniformData);
+
 
 	namespace initializers {
 
@@ -172,6 +195,16 @@ namespace vkTools
 				uint32_t location,
 				VkFormat format,
 				uint32_t offset);
+
+
+		VkGraphicsPipelineCreateInfo pipelineCreateInfo(
+			VkPipelineLayout layout,
+			VkRenderPass renderPass,
+			VkPipelineCreateFlags flags,
+			VkPrimitiveTopology topology,
+			VkPolygonMode polyMode,
+			uint32_t shaderStagesCount,
+			VkPipelineShaderStageCreateInfo* shaderStages);
 
 		VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo();
 

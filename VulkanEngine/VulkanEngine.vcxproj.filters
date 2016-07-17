@@ -34,101 +34,65 @@
     <Filter Include="DevObjects">
       <UniqueIdentifier>{7b316971-8d4f-439a-820b-29bffdcfb310}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Common\ThomasRenderer">
+      <UniqueIdentifier>{2fb1f6a8-894b-4eea-b894-58abb121c63b}</UniqueIdentifier>
+    </Filter>
     <Filter Include="vulkanTools">
       <UniqueIdentifier>{13576b71-87b7-4a84-8d00-f2bbedc7f1c5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Common\Launcher</Filter>
-    </ClCompile>
-    <ClCompile Include="TCore.cpp">
-      <Filter>Common\ThomasSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="vulkantools.cpp">
-      <Filter>vulkanTools</Filter>
-    </ClCompile>
-    <ClCompile Include="vulkandebug.cpp">
-      <Filter>vulkanTools</Filter>
-    </ClCompile>
-    <ClCompile Include="TEngineBase.cpp">
-      <Filter>Common\ThomasEngine</Filter>
-    </ClCompile>
-    <ClCompile Include="TEngine.cpp">
-      <Filter>Common\ThomasEngine</Filter>
-    </ClCompile>
-    <ClCompile Include="guiTools.cpp">
-      <Filter>Common\ThomasGui</Filter>
+      <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="System.cpp">
       <Filter>Common\ThomasSystem</Filter>
     </ClCompile>
-    <ClCompile Include="guiButton.cpp">
-      <Filter>Common\ThomasGui</Filter>
+    <ClCompile Include="vulkanTools\vulkandebug.cpp">
+      <Filter>vulkanTools</Filter>
     </ClCompile>
-    <ClCompile Include="TGui.cpp">
-      <Filter>Common\ThomasGui</Filter>
+    <ClCompile Include="vulkanTools\vulkantools.cpp">
+      <Filter>vulkanTools</Filter>
     </ClCompile>
-    <ClCompile Include="DO.cpp">
-      <Filter>DevObjects</Filter>
-    </ClCompile>
-    <ClCompile Include="Input.cpp">
-      <Filter>Common\ThomasInput</Filter>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Common\ThomasRenderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="TCore.h">
-      <Filter>Common\ThomasSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="vulkandebug.h">
-      <Filter>vulkanTools</Filter>
-    </ClInclude>
-    <ClInclude Include="vulkanMeshLoader.hpp">
-      <Filter>vulkanTools</Filter>
-    </ClInclude>
-    <ClInclude Include="vulkanswapchain.hpp">
-      <Filter>vulkanTools</Filter>
-    </ClInclude>
-    <ClInclude Include="vulkanTextureLoader.hpp">
-      <Filter>vulkanTools</Filter>
-    </ClInclude>
-    <ClInclude Include="vulkantools.h">
-      <Filter>vulkanTools</Filter>
-    </ClInclude>
-    <ClInclude Include="TEngineBase.h">
+    <ClInclude Include="I3DEngine.h">
       <Filter>Common\ThomasEngine</Filter>
     </ClInclude>
-    <ClInclude Include="TGui.h">
-      <Filter>Common\ThomasGui</Filter>
-    </ClInclude>
-    <ClInclude Include="ITGuiObject.h">
-      <Filter>Common\ThomasGui</Filter>
-    </ClInclude>
-    <ClInclude Include="TEngine.h">
-      <Filter>Common\ThomasEngine</Filter>
-    </ClInclude>
-    <ClInclude Include="guiTools.h">
-      <Filter>Common\ThomasGui</Filter>
-    </ClInclude>
-    <ClInclude Include="ISystem.h">
+    <ClInclude Include="IProcess.h">
       <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="IRenderer.h">
+      <Filter>Common\ThomasRenderer</Filter>
     </ClInclude>
     <ClInclude Include="System.h">
       <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
-    <ClInclude Include="guiButton.h">
-      <Filter>Common\ThomasGui</Filter>
+    <ClInclude Include="vulkanTools\vulkandebug.h">
+      <Filter>vulkanTools</Filter>
     </ClInclude>
-    <ClInclude Include="DO.h">
-      <Filter>DevObjects</Filter>
+    <ClInclude Include="vulkanTools\vulkanMeshLoader.hpp">
+      <Filter>vulkanTools</Filter>
     </ClInclude>
-    <ClInclude Include="Input.h">
-      <Filter>Common\ThomasInput</Filter>
+    <ClInclude Include="vulkanTools\vulkanswapchain.hpp">
+      <Filter>vulkanTools</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkanTools\vulkanTextureLoader.hpp">
+      <Filter>vulkanTools</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkanTools\vulkantools.h">
+      <Filter>vulkanTools</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Common\ThomasRenderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="platform_impl.inl">
-      <Filter>Common\ThomasSystem</Filter>
+      <Filter>Fichiers d%27en-tête</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -1,6 +1,4 @@
 #pragma once
+#include "System.h"
 
-#include <iostream>
-#include "ISystem.h"
-
-extern SSystemGlobalEnvironment* gEnv = NULL;
+struct SSystemGlobalEnvironment* gEnv = NULL;

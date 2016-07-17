@@ -523,6 +523,49 @@ VkVertexInputAttributeDescription vkTools::initializers::vertexInputAttributeDes
 	return vInputAttributeDescription;
 }
 
+VkGraphicsPipelineCreateInfo vkTools::initializers::pipelineCreateInfo(VkPipelineLayout layout,
+				VkRenderPass renderPass,
+				VkPipelineCreateFlags flags,
+	VkPrimitiveTopology topology, 
+	VkPolygonMode polyMode,
+	uint32_t shaderStagesCount,
+	VkPipelineShaderStageCreateInfo * shaderStages)
+{
+	VkGraphicsPipelineCreateInfo pipelineCreateInfo = vkTools::initializers::pipelineCreateInfo(layout, renderPass, flags);
+
+	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
+		vkTools::initializers::pipelineInputAssemblyStateCreateInfo(topology, 0, VK_FALSE);
+	VkPipelineRasterizationStateCreateInfo rasterizationState =
+		vkTools::initializers::pipelineRasterizationStateCreateInfo(polyMode,VK_CULL_MODE_NONE,VK_FRONT_FACE_COUNTER_CLOCKWISE,0);
+	VkPipelineColorBlendAttachmentState blendAttahcmentState =
+		vkTools::initializers::pipelineColorBlendAttachmentState(0xf, VK_FALSE);
+	VkPipelineColorBlendStateCreateInfo colorBlendState = 
+		vkTools::initializers::pipelineColorBlendStateCreateInfo(1, &blendAttahcmentState);
+	VkPipelineDepthStencilStateCreateInfo depthStencilState =
+		vkTools::initializers::pipelineDepthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
+	VkPipelineViewportStateCreateInfo viewportState =
+		vkTools::initializers::pipelineViewportStateCreateInfo(1, 1, 0);
+	VkPipelineMultisampleStateCreateInfo multisampleState =
+		vkTools::initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
+	std::vector<VkDynamicState> dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+
+	VkPipelineDynamicStateCreateInfo dynamicState =
+		vkTools::initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables.data(), dynamicStateEnables.size(), 0);
+
+	pipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
+	pipelineCreateInfo.pRasterizationState = &rasterizationState;
+	pipelineCreateInfo.pColorBlendState = &colorBlendState;
+	pipelineCreateInfo.pMultisampleState = &multisampleState;
+	pipelineCreateInfo.pViewportState = &viewportState;
+	pipelineCreateInfo.pDepthStencilState = &depthStencilState;
+	pipelineCreateInfo.pDynamicState = &dynamicState;
+	pipelineCreateInfo.stageCount = shaderStagesCount;
+	pipelineCreateInfo.pStages = shaderStages;
+
+
+	return VkGraphicsPipelineCreateInfo();
+}
+
 VkPipelineVertexInputStateCreateInfo vkTools::initializers::pipelineVertexInputStateCreateInfo()
 {
 	VkPipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateinfo = {};
@@ -636,7 +679,41 @@ VkGraphicsPipelineCreateInfo vkTools::initializers::pipelineCreateInfo(VkPipelin
 	return pipelineCreateInfo;
 }
 
+namespace vkTools {
+	CShader::CShader(std::string vsPath, std::string fsPath) {
+		addShader(vsPath, VK_SHADER_STAGE_VERTEX_BIT);
+		addShader(fsPath, VK_SHADER_STAGE_FRAGMENT_BIT);
+	}
 
+	CShader::~CShader(){}
+
+	void CShader::load(VkDevice device) {
+		for (size_t i = 0; i < m_paths.size();i++) {
+			m_shaderModules.push_back(loadShader(m_paths[i].c_str(), device, m_flags[i]));
+		}
+	}
+
+	std::vector<VkShaderModule> CShader::getShaderModules() const
+	{
+		return m_shaderModules;
+	}
+
+	void CShader::addShader(std::string sPath, VkShaderStageFlagBits flag) {
+		m_paths.push_back(sPath);
+		m_flags.push_back(flag);
+	}
+
+	void CShader::setInputState(uint32_t bindingCount ,VkVertexInputBindingDescription *bindingDescriptions , uint32_t attributeCount, VkVertexInputAttributeDescription *attributeDescriptions) {
+		m_inputState = vkTools::initializers::pipelineVertexInputStateCreateInfo();
+		m_inputState.vertexBindingDescriptionCount = bindingCount;
+		m_inputState.pVertexBindingDescriptions = bindingDescriptions;
+		m_inputState.vertexAttributeDescriptionCount = attributeCount;
+		m_inputState.pVertexAttributeDescriptions = attributeDescriptions;
+	}
+
+
+
+}
 
 
 

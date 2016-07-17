@@ -1,7 +1,5 @@
-#include <stdio.h>
-#include <iostream>
 
-#include "TCore.h"
+#include <iostream>
 
 #ifdef _WIN32
 #pragma comment(linker, "/subsystem:windows")
@@ -10,33 +8,31 @@
 #include <fcntl.h>
 #include <io.h>
 #endif
-/*
-int Run() {
-	
-}*/
 
-TCore *core;
+#include "System.h"
+
+//extern SSystemGlobalEnvironement *gEnv = NULL;
+
+CSystem *sys;
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-	if (core != NULL) {
-		core->handleMessages(hWnd, uMsg, wParam, lParam);
-		core->getTEngine()->handleMessages(hWnd, uMsg, wParam, lParam);
+	
+	if (sys != NULL)
+	{
+		sys->handleMessages(hWnd, uMsg, wParam, lParam);
 	}
+
 	return (DefWindowProc(hWnd, uMsg, wParam, lParam));
 }
 
 #ifdef _WIN32
-int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) 
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 #endif
 {
-	int nRes;
-//	nRes = Run();
-	core = new TCore(true);
-	core->init(hInstance, WndProc);
-	core->run();
-
-	delete core;
+	sys = new CSystem(true);
+	sys->Init(hInstance, WndProc);
+	sys->renderLoop();
+	system("pause");
+	delete sys;
 	return 0;
-
-	//return nRes;
 }

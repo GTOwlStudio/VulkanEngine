@@ -18,6 +18,28 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="System.cpp" />
+    <ClCompile Include="vulkanTools\vulkandebug.cpp" />
+    <ClCompile Include="vulkanTools\vulkantools.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="I3DEngine.h" />
+    <ClInclude Include="IProcess.h" />
+    <ClInclude Include="IRenderer.h" />
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="System.h" />
+    <ClInclude Include="vulkanTools\vulkandebug.h" />
+    <ClInclude Include="vulkanTools\vulkanMeshLoader.hpp" />
+    <ClInclude Include="vulkanTools\vulkanswapchain.hpp" />
+    <ClInclude Include="vulkanTools\vulkanTextureLoader.hpp" />
+    <ClInclude Include="vulkanTools\vulkantools.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="platform_impl.inl" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FE394A84-26BA-4955-A3E9-01AA40BC041D}</ProjectGuid>
     <RootNamespace>VulkanEngine</RootNamespace>
@@ -122,41 +144,6 @@
       <AdditionalDependencies>vulkan-1.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="DO.cpp" />
-    <ClCompile Include="guiButton.cpp" />
-    <ClCompile Include="guiTools.cpp" />
-    <ClCompile Include="Input.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="System.cpp" />
-    <ClCompile Include="TCore.cpp" />
-    <ClCompile Include="TEngine.cpp" />
-    <ClCompile Include="TEngineBase.cpp" />
-    <ClCompile Include="TGui.cpp" />
-    <ClCompile Include="vulkandebug.cpp" />
-    <ClCompile Include="vulkantools.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="DO.h" />
-    <ClInclude Include="guiButton.h" />
-    <ClInclude Include="guiTools.h" />
-    <ClInclude Include="Input.h" />
-    <ClInclude Include="ISystem.h" />
-    <ClInclude Include="ITGuiObject.h" />
-    <ClInclude Include="System.h" />
-    <ClInclude Include="TCore.h" />
-    <ClInclude Include="TEngine.h" />
-    <ClInclude Include="TEngineBase.h" />
-    <ClInclude Include="TGui.h" />
-    <ClInclude Include="vulkandebug.h" />
-    <ClInclude Include="vulkanMeshLoader.hpp" />
-    <ClInclude Include="vulkanswapchain.hpp" />
-    <ClInclude Include="vulkanTextureLoader.hpp" />
-    <ClInclude Include="vulkantools.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="platform_impl.inl" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
