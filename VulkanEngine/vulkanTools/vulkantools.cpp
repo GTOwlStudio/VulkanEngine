@@ -523,15 +523,17 @@ VkVertexInputAttributeDescription vkTools::initializers::vertexInputAttributeDes
 	return vInputAttributeDescription;
 }
 
-VkGraphicsPipelineCreateInfo vkTools::initializers::pipelineCreateInfo(VkPipelineLayout layout,
-				VkRenderPass renderPass,
-				VkPipelineCreateFlags flags,
+VkGraphicsPipelineCreateInfo vkTools::initializers::pipelineCreateInfo(
+	VkPipelineState* dst,
+	VkPipelineLayout layout,
+	VkRenderPass renderPass,
+	VkPipelineCreateFlags flags,
 	VkPrimitiveTopology topology, 
 	VkPolygonMode polyMode,
 	uint32_t shaderStagesCount,
 	VkPipelineShaderStageCreateInfo * shaderStages)
 {
-	VkGraphicsPipelineCreateInfo pipelineCreateInfo = vkTools::initializers::pipelineCreateInfo(layout, renderPass, flags);
+	/*VkGraphicsPipelineCreateInfo pipelineCreateInfo = vkTools::initializers::pipelineCreateInfo(layout, renderPass, flags);
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyState =
 		vkTools::initializers::pipelineInputAssemblyStateCreateInfo(topology, 0, VK_FALSE);
@@ -550,20 +552,42 @@ VkGraphicsPipelineCreateInfo vkTools::initializers::pipelineCreateInfo(VkPipelin
 	std::vector<VkDynamicState> dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
 
 	VkPipelineDynamicStateCreateInfo dynamicState =
-		vkTools::initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables.data(), dynamicStateEnables.size(), 0);
+		vkTools::initializers::pipelineDynamicStateCreateInfo(dynamicStateEnables.data(), dynamicStateEnables.size(), 0);*/
 
-	pipelineCreateInfo.pInputAssemblyState = &inputAssemblyState;
-	pipelineCreateInfo.pRasterizationState = &rasterizationState;
-	pipelineCreateInfo.pColorBlendState = &colorBlendState;
-	pipelineCreateInfo.pMultisampleState = &multisampleState;
-	pipelineCreateInfo.pViewportState = &viewportState;
-	pipelineCreateInfo.pDepthStencilState = &depthStencilState;
-	pipelineCreateInfo.pDynamicState = &dynamicState;
+	VkGraphicsPipelineCreateInfo pipelineCreateInfo = vkTools::initializers::pipelineCreateInfo(layout, renderPass, flags);
+
+	dst->inputAssemblyState = 
+		vkTools::initializers::pipelineInputAssemblyStateCreateInfo(topology, 0, VK_FALSE);
+	dst->rasterizationState = 
+		vkTools::initializers::pipelineRasterizationStateCreateInfo(polyMode, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, 0);
+	dst->blendAttachmentState =
+		vkTools::initializers::pipelineColorBlendAttachmentState(0xf, VK_FALSE);
+	dst->colorBlendState =
+		vkTools::initializers::pipelineColorBlendStateCreateInfo(1, &dst->blendAttachmentState);
+	dst->depthStencilState =
+		vkTools::initializers::pipelineDepthStencilStateCreateInfo(VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS_OR_EQUAL);
+	dst->viewportState =
+		vkTools::initializers::pipelineViewportStateCreateInfo(1, 1, 0);
+	dst->multisampleState =
+		vkTools::initializers::pipelineMultisampleStateCreateInfo(VK_SAMPLE_COUNT_1_BIT, 0);
+	dst->dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+	dst->dynamicState =
+		vkTools::initializers::pipelineDynamicStateCreateInfo(dst->dynamicStateEnables.data(), dst->dynamicStateEnables.size(), 0);
+
+
+	pipelineCreateInfo.pInputAssemblyState = &dst->inputAssemblyState;
+	pipelineCreateInfo.pRasterizationState = &dst->rasterizationState;
+	pipelineCreateInfo.pColorBlendState = &dst->colorBlendState;
+	pipelineCreateInfo.pMultisampleState = &dst->multisampleState;
+	pipelineCreateInfo.pViewportState = &dst->viewportState;
+	pipelineCreateInfo.pDepthStencilState = &dst->depthStencilState;
+	pipelineCreateInfo.pDynamicState = &dst->dynamicState;
 	pipelineCreateInfo.stageCount = shaderStagesCount;
 	pipelineCreateInfo.pStages = shaderStages;
 
 
-	return VkGraphicsPipelineCreateInfo();
+	return pipelineCreateInfo;
 }
 
 VkPipelineVertexInputStateCreateInfo vkTools::initializers::pipelineVertexInputStateCreateInfo()

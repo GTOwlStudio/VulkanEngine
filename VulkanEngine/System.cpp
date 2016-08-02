@@ -186,6 +186,9 @@ void CSystem::renderLoop()
 				DispatchMessage(&msg);
 			}
 		}
+		
+		m_env.pRenderer->render();
+
 		m_frameCounter++;
 		auto tEnd = std::chrono::high_resolution_clock::now();
 		auto tDiff = std::chrono::duration<double, std::milli>(tEnd-tStart).count();

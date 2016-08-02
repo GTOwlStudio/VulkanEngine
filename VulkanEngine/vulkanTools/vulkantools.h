@@ -66,7 +66,23 @@ namespace vkTools {
 		void setInputState(uint32_t bindingCount, VkVertexInputBindingDescription *bindingDescriptions, uint32_t attributeCount, VkVertexInputAttributeDescription *attributeDescriptions);
 
 	};
+
+	struct VkPipelineState {
+		VkPipelineInputAssemblyStateCreateInfo inputAssemblyState;
+		VkPipelineRasterizationStateCreateInfo rasterizationState;
+		VkPipelineColorBlendAttachmentState blendAttachmentState;
+		VkPipelineColorBlendStateCreateInfo colorBlendState;
+		VkPipelineDepthStencilStateCreateInfo depthStencilState;
+		VkPipelineViewportStateCreateInfo viewportState;
+		VkPipelineMultisampleStateCreateInfo multisampleState;
+
+		std::vector<VkDynamicState> dynamicStateEnables;
+		VkPipelineDynamicStateCreateInfo dynamicState;
+
+	};
+
 }
+
 
 namespace vkTools
 {
@@ -198,6 +214,7 @@ namespace vkTools
 
 
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo(
+			VkPipelineState* dst,
 			VkPipelineLayout layout,
 			VkRenderPass renderPass,
 			VkPipelineCreateFlags flags,

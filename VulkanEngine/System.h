@@ -42,6 +42,7 @@ public:
 	virtual SSystemGlobalEnvironement* getGlobalEnvironment() { return &m_env; };
 
 	void renderLoop();
+
 	
 	void Update();
 

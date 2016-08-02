@@ -32,7 +32,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	sys = new CSystem(true);
 	sys->Init(hInstance, WndProc);
 	sys->renderLoop();
-	system("pause");
+	//system("pause");
 	delete sys;
+	//system("pause");
 	return 0;
 }

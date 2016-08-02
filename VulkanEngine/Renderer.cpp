@@ -11,8 +11,7 @@ CRenderer::CRenderer()
 CRenderer::~CRenderer()
 {
 
-	vkDestroyBuffer(m_device, m_smem.buf, nullptr);
-	vkFreeMemory(m_device, m_smem.mem, nullptr);
+	clean_dev();
 
 	m_swapChain.cleanup();
 	if (m_setupCmdBuffer != VK_NULL_HANDLE) {
@@ -65,12 +64,26 @@ void CRenderer::Init()
 	flushSetupCommandBuffer();
 	createSetupCommandBuffer();
 
-	createSBuffer(sizeof(uint32_t)*10, 0);
+	//createSBuffer(sizeof(uint32_t)*10, 0);
+
+	dev_test(100.0f, 100.0f, 100.0f, 100.0f, 0.1f);
+	//dev_test(0.5f, 0.5f, 0.5f, 0.5f, 0.1f);
+	dev_prepareUBO();
+	setupDescriptorPool();
+	dev_setupDescriptorSet();
+	buildCommandBuffer();
+
+	m_prepared = true;
 
 }
 
 void CRenderer::render()
 {
+
+	if (!m_prepared) {
+		return;
+	}
+
 	draw();
 }
 
@@ -98,6 +111,19 @@ uint32_t CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties)
 		}
 	}
 	return 0;
+}
+
+VkPipelineShaderStageCreateInfo CRenderer::loadShader(std::string fileName, VkShaderStageFlagBits stage)
+{
+	VkPipelineShaderStageCreateInfo shaderStage = {};
+	shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStage.stage = stage;
+	shaderStage.module = vkTools::loadShader(fileName.c_str(), m_device, stage);
+	shaderStage.pName = "main";
+	assert(shaderStage.module != NULL);
+	dev_data.shaderModules.push_back(shaderStage.module);
+
+	return shaderStage;
 }
 
 void CRenderer::InitVulkan()
@@ -533,12 +559,27 @@ void CRenderer::submitFrame()
 	VK_CHECK_RESULT(vkQueueWaitIdle(m_queue));
 }
 
-void CRenderer::addGraphicPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo inputState, std::string name)
+void CRenderer::addGraphicPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name)
 {
 	pipelineCreateInfo.pVertexInputState = &inputState;
 	m_pipelineName.push_back(name);
 	m_pipelines.push_back(nullptr);
+	
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.back()));
+}
+
+void CRenderer::setupDescriptorPool()
+{
+	std::vector<VkDescriptorPoolSize> poolSizes = 
+	{
+		vkTools::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1)
+	};
+
+	VkDescriptorPoolCreateInfo descriptorPoolInfo =
+		vkTools::initializers::descriptorPoolCreateInfo(poolSizes.size(), poolSizes.data(), 1);
+
+	VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &descriptorPoolInfo, nullptr, &m_descriptorPool));
+
 }
 
 void CRenderer::buildCommandBuffer()
@@ -547,7 +588,7 @@ void CRenderer::buildCommandBuffer()
 
 	VkClearValue clearValue[2];
 	clearValue[0].color = { 0.025f, 0.025f, 0.025f, 1.0f};
-	clearValue[0].depthStencil = {1.0f, 0};
+	clearValue[1].depthStencil = {1.0f, 0};
 
 	VkRenderPassBeginInfo renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
 	renderPassBeginInfo.renderPass = m_renderPass;
@@ -571,6 +612,16 @@ void CRenderer::buildCommandBuffer()
 		VkRect2D scissor = vkTools::initializers::rect2D(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
 		vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
+		vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, dev_data.pipelineLayout, 0, 1, &dev_data.descriptorSet, 0, NULL);
+		vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines.back());
+
+		VkDeviceSize offsets[1] = {0};
+		vkCmdBindVertexBuffers(m_drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &m_smem.buf, offsets);
+
+		vkCmdBindIndexBuffer(m_drawCmdBuffers[i], m_smem.buf, dev_data.vertices.size() * sizeof(Vertex), VK_INDEX_TYPE_UINT32);
+
+		vkCmdDrawIndexed(m_drawCmdBuffers[i], dev_data.indices.size(), 1, 0, 0, 0);
+		
 		vkCmdEndRenderPass(m_drawCmdBuffers[i]);
 
 		VK_CHECK_RESULT(vkEndCommandBuffer(m_drawCmdBuffers[i]));
@@ -579,7 +630,7 @@ void CRenderer::buildCommandBuffer()
 
 }
 
-void CRenderer::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory)
+VkBool32 CRenderer::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory)
 {
 	VkMemoryRequirements memReqs;
 	VkMemoryAllocateInfo memAlloc = vkTools::initializers::memoryAllocateInfo();
@@ -598,7 +649,26 @@ void CRenderer::createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlag
 		vkUnmapMemory(m_device, *memory);
 	}
 	VK_CHECK_RESULT(vkBindBufferMemory(m_device, *buffer, *memory, 0));
+	return true;
+}
 
+VkBool32 CRenderer::createBuffer(VkBufferUsageFlags usage, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory)
+{
+	return createBuffer(usage, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, size, data, buffer, memory);
+}
+
+VkBool32 CRenderer::createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory, VkDescriptorBufferInfo * descriptor)
+{
+	VkBool32 res = createBuffer(usage, memFlags, size, data, buffer, memory);
+	if (res) {
+		descriptor->offset = 0;
+		descriptor->buffer = *buffer;
+		descriptor->range = size;
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
 void CRenderer::createSBuffer(VkDeviceSize size, void* data)
@@ -644,6 +714,189 @@ void CRenderer::createSBuffer(VkDeviceSize size, void* data)
 	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
 	vkFreeMemory(m_device, stagingMemory, nullptr);
 
+}
+
+void CRenderer::writeInBuffer(VkBuffer * dstBuffer, VkDeviceSize size, void * data, VkDeviceSize dstOffset)
+{
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingMemory;
+	
+	createBuffer(
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+		size,
+		data,
+		&stagingBuffer,
+		&stagingMemory);
+
+	VkCommandBuffer copyCmd  = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+	VkBufferCopy copyRegion = {};
+	copyRegion.size = size;
+	copyRegion.dstOffset = dstOffset;
+
+	vkCmdCopyBuffer(
+		copyCmd,
+		stagingBuffer,
+		*dstBuffer,
+		1,
+		&copyRegion);
+
+	flushCommandBuffer(copyCmd, m_queue, true);
+
+	vkDestroyBuffer(m_device, stagingBuffer, nullptr);
+	vkFreeMemory(m_device, stagingMemory, nullptr);
+	
+}
+
+void CRenderer::dev_test(float x, float y, float w, float h, float depth)
+{
+	std::vector<Vertex> tmpV = {
+	{ { x + w, y + h, depth },{ 1.0f, 1.0f, 0.0f} },
+	{ { x, y + h, depth },{ 0.0f, 1.0f, 0.0f} },
+	{ { x, y, depth },{ 0.0f, 1.0f, 1.0f} },
+	{ { x + w, y, depth },{ 1.0f, 0.0f, 1.0f } } };
+	
+	dev_data.vertices.resize(4);
+
+	for (size_t i = 0; i < tmpV.size();i++) {
+		dev_data.vertices[i] = tmpV[i];
+	}
+
+	std::vector<uint32_t> tmpI = {0,1,2,	2,3,0};
+	
+	dev_data.indices.resize(tmpI.size());
+
+	for (size_t i = 0; i < tmpI.size();i++) {
+		dev_data.indices[i] = tmpI[i];
+	}
+	
+	VkDeviceSize vsize = tmpV.size() * sizeof(Vertex);
+	VkDeviceSize isize = tmpI.size() * sizeof(uint32_t);
+
+	createSBuffer(vsize+isize, dev_data.vertices.data()); //create sbuffer and copy vertex(pos and color) to it
+	writeInBuffer(&m_smem.buf, isize,dev_data.indices.data(), vsize); //Copy index data to sbuffer
+
+	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_SHADER_STAGE_VERTEX_BIT,
+		0)
+	};
+
+	VkDescriptorSetLayoutCreateInfo descriptorLayout =
+		vkTools::initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), setLayoutBindings.size());
+
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_device, &descriptorLayout, nullptr, &dev_data.descriptorSetLayout));
+
+	VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo =
+		vkTools::initializers::pipelineLayoutCreateInfo(&dev_data.descriptorSetLayout, 1);
+
+	vkCreatePipelineLayout(m_device, &pPipelineLayoutCreateInfo,nullptr, &dev_data.pipelineLayout);
+
+	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
+	shaderStages[0] = loadShader("./data/shaders/basic.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = loadShader("./data/shaders/basic.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+
+	m_pipelinesState.push_back({});
+
+	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
+		vkTools::initializers::pipelineCreateInfo(
+			&m_pipelinesState.back(),
+			dev_data.pipelineLayout,
+			m_renderPass,
+			0,
+			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+			VK_POLYGON_MODE_FILL,
+			2,
+			shaderStages.data());
+
+	dev_data.bindingDescriptions.resize(1);
+	dev_data.bindingDescriptions[0] =
+		vkTools::initializers::vertexInputBindingDescription(
+			VERTEX_BUFFER_BIND_ID,
+			sizeof(Vertex),
+			VK_VERTEX_INPUT_RATE_VERTEX
+		);
+
+	dev_data.attributeDescriptions.resize(2);
+	dev_data.attributeDescriptions[0] =
+		vkTools::initializers::vertexInputAttributeDescription(
+			VERTEX_BUFFER_BIND_ID,
+			0,
+			VK_FORMAT_R32G32B32_SFLOAT,
+			0);
+	dev_data.attributeDescriptions[1] =
+		vkTools::initializers::vertexInputAttributeDescription(
+			VERTEX_BUFFER_BIND_ID,
+			1,
+			VK_FORMAT_R32G32B32_SFLOAT,
+			sizeof(float)*3
+		);
+	dev_data.inputState = vkTools::initializers::pipelineVertexInputStateCreateInfo();
+	dev_data.inputState.vertexBindingDescriptionCount = dev_data.bindingDescriptions.size();
+	dev_data.inputState.pVertexBindingDescriptions = dev_data.bindingDescriptions.data();
+	dev_data.inputState.vertexAttributeDescriptionCount = dev_data.attributeDescriptions.size();
+	dev_data.inputState.pVertexAttributeDescriptions = dev_data.attributeDescriptions.data();
+
+	addGraphicPipeline(pipelineCreateInfo, dev_data.inputState, "devp");
+
+}
+
+void CRenderer::dev_setupDescriptorSet()
+{
+	VkDescriptorSetAllocateInfo allocInfo =
+		vkTools::initializers::descriptorSetAllocateInfo(m_descriptorPool, &dev_data.descriptorSetLayout, 1);
+
+	VkResult vkRes = vkAllocateDescriptorSets(m_device, &allocInfo, &dev_data.descriptorSet);
+	assert(!vkRes);
+
+	std::vector<VkWriteDescriptorSet> writeDescriptorSets =
+	{
+		//Binding 0 for Vertex Shader Uniform Buffer
+		vkTools::initializers::writeDescriptorSet(
+			dev_data.descriptorSet,
+			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			0,
+			&dev_data.uniformDataVS.descriptor),
+
+	};
+
+	vkUpdateDescriptorSets(m_device, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
+}
+
+void CRenderer::dev_prepareUBO()
+{
+	createBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		sizeof(dev_data.uboVS),
+		nullptr,
+		&dev_data.uniformDataVS.buffer,
+		&dev_data.uniformDataVS.memory,
+		&dev_data.uniformDataVS.descriptor);
+	dev_updateUniform();
+}
+
+void CRenderer::dev_updateUniform()
+{
+	//dev_data.uboVS.projection = glm::perspective(glm::radians(60.0f), (float)gEnv->pSystem->getWidth()/(float)gEnv->pSystem->getHeight(), 0.1f, 256.0f);
+	
+	dev_data.uboVS.projection = glm::ortho(0.0f, (float)gEnv->pSystem->getWidth(), 0.0f, (float)gEnv->pSystem->getHeight(), 0.1f, 100.0f);
+
+	//dev_data.uboVS.view = glm::lookAt(glm::vec3(1.0f,1.0f,1.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+	uint8_t *pData;
+	VK_CHECK_RESULT(vkMapMemory(m_device, dev_data.uniformDataVS.memory, 0, sizeof(dev_data.uboVS), 0, (void**)&pData));
+	memcpy(pData, &dev_data.uboVS, sizeof(dev_data.uboVS));
+	vkUnmapMemory(m_device, dev_data.uniformDataVS.memory);
+
+}
+
+void CRenderer::clean_dev()
+{
+
+	vkDestroyBuffer(m_device, m_smem.buf, nullptr);
+	vkFreeMemory(m_device, m_smem.mem, nullptr);
+	vkDestroyPipelineLayout(m_device, dev_data.pipelineLayout, nullptr);
 }
 
 VkResult CRenderer::createInstance()

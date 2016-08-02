@@ -16,7 +16,14 @@
 
 #include "System.h"
 
+#define VERTEX_BUFFER_BIND_ID 0
+
 class CSystem;
+
+struct Vertex {
+	float pos[3];
+	float col[3];
+};
 
 class CRenderer : public IRenderer
 {
@@ -30,6 +37,7 @@ public:
 
 	VkBool32 getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t *typeIndex);
 	uint32_t getMemoryType(uint32_t typeBits, VkFlags properties);
+	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
 
 protected:
 	
@@ -64,14 +72,17 @@ protected:
 	void prepareFrame();
 	void submitFrame();
 
-	virtual void addGraphicPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo inputState, std::string name);
+	virtual void addGraphicPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name);
 	
 
+	void setupDescriptorPool();
 	void buildCommandBuffer();
 
-	void createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory);
-
+	VkBool32 createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory);
+	VkBool32 createBuffer(VkBufferUsageFlags usage, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory);
+	VkBool32 createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory, VkDescriptorBufferInfo * descriptor);
 	void createSBuffer(VkDeviceSize size, void* data);
+	void writeInBuffer(VkBuffer*buffer, VkDeviceSize size, void* data, VkDeviceSize dstOffset);
 
 
 protected:
@@ -122,14 +133,47 @@ protected:
 
 	VkCommandBuffer m_setupCmdBuffer = VK_NULL_HANDLE;
 
+	VkDescriptorPool m_descriptorPool;
+
 	VkPipelineCache m_pipelineCache;
-	std::vector<VkPipeline> m_pipelines;
+	std::vector<VkPipeline> m_pipelines; 
+	std::vector<vkTools::VkPipelineState> m_pipelinesState;
+	VkPipeline dev_pipeline;
 	std::vector<std::string> m_pipelineName;
 
 	struct{
 		VkBuffer buf;
 		VkDeviceMemory mem;
 	} m_smem;
+
+	
+	void dev_test(float x, float y, float w, float h, float depth);
+	void clean_dev();
+
+	void dev_setupDescriptorSet();
+	void dev_prepareUBO();
+	void dev_updateUniform();
+
+	struct {
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
+		VkPipelineLayout pipelineLayout;
+		std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+		std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+		VkPipelineVertexInputStateCreateInfo inputState;
+		VkDescriptorSet descriptorSet;
+		VkDescriptorSetLayout descriptorSetLayout;
+		std::vector<VkShaderModule> shaderModules;
+		struct {
+			glm::mat4 projection;
+			glm::mat4 view;
+		} uboVS;
+
+		vkTools::UniformData uniformDataVS;
+
+	} dev_data;
+
+	bool m_prepared = false;
 
 private:
 	VkResult createInstance();
