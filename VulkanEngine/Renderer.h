@@ -179,6 +179,7 @@ protected:
 		VkDescriptorSetLayout descriptorSetLayout;
 		std::vector<VkShaderModule> shaderModules;
 
+		vkTools::CShader *shader;
 
 		struct {
 			glm::mat4 projection;
