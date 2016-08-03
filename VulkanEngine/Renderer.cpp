@@ -2,8 +2,13 @@
 
 
 
-CRenderer::CRenderer()
+CRenderer::CRenderer(PFN_GetEnabledFeatures enabledFeaturesFn)
 {
+
+	if (enabledFeaturesFn != nullptr) {
+		this->m_enabledFeatures = enabledFeaturesFn();
+	}
+
 //	InitVulkan();
 }
 
@@ -12,7 +17,8 @@ CRenderer::~CRenderer()
 {
 
 	clean_dev();
-
+	dev_data.shader->clear(m_device);
+	delete dev_data.shader;
 	m_swapChain.cleanup();
 	if (m_setupCmdBuffer != VK_NULL_HANDLE) {
 		vkFreeCommandBuffers(m_device, m_cmdPool, 1, &m_setupCmdBuffer);
@@ -34,12 +40,13 @@ CRenderer::~CRenderer()
 	vkDestroySemaphore(m_device, m_semaphores.presentComplete, nullptr);
 	vkDestroySemaphore(m_device, m_semaphores.renderComplete, nullptr);
 
-	vkDestroyDevice(m_device, nullptr);
+	delete m_vulkanDevice;
+
 	if (gEnv->enableValidation) {
 		vkDebug::freeDebugCallback(m_instance);
 	}
 	vkDestroyInstance(m_instance, nullptr);
-
+	
 }
 
 void CRenderer::Init()
@@ -66,8 +73,8 @@ void CRenderer::Init()
 
 	//createSBuffer(sizeof(uint32_t)*10, 0);
 
-	dev_test(100.0f, 100.0f, 100.0f, 100.0f, 0.1f);
-	//dev_test(0.5f, 0.5f, 0.5f, 0.5f, 0.1f);
+	//dev_test(100.0f, 100.0f, 100.0f, 100.0f, 0.1f);
+	dev_test(-0.5f, -0.5f, 1.0f, 1.0f, 0.1f);
 	dev_prepareUBO();
 	setupDescriptorPool();
 	dev_setupDescriptorSet();
@@ -150,7 +157,11 @@ void CRenderer::InitVulkan()
 
 	m_physicalDevice.physicalDevice = physicalDevices[0];
 
-	uint32_t graphicsQueueIndex = 0;
+	m_vulkanDevice = new vk::VulkanDevice(m_physicalDevice.physicalDevice);
+	VK_CHECK_RESULT(m_vulkanDevice->createLogicalDevice(m_enabledFeatures));
+	m_device = m_vulkanDevice->logicalDevice;
+
+	/*uint32_t graphicsQueueIndex = 0;
 	uint32_t queueCount;
 	vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice.physicalDevice, &queueCount, NULL);
 	assert(queueCount >= 1);
@@ -174,8 +185,8 @@ void CRenderer::InitVulkan()
 	queueCreateInfo.queueCount = 1;
 	queueCreateInfo.pQueuePriorities = queuePriorities.data();
 
-	VK_CHECK_RESULT(createDevice(queueCreateInfo, gEnv->enableValidation));
-
+	//VK_CHECK_RESULT(createDevice(queueCreateInfo, gEnv->enableValidation));
+	*/
 	// Store properties (including limits) and features of the phyiscal device
 	// So examples can check against them and see if a feature is actually supported
 	vkGetPhysicalDeviceProperties(m_physicalDevice.physicalDevice, &m_physicalDevice.deviceProperties);
@@ -183,7 +194,7 @@ void CRenderer::InitVulkan()
 
 	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice.physicalDevice, &m_physicalDevice.deviceMemoryProperties);
 
-	vkGetDeviceQueue(m_device, graphicsQueueIndex, 0, &m_queue);
+	vkGetDeviceQueue(m_device, m_vulkanDevice->queueFamilyIndices.graphics, 0, &m_queue);
 
 	VkBool32 validDepthFormat = vkTools::getSupportedDepthFormat(m_physicalDevice.physicalDevice, &m_depthFormat);
 	assert(validDepthFormat);
@@ -612,7 +623,8 @@ void CRenderer::buildCommandBuffer()
 		VkRect2D scissor = vkTools::initializers::rect2D(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
 		vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
-		vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, dev_data.pipelineLayout, 0, 1, &dev_data.descriptorSet, 0, NULL);
+		//vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, dev_data.pipelineLayout, 0, 1, &dev_data.descriptorSet, 0, NULL);
+		vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, dev_data.shader->getPipelineLayout(), 0, 1, &dev_data.descriptorSet, 0, NULL);
 		vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines.back());
 
 		VkDeviceSize offsets[1] = {0};
@@ -748,34 +760,33 @@ void CRenderer::writeInBuffer(VkBuffer * dstBuffer, VkDeviceSize size, void * da
 	vkFreeMemory(m_device, stagingMemory, nullptr);
 	
 }
-
-void CRenderer::dev_test(float x, float y, float w, float h, float depth)
-{
+/*
+void CRenderer::dev_test(float x, float y, float w, float h, float depth) {
 	std::vector<Vertex> tmpV = {
-	{ { x + w, y + h, depth },{ 1.0f, 1.0f, 0.0f} },
-	{ { x, y + h, depth },{ 0.0f, 1.0f, 0.0f} },
-	{ { x, y, depth },{ 0.0f, 1.0f, 1.0f} },
-	{ { x + w, y, depth },{ 1.0f, 0.0f, 1.0f } } };
-	
+		{ { x + w, y + h, depth },{ 1.0f, 1.0f, 0.0f } },
+		{ { x, y + h, depth },{ 0.0f, 1.0f, 0.0f } },
+		{ { x, y, depth },{ 0.0f, 1.0f, 1.0f } },
+		{ { x + w, y, depth },{ 1.0f, 0.0f, 1.0f } } };
+
 	dev_data.vertices.resize(4);
 
-	for (size_t i = 0; i < tmpV.size();i++) {
+	for (size_t i = 0; i < tmpV.size(); i++) {
 		dev_data.vertices[i] = tmpV[i];
 	}
 
-	std::vector<uint32_t> tmpI = {0,1,2,	2,3,0};
-	
+	std::vector<uint32_t> tmpI = { 0,1,2,	2,3,0 };
+
 	dev_data.indices.resize(tmpI.size());
 
-	for (size_t i = 0; i < tmpI.size();i++) {
+	for (size_t i = 0; i < tmpI.size(); i++) {
 		dev_data.indices[i] = tmpI[i];
 	}
-	
+
 	VkDeviceSize vsize = tmpV.size() * sizeof(Vertex);
 	VkDeviceSize isize = tmpI.size() * sizeof(uint32_t);
 
-	createSBuffer(vsize+isize, dev_data.vertices.data()); //create sbuffer and copy vertex(pos and color) to it
-	writeInBuffer(&m_smem.buf, isize,dev_data.indices.data(), vsize); //Copy index data to sbuffer
+	createSBuffer(vsize + isize, dev_data.vertices.data()); //create sbuffer and copy vertex(pos and color) to it
+	writeInBuffer(&m_smem.buf, isize, dev_data.indices.data(), vsize); //Copy index data to sbuffer
 
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
 		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
@@ -791,7 +802,7 @@ void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 	VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo =
 		vkTools::initializers::pipelineLayoutCreateInfo(&dev_data.descriptorSetLayout, 1);
 
-	vkCreatePipelineLayout(m_device, &pPipelineLayoutCreateInfo,nullptr, &dev_data.pipelineLayout);
+	vkCreatePipelineLayout(m_device, &pPipelineLayoutCreateInfo, nullptr, &dev_data.pipelineLayout);
 
 	std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 	shaderStages[0] = loadShader("./data/shaders/basic.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
@@ -830,7 +841,7 @@ void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 			VERTEX_BUFFER_BIND_ID,
 			1,
 			VK_FORMAT_R32G32B32_SFLOAT,
-			sizeof(float)*3
+			sizeof(float) * 3
 		);
 	dev_data.inputState = vkTools::initializers::pipelineVertexInputStateCreateInfo();
 	dev_data.inputState.vertexBindingDescriptionCount = dev_data.bindingDescriptions.size();
@@ -840,12 +851,137 @@ void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 
 	addGraphicPipeline(pipelineCreateInfo, dev_data.inputState, "devp");
 
+}*/
+
+void CRenderer::dev_test(float x, float y, float w, float h, float depth)
+{
+
+
+	std::vector<Vertex> tmpV = {
+	{ { x + w, y + h, depth },{ 1.0f, 1.0f, 0.0f} },
+	{ { x, y + h, depth },{ 0.0f, 1.0f, 0.0f} },
+	{ { x, y, depth },{ 0.0f, 1.0f, 1.0f} },
+	{ { x + w, y, depth },{ 1.0f, 0.0f, 1.0f } } };
+	
+	dev_data.vertices.resize(4);
+
+	for (size_t i = 0; i < tmpV.size();i++) {
+		dev_data.vertices[i] = tmpV[i];
+	}
+
+	std::vector<uint32_t> tmpI = {0,1,2,	2,3,0};
+	
+	dev_data.indices.resize(tmpI.size());
+
+	for (size_t i = 0; i < tmpI.size();i++) {
+		dev_data.indices[i] = tmpI[i];
+	}
+	
+	VkDeviceSize vsize = tmpV.size() * sizeof(Vertex);
+	VkDeviceSize isize = tmpI.size() * sizeof(uint32_t);
+
+	createSBuffer(vsize+isize, dev_data.vertices.data()); //create sbuffer and copy vertex(pos and color) to it
+	writeInBuffer(&m_smem.buf, isize,dev_data.indices.data(), vsize); //Copy index data to sbuffer
+
+	
+
+	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_SHADER_STAGE_VERTEX_BIT,
+		0)
+	};
+
+	/*VkDescriptorSetLayoutCreateInfo descriptorLayout =
+		vkTools::initializers::descriptorSetLayoutCreateInfo(setLayoutBindings.data(), setLayoutBindings.size());
+
+	VK_CHECK_RESULT(vkCreateDescriptorSetLayout(m_device, &descriptorLayout, nullptr, &dev_data.descriptorSetLayout));
+
+	VkPipelineLayoutCreateInfo pPipelineLayoutCreateInfo =
+		vkTools::initializers::pipelineLayoutCreateInfo(&dev_data.descriptorSetLayout, 1);
+
+	vkCreatePipelineLayout(m_device, &pPipelineLayoutCreateInfo,nullptr, &dev_data.pipelineLayout);*/
+
+
+
+	/*std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
+	shaderStages[0] = loadShader("./data/shaders/basic.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	shaderStages[1] = loadShader("./data/shaders/basic.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	*/
+	
+
+	dev_data.bindingDescriptions.resize(1);
+	dev_data.bindingDescriptions[0] =
+		vkTools::initializers::vertexInputBindingDescription(
+			VERTEX_BUFFER_BIND_ID,
+			sizeof(Vertex),
+			VK_VERTEX_INPUT_RATE_VERTEX
+		);
+
+	dev_data.attributeDescriptions.resize(2);
+	dev_data.attributeDescriptions[0] =
+		vkTools::initializers::vertexInputAttributeDescription(
+			VERTEX_BUFFER_BIND_ID,
+			0,
+			VK_FORMAT_R32G32B32_SFLOAT,
+			0);
+	dev_data.attributeDescriptions[1] =
+		vkTools::initializers::vertexInputAttributeDescription(
+			VERTEX_BUFFER_BIND_ID,
+			1,
+			VK_FORMAT_R32G32B32_SFLOAT,
+			sizeof(float)*3
+		);
+		
+	/*dev_data.inputState = vkTools::initializers::pipelineVertexInputStateCreateInfo();
+	dev_data.inputState.vertexBindingDescriptionCount = dev_data.bindingDescriptions.size();
+	dev_data.inputState.pVertexBindingDescriptions = dev_data.bindingDescriptions.data();
+	dev_data.inputState.vertexAttributeDescriptionCount = dev_data.attributeDescriptions.size();
+	dev_data.inputState.pVertexAttributeDescriptions = dev_data.attributeDescriptions.data();*/
+
+	dev_data.shader = new vkTools::CShader("./data/shaders/basic.vert.spv", "./data/shaders/basic.frag.spv", setLayoutBindings, dev_data.bindingDescriptions, dev_data.attributeDescriptions);
+	dev_data.shader->load(m_device);
+	//addGraphicPipeline(pipelineCreateInfo, dev_data.inputState, "devp");
+
+	m_pipelinesState.push_back({});
+
+	/*VkGraphicsPipelineCreateInfo pipelineCreateInfo =
+		vkTools::initializers::pipelineCreateInfo(
+			&m_pipelinesState.back(),
+			dev_data.pipelineLayout,
+			m_renderPass,
+			0,
+			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+			VK_POLYGON_MODE_FILL,
+			2,
+			shaderStages.data());*/
+
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages = dev_data.shader->getShaderStages();
+
+	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
+		vkTools::initializers::pipelineCreateInfo(
+			&m_pipelinesState.back(),
+			dev_data.shader->getPipelineLayout(),
+			m_renderPass,
+			0,
+			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+			VK_POLYGON_MODE_FILL,
+			2,
+			//shaderStages.data());
+			dev_data.shader->getShaderStagesPtr());
+	
+	//std::cout << &dev_data.shader->getShaderStages() << std::endl;
+
+	addGraphicPipeline(pipelineCreateInfo, dev_data.shader->getInputState(), "devp");
+
 }
 
 void CRenderer::dev_setupDescriptorSet()
 {
+	/*VkDescriptorSetAllocateInfo allocInfo =
+		vkTools::initializers::descriptorSetAllocateInfo(m_descriptorPool, &dev_data.descriptorSetLayout, 1);*/
+
 	VkDescriptorSetAllocateInfo allocInfo =
-		vkTools::initializers::descriptorSetAllocateInfo(m_descriptorPool, &dev_data.descriptorSetLayout, 1);
+		vkTools::initializers::descriptorSetAllocateInfo(m_descriptorPool, dev_data.shader->getDescriptorSetLayoutPtr(), 1);
 
 	VkResult vkRes = vkAllocateDescriptorSets(m_device, &allocInfo, &dev_data.descriptorSet);
 	assert(!vkRes);
@@ -878,11 +1014,11 @@ void CRenderer::dev_prepareUBO()
 
 void CRenderer::dev_updateUniform()
 {
-	//dev_data.uboVS.projection = glm::perspective(glm::radians(60.0f), (float)gEnv->pSystem->getWidth()/(float)gEnv->pSystem->getHeight(), 0.1f, 256.0f);
+	dev_data.uboVS.projection = glm::perspective(glm::radians(60.0f), (float)gEnv->pSystem->getWidth()/(float)gEnv->pSystem->getHeight(), 0.1f, 256.0f);
 	
-	dev_data.uboVS.projection = glm::ortho(0.0f, (float)gEnv->pSystem->getWidth(), 0.0f, (float)gEnv->pSystem->getHeight(), 0.1f, 100.0f);
+	//dev_data.uboVS.projection = glm::ortho(0.0f, (float)gEnv->pSystem->getWidth(), 0.0f, (float)gEnv->pSystem->getHeight(), 0.1f, 100.0f);
 
-	//dev_data.uboVS.view = glm::lookAt(glm::vec3(1.0f,1.0f,1.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	dev_data.uboVS.view = glm::lookAt(glm::vec3(1.0f,1.0f,1.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 
 	uint8_t *pData;
 	VK_CHECK_RESULT(vkMapMemory(m_device, dev_data.uniformDataVS.memory, 0, sizeof(dev_data.uboVS), 0, (void**)&pData));
@@ -905,7 +1041,7 @@ VkResult CRenderer::createInstance()
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = gEnv->pSystem->getAppName().c_str();
 	appInfo.pEngineName = gEnv->pSystem->getAppName().c_str();
-	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 11);
+	appInfo.apiVersion = VK_API_VERSION_1_0;
 
 	std::vector<const char*> enabledExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
 

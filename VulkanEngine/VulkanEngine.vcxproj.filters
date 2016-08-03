@@ -89,6 +89,12 @@
     <ClInclude Include="Renderer.h">
       <Filter>Common\ThomasRenderer</Filter>
     </ClInclude>
+    <ClInclude Include="vulkanbuffer.hpp">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkandevice.hpp">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="platform_impl.inl">

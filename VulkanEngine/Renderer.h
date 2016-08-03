@@ -14,11 +14,16 @@
 #include "vulkanTools\vulkandebug.h"
 #include "IRenderer.h"
 
+#include "vulkandevice.hpp"
 #include "System.h"
+
+typedef VkPhysicalDeviceFeatures (*PFN_GetEnabledFeatures)();
 
 #define VERTEX_BUFFER_BIND_ID 0
 
 class CSystem;
+class CShader;
+class CRenderer;
 
 struct Vertex {
 	float pos[3];
@@ -28,7 +33,8 @@ struct Vertex {
 class CRenderer : public IRenderer
 {
 public:
-	CRenderer();
+	CRenderer(PFN_GetEnabledFeatures enabledFeaturesFn = nullptr);
+	//CRenderer();
 	~CRenderer();
 	virtual void InitVulkan();
 	virtual void Init();
@@ -86,8 +92,16 @@ protected:
 
 
 protected:
+
+	bool m_enableDebugMarkers = false;
+	bool m_enableVSync = false;
+
+	VkPhysicalDeviceFeatures m_enabledFeatures = {};
+
 	VkInstance m_instance;
 	
+	vk::VulkanDevice *m_vulkanDevice;
+
 	struct {
 		VkPhysicalDevice physicalDevice;
 		VkPhysicalDeviceProperties deviceProperties;
@@ -164,6 +178,8 @@ protected:
 		VkDescriptorSet descriptorSet;
 		VkDescriptorSetLayout descriptorSetLayout;
 		std::vector<VkShaderModule> shaderModules;
+
+
 		struct {
 			glm::mat4 projection;
 			glm::mat4 view;

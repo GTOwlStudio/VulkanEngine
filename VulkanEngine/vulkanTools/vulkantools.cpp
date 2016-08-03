@@ -9,7 +9,22 @@
 #include "vulkantools.h"
 
 namespace vkTools {
-
+	VkBool32 checkDeviceExtensionPresent(VkPhysicalDevice physicalDevice, const char * extensionName)
+	{
+		uint32_t extensionCount = 0;
+		std::vector<VkExtensionProperties> extensions;
+		vkEnumerateInstanceExtensionProperties(NULL, &extensionCount, NULL);
+		extensions.resize(extensionCount);
+		vkEnumerateInstanceExtensionProperties(NULL, &extensionCount, extensions.data());
+		for (auto& ext : extensions)
+		{
+			if (!strcmp(extensionName, ext.extensionName))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 	std::string errorString(VkResult errorCode)
 	{
 		switch (errorCode)
@@ -704,17 +719,50 @@ VkGraphicsPipelineCreateInfo vkTools::initializers::pipelineCreateInfo(VkPipelin
 }
 
 namespace vkTools {
-	CShader::CShader(std::string vsPath, std::string fsPath) {
+	CShader::CShader(std::string vsPath, std::string fsPath, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings,std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription) {
 		addShader(vsPath, VK_SHADER_STAGE_VERTEX_BIT);
 		addShader(fsPath, VK_SHADER_STAGE_FRAGMENT_BIT);
+		m_layoutBindings = setLayoutBindings;
+		m_bindingDescription = bindingDescription;
+		m_attributeDescription = attributeDescription;
+		m_descriptorLayoutCreateInfo = vkTools::initializers::descriptorSetLayoutCreateInfo(m_layoutBindings.data(), m_layoutBindings.size());
+		m_pipelineLayoutCreateInfo = vkTools::initializers::pipelineLayoutCreateInfo(&m_descriptorSetLayout, 1);
+		
+		setInputState(m_bindingDescription.size(), m_bindingDescription.data(), m_attributeDescription.size(), m_attributeDescription.data());
 	}
 
-	CShader::~CShader(){}
+	CShader::~CShader()
+	{
+	}
+
+	
 
 	void CShader::load(VkDevice device) {
+		VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &m_descriptorLayoutCreateInfo, nullptr, &m_descriptorSetLayout));
+		vkCreatePipelineLayout(device, &m_pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
+
+		VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
+		shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+
+		m_shaderModules.resize(m_paths.size());
+		m_shaderStages.resize(m_paths.size());
+
 		for (size_t i = 0; i < m_paths.size();i++) {
-			m_shaderModules.push_back(loadShader(m_paths[i].c_str(), device, m_flags[i]));
+			m_shaderModules[i] = loadShader(m_paths[i].c_str(), device, m_flags[i]);
+			shaderStageCreateInfo.stage = m_flags[i];
+			shaderStageCreateInfo.module = m_shaderModules[i];
+			shaderStageCreateInfo.pName = "main";
+			assert(shaderStageCreateInfo.module != NULL);
+			m_shaderModules[i] = shaderStageCreateInfo.module;
+
+			m_shaderStages[i] = shaderStageCreateInfo;
+
 		}
+	}
+
+	void CShader::clear(VkDevice device)
+	{
+		vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
 	}
 
 	std::vector<VkShaderModule> CShader::getShaderModules() const
@@ -735,7 +783,31 @@ namespace vkTools {
 		m_inputState.pVertexAttributeDescriptions = attributeDescriptions;
 	}
 
+	VkPipelineLayout CShader::getPipelineLayout() const
+	{
+		return m_pipelineLayout;
+	}
 
+	VkPipelineVertexInputStateCreateInfo CShader::getInputState() const
+	{
+		return m_inputState;
+	}
+
+	std::vector<VkPipelineShaderStageCreateInfo> CShader::getShaderStages()
+	{
+		std::cout << &m_shaderStages << std::endl;
+		return m_shaderStages;
+	}
+
+	VkPipelineShaderStageCreateInfo * CShader::getShaderStagesPtr()
+	{
+		return m_shaderStages.data();
+	}
+
+	VkDescriptorSetLayout * CShader::getDescriptorSetLayoutPtr()
+	{
+		return &m_descriptorSetLayout;
+	}
 
 }
 

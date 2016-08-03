@@ -48,22 +48,42 @@
 namespace vkTools {
 	class CShader {
 	public:
-		CShader(std::string vertexpath, std::string fragmentpath);
+		CShader(std::string vertexpath, std::string fragmentpath, std::vector<VkDescriptorSetLayoutBinding> descriptorLayout, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription);
 		//CShader();
 		~CShader();
 		void load(VkDevice device);
+		void clear(VkDevice device);
 		std::vector<VkShaderModule> getShaderModules() const;
+		VkPipelineLayout getPipelineLayout() const; //@?Future ptr
+		VkPipelineVertexInputStateCreateInfo getInputState() const; //@?Future ptr
+		std::vector<VkPipelineShaderStageCreateInfo> getShaderStages();
+		VkPipelineShaderStageCreateInfo* getShaderStagesPtr();
+		VkDescriptorSetLayout* getDescriptorSetLayoutPtr();
 
 	private:
+		
 		std::vector<VkShaderModule> m_shaderModules;
+		std::vector<VkPipelineShaderStageCreateInfo> m_shaderStages;
+
+		std::vector<VkDescriptorSetLayoutBinding> m_layoutBindings;
+		std::vector<VkVertexInputBindingDescription> m_bindingDescription;
+		std::vector<VkVertexInputAttributeDescription> m_attributeDescription;
+	
 		std::vector <std::string> m_paths;
 		std::vector <VkShaderStageFlagBits> m_flags;
 
+		VkDescriptorSetLayoutCreateInfo m_descriptorLayoutCreateInfo;
 		VkPipelineVertexInputStateCreateInfo m_inputState;
+		VkPipelineLayoutCreateInfo m_pipelineLayoutCreateInfo;
+
+		VkDescriptorSetLayout m_descriptorSetLayout;
+		VkPipelineLayout m_pipelineLayout;
 
 		void addShader(std::string sPath, VkShaderStageFlagBits flag);
 
 		void setInputState(uint32_t bindingCount, VkVertexInputBindingDescription *bindingDescriptions, uint32_t attributeCount, VkVertexInputAttributeDescription *attributeDescriptions);
+		
+
 
 	};
 
@@ -86,6 +106,9 @@ namespace vkTools {
 
 namespace vkTools
 {
+
+	VkBool32 checkDeviceExtensionPresent(VkPhysicalDevice physicalDevice, const char* extensionName);
+
 	//Return string representation of a vulakn error string
 	std::string errorString(VkResult errorCode);
 
