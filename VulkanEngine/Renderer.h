@@ -79,7 +79,7 @@ protected:
 	void submitFrame();
 
 	virtual void addGraphicPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name);
-	
+	virtual void handleMessages(WPARAM wParam, LPARAM lParam);
 
 	void setupDescriptorPool();
 	void buildCommandBuffer();
@@ -108,6 +108,7 @@ protected:
 		VkPhysicalDeviceFeatures deviceFeatures;
 		VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
 	} m_physicalDevice;
+
 	VkDevice m_device;
 	VkQueue m_queue;
 
@@ -167,6 +168,7 @@ protected:
 	void dev_setupDescriptorSet();
 	void dev_prepareUBO();
 	void dev_updateUniform();
+	void dev_updateUniform_2();
 
 	struct {
 		std::vector<Vertex> vertices;
@@ -187,6 +189,9 @@ protected:
 		} uboVS;
 
 		vkTools::UniformData uniformDataVS;
+
+		float rotationSpeed = 1.0f;
+		float rotationZ = 0.0f;
 
 	} dev_data;
 

@@ -57,6 +57,9 @@
     <ClCompile Include="Renderer.cpp">
       <Filter>Common\ThomasRenderer</Filter>
     </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="I3DEngine.h">
@@ -94,6 +97,12 @@
     </ClInclude>
     <ClInclude Include="vulkandevice.hpp">
       <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="IInput.h">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

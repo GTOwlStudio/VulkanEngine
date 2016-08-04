@@ -795,7 +795,6 @@ namespace vkTools {
 
 	std::vector<VkPipelineShaderStageCreateInfo> CShader::getShaderStages()
 	{
-		std::cout << &m_shaderStages << std::endl;
 		return m_shaderStages;
 	}
 

@@ -80,5 +80,8 @@ struct IRenderer
 	virtual void InitVulkan() = 0;
 	virtual void render() = 0;
 	virtual void addGraphicPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name) = 0;
+	
+	//Maybe Not final function
+	virtual void handleMessages(WPARAM wParam, LPARAM lParam) = 0;
 
 };

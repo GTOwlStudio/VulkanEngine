@@ -5,6 +5,7 @@
 #include <chrono>
 
 #include "Renderer.h"
+#include "Input.h"
 
 class CSystem;
 class CRenderer;

@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="System.cpp" />
@@ -27,6 +28,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="I3DEngine.h" />
+    <ClInclude Include="IInput.h" />
+    <ClInclude Include="Input.h" />
     <ClInclude Include="IProcess.h" />
     <ClInclude Include="IRenderer.h" />
     <ClInclude Include="Renderer.h" />

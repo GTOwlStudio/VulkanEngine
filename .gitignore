@@ -243,3 +243,4 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+VulkanEngine/old_exe/5_08_2016.7z

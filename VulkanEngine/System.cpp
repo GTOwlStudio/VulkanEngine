@@ -10,12 +10,15 @@ CSystem::CSystem(bool enableValidation)
 	m_env.pSystem = this;
 	m_env.enableValidation = enableValidation;
 	m_env.pRenderer = new CRenderer();
+	m_env.pInput = new CInput();
 	gEnv = &m_env;
 
 }
 CSystem::~CSystem() 
 {
 	delete(m_env.pRenderer);
+	delete(m_env.pInput);
+	 
 	gEnv = 0;
 }
 
@@ -30,6 +33,121 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 	m_env.pRenderer->Init();
 	return true;
 }
+
+
+
+void CSystem::renderLoop()
+{
+#if defined(_WIN32)
+	MSG msg;
+	while (!m_isFinished) {
+		auto tStart = std::chrono::high_resolution_clock::now();
+		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			if (msg.message == WM_QUIT) {
+				break;
+			}
+			else {
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+		
+		m_env.pRenderer->render();
+
+		m_frameCounter++;
+		auto tEnd = std::chrono::high_resolution_clock::now();
+		auto tDiff = std::chrono::duration<double, std::milli>(tEnd-tStart).count();
+		frameTimer = (float)tDiff / 1000.0f;
+		
+		if (!m_paused) {
+			m_timer += m_timerSpeed * frameTimer;
+			if (m_timer>1.0f) {
+				m_timer -= 1.0f;
+			}
+		}
+		m_fpsTimer += (float)tDiff;
+		if (m_fpsTimer>1000.0f) {
+			std::string windowTitle = getWindowTitle();
+			SetWindowText(m_window, windowTitle.c_str());
+			m_fpsTimer = 0.0f;
+			m_frameCounter = 0.0f;
+		}
+
+	}
+#endif
+}
+
+void CSystem::Update()
+{
+
+}
+
+void CSystem::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch (uMsg)
+	{
+	case WM_CLOSE:
+		DestroyWindow(hWnd);
+		PostQuitMessage(0);
+		break;
+	case WM_PAINT:
+		ValidateRect(m_window, NULL);
+		break;
+	case WM_KEYDOWN:
+		m_env.pRenderer->handleMessages(wParam, lParam);
+		switch (wParam) {
+		case VK_ESCAPE:
+			m_isFinished = true;
+			break;
+		}
+		
+		
+
+		break;
+	}
+}
+
+std::string CSystem::getWindowTitle() const
+{
+	return m_sTitle;
+}
+
+std::string CSystem::getAppName() const
+{
+	return m_sName;
+}
+
+HWND CSystem::getWindow() const
+{
+	return m_window;
+}
+
+HINSTANCE CSystem::getWindowInstance() const
+{
+	return m_windowInstance;
+}
+
+uint32_t CSystem::getWidth() const
+{
+	return m_iWidth;
+}
+
+uint32_t CSystem::getHeight() const
+{
+	return m_iHeight;
+}
+
+uint32_t * CSystem::getWidthPtr()
+{
+	return &m_iWidth;
+}
+
+uint32_t * CSystem::getHeightPtr()
+{
+	return &m_iHeight;
+}
+
+
 
 HWND CSystem::setupWindow(HINSTANCE hInstance, WNDPROC wndProc)
 {
@@ -168,112 +286,5 @@ void CSystem::setupConsole(std::string title)
 	if (m_env.enableValidation)
 	{
 		std::cout << "Validation enabled:\n";
-	}
-}
-
-void CSystem::renderLoop()
-{
-#if defined(_WIN32)
-	MSG msg;
-	while (!m_isFinished) {
-		auto tStart = std::chrono::high_resolution_clock::now();
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
-			if (msg.message == WM_QUIT) {
-				break;
-			}
-			else {
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-		}
-		
-		m_env.pRenderer->render();
-
-		m_frameCounter++;
-		auto tEnd = std::chrono::high_resolution_clock::now();
-		auto tDiff = std::chrono::duration<double, std::milli>(tEnd-tStart).count();
-		frameTimer = (float)tDiff / 1000.0f;
-		
-		if (!m_paused) {
-			m_timer += m_timerSpeed * frameTimer;
-			if (m_timer>1.0f) {
-				m_timer -= 1.0f;
-			}
-		}
-		m_fpsTimer += (float)tDiff;
-		if (m_fpsTimer>1000.0f) {
-			std::string windowTitle = getWindowTitle();
-			SetWindowText(m_window, windowTitle.c_str());
-			m_fpsTimer = 0.0f;
-			m_frameCounter = 0.0f;
-		}
-
-	}
-#endif
-}
-
-void CSystem::Update()
-{
-
-}
-
-std::string CSystem::getWindowTitle() const
-{
-	return m_sTitle;
-}
-
-std::string CSystem::getAppName() const
-{
-	return m_sName;
-}
-
-HWND CSystem::getWindow() const
-{
-	return m_window;
-}
-
-HINSTANCE CSystem::getWindowInstance() const
-{
-	return m_windowInstance;
-}
-
-uint32_t CSystem::getWidth() const
-{
-	return m_iWidth;
-}
-
-uint32_t CSystem::getHeight() const
-{
-	return m_iHeight;
-}
-
-uint32_t * CSystem::getWidthPtr()
-{
-	return &m_iWidth;
-}
-
-uint32_t * CSystem::getHeightPtr()
-{
-	return &m_iHeight;
-}
-
-void CSystem::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	switch (uMsg)
-	{
-	case WM_CLOSE:
-		DestroyWindow(hWnd);
-		PostQuitMessage(0);
-		break;
-	case WM_PAINT:
-		ValidateRect(m_window, NULL);
-		break;
-	case WM_KEYDOWN:
-		switch (wParam) {
-		case VK_ESCAPE:
-			m_isFinished = true;
-			break;
-		}
-		break;
 	}
 }
