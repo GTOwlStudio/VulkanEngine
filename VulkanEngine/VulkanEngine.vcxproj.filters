@@ -60,6 +60,18 @@
     <ClCompile Include="Input.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="guiutils.h">
+      <Filter>Common\ThomasGui</Filter>
+    </ClCompile>
+    <ClCompile Include="guiutils.cpp">
+      <Filter>Common\ThomasGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Font.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="vulkandevice.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="I3DEngine.h">
@@ -95,14 +107,17 @@
     <ClInclude Include="vulkanbuffer.hpp">
       <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
-    <ClInclude Include="vulkandevice.hpp">
-      <Filter>Common\ThomasSystem</Filter>
-    </ClInclude>
     <ClInclude Include="IInput.h">
       <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
     <ClInclude Include="Input.h">
       <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="Font.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkandevice.h">
+      <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

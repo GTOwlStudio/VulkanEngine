@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <vulkan\vulkan.h>
 
+
 namespace vkDebug
 {
 	extern int validationLayerCount;
@@ -20,4 +21,5 @@ namespace vkDebug
 
 	void setupDebugging(VkInstance instance, VkDebugReportFlagsEXT flags, VkDebugReportCallbackEXT callback);
 	void freeDebugCallback(VkInstance instance);
+
 }

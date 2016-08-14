@@ -10,6 +10,7 @@
 #endif
 
 #include "System.h"
+#include "vulkanTools\vulkandebug.h"
 
 //extern SSystemGlobalEnvironement *gEnv = NULL;
 
@@ -30,10 +31,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 #endif
 {
 	sys = new CSystem(true);
+	//vkDebug::error("test\n");
 	sys->Init(hInstance, WndProc);
 	sys->renderLoop();
 	//system("pause");
 	delete sys;
-	//system("pause");
+	//vkDebug::error("test\n");
+	system("pause");
 	return 0;
 }

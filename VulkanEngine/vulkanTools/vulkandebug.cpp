@@ -1,6 +1,7 @@
 #include "vulkandebug.h"
 #include <iostream>
 
+
 namespace vkDebug
 {
 	int validationLayerCount = 1;
@@ -74,4 +75,7 @@ namespace vkDebug
 		}*/
 	}
 
+
+	
+	
 }

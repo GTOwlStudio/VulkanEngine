@@ -6,6 +6,7 @@
 using namespace glm;
 
 #include <Windows.h>
+#include "vulkandevice.h"
 
 ///**/
 //
@@ -81,7 +82,12 @@ struct IRenderer
 	virtual void render() = 0;
 	virtual void addGraphicPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name) = 0;
 	
+	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height) = 0;
+
 	//Maybe Not final function
 	virtual void handleMessages(WPARAM wParam, LPARAM lParam) = 0;
 
+	virtual vk::VulkanDevice* getVulkanDevice() = 0;
+	virtual vkTools::VulkanTextureLoader* getTextureLoader() = 0;
+	
 };

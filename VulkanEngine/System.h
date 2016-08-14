@@ -3,16 +3,18 @@
 #include <Windows.h>
 #include <iostream>
 #include <chrono>
+#include <thread>
 
 #include "Renderer.h"
 #include "Input.h"
+#include "Font.h"
 
 class CSystem;
 class CRenderer;
-struct IInput;
+class IInput;
 struct IRenderer;
 struct I3DEngine;
-
+class CFont;
 
 
 struct SSystemGlobalEnvironement
@@ -93,6 +95,8 @@ private:
 	float m_timerSpeed = 0.025f;
 
 	uint32_t m_frameCounter = 0;
+	uint32_t m_cap = 60;
+	uint32_t m_frameTime_millisecond;
 	float frameTimer = 1.0f;
 	float m_fpsTimer = 0.0f;
 

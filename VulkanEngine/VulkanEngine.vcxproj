@@ -19,14 +19,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Font.cpp" />
+    <ClCompile Include="guiutils.cpp" />
+    <ClCompile Include="guiutils.h" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="System.cpp" />
+    <ClCompile Include="vulkandevice.cpp" />
     <ClCompile Include="vulkanTools\vulkandebug.cpp" />
     <ClCompile Include="vulkanTools\vulkantools.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Font.h" />
     <ClInclude Include="I3DEngine.h" />
     <ClInclude Include="IInput.h" />
     <ClInclude Include="Input.h" />
@@ -35,7 +40,7 @@
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="vulkanbuffer.hpp" />
-    <ClInclude Include="vulkandevice.hpp" />
+    <ClInclude Include="vulkandevice.h" />
     <ClInclude Include="vulkanTools\vulkandebug.h" />
     <ClInclude Include="vulkanTools\vulkanMeshLoader.hpp" />
     <ClInclude Include="vulkanTools\vulkanswapchain.hpp" />
@@ -118,7 +123,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>vulkan-1.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;assimp.lib;freetyped.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -146,7 +151,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>vulkan-1.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;assimp.lib;freetyped.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

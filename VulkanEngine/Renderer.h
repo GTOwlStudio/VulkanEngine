@@ -12,9 +12,10 @@
 #include <vulkan\vulkan.h>
 #include "vulkanTools\vulkanswapchain.hpp"
 #include "vulkanTools\vulkandebug.h"
+#include "vulkanTools\vulkanTextureLoader.hpp"
 #include "IRenderer.h"
 
-#include "vulkandevice.hpp"
+#include "vulkandevice.h"
 #include "System.h"
 
 typedef VkPhysicalDeviceFeatures (*PFN_GetEnabledFeatures)();
@@ -36,10 +37,16 @@ public:
 	CRenderer(PFN_GetEnabledFeatures enabledFeaturesFn = nullptr);
 	//CRenderer();
 	~CRenderer();
+	void cleanTextures();
+
+
 	virtual void InitVulkan();
 	virtual void Init();
 
 	virtual void render();
+
+	virtual vk::VulkanDevice* getVulkanDevice();
+	virtual vkTools::VulkanTextureLoader* getTextureLoader();
 
 	VkBool32 getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t *typeIndex);
 	uint32_t getMemoryType(uint32_t typeBits, VkFlags properties);
@@ -87,6 +94,9 @@ protected:
 	VkBool32 createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory);
 	VkBool32 createBuffer(VkBufferUsageFlags usage, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory);
 	VkBool32 createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory, VkDescriptorBufferInfo * descriptor);
+	
+	void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height);
+
 	void createSBuffer(VkDeviceSize size, void* data);
 	void writeInBuffer(VkBuffer*buffer, VkDeviceSize size, void* data, VkDeviceSize dstOffset);
 
@@ -118,7 +128,8 @@ protected:
 
 	std::vector<VkCommandBuffer> m_drawCmdBuffers;
 	std::vector<VkFramebuffer> m_frameBuffers;
-
+//	std::vector<VkBuffer> m_buffer;
+		
 	uint32_t m_currentBuffer = 0;
 
 	std::vector<VkCommandBuffer> m_postPresentCmdBuffers = {VK_NULL_HANDLE};
@@ -161,8 +172,13 @@ protected:
 		VkDeviceMemory mem;
 	} m_smem;
 
+	std::vector<vk::Buffer> m_buffers;
+	std::vector<vkTools::VulkanTexture> m_textures;
 	
+	vkTools::VulkanTextureLoader* m_textureLoader = nullptr;
+
 	void dev_test(float x, float y, float w, float h, float depth);
+	void dev_test2(float x, float y, float w, float h, float depth);
 	void clean_dev();
 
 	void dev_setupDescriptorSet();

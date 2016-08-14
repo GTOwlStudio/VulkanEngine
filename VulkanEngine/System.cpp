@@ -5,6 +5,8 @@ SSystemGlobalEnvironement* gEnv = NULL;
 CSystem::CSystem(bool enableValidation)
 {
 
+	m_frameTime_millisecond = (uint32_t)(1000.0f/(float)m_cap);
+	std::cout << m_frameTime_millisecond << std::endl;
 	memset(&m_env, 0, sizeof(m_env));
 
 	m_env.pSystem = this;
@@ -12,6 +14,8 @@ CSystem::CSystem(bool enableValidation)
 	m_env.pRenderer = new CRenderer();
 	m_env.pInput = new CInput();
 	gEnv = &m_env;
+
+	
 
 }
 CSystem::~CSystem() 
@@ -29,8 +33,9 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 		setupConsole("tEngine Console");
 	}
 	setupWindow(hInstance, wndProc);
-	
 	m_env.pRenderer->Init();
+	CFont font("./data/fonts/consola.ttf", 24);
+	font.load();
 	return true;
 }
 
@@ -55,6 +60,7 @@ void CSystem::renderLoop()
 		m_env.pRenderer->render();
 
 		m_frameCounter++;
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(m_frameTime_millisecond));
 		auto tEnd = std::chrono::high_resolution_clock::now();
 		auto tDiff = std::chrono::duration<double, std::milli>(tEnd-tStart).count();
 		frameTimer = (float)tDiff / 1000.0f;
@@ -65,12 +71,15 @@ void CSystem::renderLoop()
 				m_timer -= 1.0f;
 			}
 		}
+		//m_frameCounter += 1; 
 		m_fpsTimer += (float)tDiff;
+		//if (m_fpsTimer>1000.0f) {
 		if (m_fpsTimer>1000.0f) {
 			std::string windowTitle = getWindowTitle();
+			//printf("fps=%i\n", m_frameCounter);
 			SetWindowText(m_window, windowTitle.c_str());
 			m_fpsTimer = 0.0f;
-			m_frameCounter = 0.0f;
+			m_frameCounter = 0;
 		}
 
 	}
