@@ -20,6 +20,9 @@ namespace vkDebug
 		void* pUserData);
 
 	void setupDebugging(VkInstance instance, VkDebugReportFlagsEXT flags, VkDebugReportCallbackEXT callback);
+	void setupDebugMarker(VkDevice device);
 	void freeDebugCallback(VkInstance instance);
+	
+	void setObjectName(VkDevice device, uint64_t object, VkDebugReportObjectTypeEXT objectType, const char *name);
 
 }

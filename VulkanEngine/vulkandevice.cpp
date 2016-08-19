@@ -19,8 +19,12 @@ namespace vk
 		{
 			if (commandPool)
 			{
+				vkDeviceWaitIdle(logicalDevice);
 				vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+			//	vkDeviceWaitIdle(logicalDevice);
 			}
+
+			//Sleep(DWORD(1000));
 
 			if (logicalDevice) {
 				vkDestroyDevice(logicalDevice, nullptr);
@@ -160,6 +164,7 @@ namespace vk
 		{
 			deviceExtensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
 			enableDebugMarkers = true;
+			printf("Debug Marker Enabled\n");
 		}
 
 		if (deviceExtensions.size() > 0)

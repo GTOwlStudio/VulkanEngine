@@ -23,12 +23,18 @@ typedef VkPhysicalDeviceFeatures (*PFN_GetEnabledFeatures)();
 #define VERTEX_BUFFER_BIND_ID 0
 
 class CSystem;
-class CShader;
+class vkTools::CShader;
 class CRenderer;
 
 struct Vertex {
 	float pos[3];
 	float col[3];
+};
+
+
+struct VertexT {
+	float pos[3];
+	float tc[2];
 };
 
 class CRenderer : public IRenderer
@@ -37,8 +43,7 @@ public:
 	CRenderer(PFN_GetEnabledFeatures enabledFeaturesFn = nullptr);
 	//CRenderer();
 	~CRenderer();
-	void cleanTextures();
-
+	void clearRessources();
 
 	virtual void InitVulkan();
 	virtual void Init();
@@ -47,6 +52,7 @@ public:
 
 	virtual vk::VulkanDevice* getVulkanDevice();
 	virtual vkTools::VulkanTextureLoader* getTextureLoader();
+	virtual vkTools::CShader* getShader(std::string shaderName);
 
 	VkBool32 getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t *typeIndex);
 	uint32_t getMemoryType(uint32_t typeBits, VkFlags properties);
@@ -85,7 +91,25 @@ protected:
 	void prepareFrame();
 	void submitFrame();
 
-	virtual void addGraphicPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name);
+	virtual void addGraphicsPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name);
+	virtual void addGraphicsPipeline(
+			VkPipelineLayout pipelineLayout,
+			VkRenderPass renderPass,
+			VkPipelineCreateFlags flags,
+			VkPrimitiveTopology topology,
+			VkPolygonMode polyMode,
+			uint32_t shaderStagesCount,
+			VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name);
+
+	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName,
+		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings,
+		std::vector<VkVertexInputBindingDescription> bindingDescription,
+		std::vector<VkVertexInputAttributeDescription> attributeDescription);
+
+	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo);
+
+	virtual void initRessources();
+
 	virtual void handleMessages(WPARAM wParam, LPARAM lParam);
 
 	void setupDescriptorPool();
@@ -161,11 +185,19 @@ protected:
 
 	VkDescriptorPool m_descriptorPool;
 
-	VkPipelineCache m_pipelineCache;
-	std::vector<VkPipeline> m_pipelines; 
-	std::vector<vkTools::VkPipelineState> m_pipelinesState;
-	VkPipeline dev_pipeline;
-	std::vector<std::string> m_pipelineName;
+	struct {
+		VkPipelineCache pipelineCache;
+		std::vector<VkPipeline> pipelines;
+		std::vector<vkTools::VkPipelineState> pipelinesState;
+		VkPipeline dev_pipeline;
+		std::vector<std::string> pipelineNames;
+	} m_pipelines;
+
+	
+	struct {
+		std::vector<vkTools::CShader*> shaders;
+		std::vector<std::string> names;
+	} m_shaders;
 
 	struct{
 		VkBuffer buf;
@@ -174,6 +206,8 @@ protected:
 
 	std::vector<vk::Buffer> m_buffers;
 	std::vector<vkTools::VulkanTexture> m_textures;
+
+	std::vector<SIndexedDrawInfo> m_indexedDraws;
 	
 	vkTools::VulkanTextureLoader* m_textureLoader = nullptr;
 

@@ -4,7 +4,6 @@ SSystemGlobalEnvironement* gEnv = NULL;
 
 CSystem::CSystem(bool enableValidation)
 {
-
 	m_frameTime_millisecond = (uint32_t)(1000.0f/(float)m_cap);
 	std::cout << m_frameTime_millisecond << std::endl;
 	memset(&m_env, 0, sizeof(m_env));
@@ -13,28 +12,32 @@ CSystem::CSystem(bool enableValidation)
 	m_env.enableValidation = enableValidation;
 	m_env.pRenderer = new CRenderer();
 	m_env.pInput = new CInput();
+	m_env.pMemoryManager = new CMemoryManager();
 	gEnv = &m_env;
-
-	
-
 }
 CSystem::~CSystem() 
 {
 	delete(m_env.pRenderer);
 	delete(m_env.pInput);
+	delete(m_env.pMemoryManager);
 	 
 	gEnv = 0;
 }
 
 bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 {
+	CFont font("./data/fonts/consola.ttf", 24);
+
 	m_env.pRenderer->InitVulkan();
 	if (m_env.enableValidation) {
 		setupConsole("tEngine Console");
 	}
 	setupWindow(hInstance, wndProc);
-	m_env.pRenderer->Init();
-	CFont font("./data/fonts/consola.ttf", 24);
+	m_env.pRenderer->Init();	
+
+	printf("Requested memory size : %i\n",(uint32_t)m_env.pMemoryManager->requestMemorySize());
+	//printf("sizeof(float) = %i\n", sizeof(float));
+
 	font.load();
 	return true;
 }
@@ -291,9 +294,10 @@ void CSystem::setupConsole(std::string title)
 	AllocConsole();
 	AttachConsole(GetCurrentProcessId());
 	freopen("CON", "w", stdout);
+	printf("printf\n");
 	SetConsoleTitle(TEXT(title.c_str()));
 	if (m_env.enableValidation)
 	{
-		std::cout << "Validation enabled:\n";
+		printf("Validation enabled:\n");
 	}
 }

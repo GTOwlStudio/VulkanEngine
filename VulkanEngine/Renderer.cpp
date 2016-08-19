@@ -17,15 +17,26 @@ CRenderer::~CRenderer()
 {
 
 	clean_dev();
-	cleanTextures();
+	clearRessources();
+
+	for (size_t i = 0; i < m_pipelines.pipelines.size();i++) {
+		vkDestroyPipeline(m_device, m_pipelines.pipelines[i],nullptr);
+	}
+
 	dev_data.shader->clear(m_device);
 	delete dev_data.shader;
 	m_swapChain.cleanup();
+
+	if (m_descriptorPool != VK_NULL_HANDLE) {
+		vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+	}
+
 	if (m_setupCmdBuffer != VK_NULL_HANDLE) {
 		vkFreeCommandBuffers(m_device, m_cmdPool, 1, &m_setupCmdBuffer);
 	}
 	destroyCommandBuffer();
 	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
+
 	for (uint32_t i = 0; i < m_frameBuffers.size();i++) {
 		vkDestroyFramebuffer(m_device, m_frameBuffers[i], nullptr);
 	}
@@ -34,7 +45,7 @@ CRenderer::~CRenderer()
 	vkDestroyImage(m_device, m_depthStencil.image, nullptr);
 	vkFreeMemory(m_device, m_depthStencil.mem, nullptr);
 
-	vkDestroyPipelineCache(m_device, m_pipelineCache, nullptr);
+	vkDestroyPipelineCache(m_device, m_pipelines.pipelineCache, nullptr);
 
 	vkDestroyCommandPool(m_device, m_cmdPool, nullptr);
 
@@ -46,19 +57,27 @@ CRenderer::~CRenderer()
 	if (gEnv->enableValidation) {
 		vkDebug::freeDebugCallback(m_instance);
 	}
+
 	vkDestroyInstance(m_instance, nullptr);
 	
 }
 
-void CRenderer::cleanTextures()
+void CRenderer::clearRessources()
 {
-
-	for (size_t i = 0; i < m_textures.size();i++) {
+	//Clean Textures
+	for (size_t i = 0; i < m_textures.size(); i++) {
 		m_textureLoader->destroyTexture(m_textures[i]);
 	}
 
 	if (m_textureLoader != nullptr) {
 		delete(m_textureLoader);
+	}
+
+	//Clean Shaders
+	for (size_t i = 0; i < m_shaders.shaders.size();i++) {
+		m_shaders.shaders[i]->clear(m_device);
+		delete m_shaders.shaders[i];
+		m_shaders.shaders[i] = 0;
 	}
 }
 
@@ -69,6 +88,10 @@ void CRenderer::Init()
 
 	if (gEnv->enableValidation) {
 		vkDebug::setupDebugging(m_instance, VK_DEBUG_REPORT_DEBUG_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, NULL);
+	}
+
+	if (m_vulkanDevice->enableDebugMarkers) {
+		vkDebug::setupDebugMarker(m_device);
 	}
 
 
@@ -89,6 +112,9 @@ void CRenderer::Init()
 
 	//dev_test(100.0f, 100.0f, 100.0f, 100.0f, 0.1f);
 	setupDescriptorPool();
+
+
+
 	dev_test(-0.5f, -0.5f, 1.0f, 1.0f, 0.1f);
 	
 	/*dev_prepareUBO();
@@ -99,7 +125,6 @@ void CRenderer::Init()
 	m_prepared = true;
 
 }
-
 
 void CRenderer::InitVulkan()
 {
@@ -183,7 +208,6 @@ void CRenderer::InitVulkan()
 	m_submitInfo.pSignalSemaphores = &m_semaphores.renderComplete;
 }
 
-
 void CRenderer::render()
 {
 
@@ -201,6 +225,19 @@ vk::VulkanDevice * CRenderer::getVulkanDevice()
 vkTools::VulkanTextureLoader * CRenderer::getTextureLoader()
 {
 	return m_textureLoader;
+}
+
+vkTools::CShader * CRenderer::getShader(std::string shaderName)
+{
+	for (size_t i = 0; i < m_shaders.shaders.size();i++) {
+		if (shaderName==m_shaders.names[i]) {
+			return m_shaders.shaders[i];
+		}
+	}
+
+	printf("Shader %s does not exit\n", shaderName.c_str());
+
+	return nullptr;
 }
 
 VkBool32 CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex)
@@ -381,7 +418,7 @@ void CRenderer::createPipelineCache()
 {
 	VkPipelineCacheCreateInfo pipelineCacheCreateInfo = {};
 	pipelineCacheCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-	VK_CHECK_RESULT(vkCreatePipelineCache(m_device, &pipelineCacheCreateInfo, nullptr, &m_pipelineCache));
+	VK_CHECK_RESULT(vkCreatePipelineCache(m_device, &pipelineCacheCreateInfo, nullptr, &m_pipelines.pipelineCache));
 }
 void CRenderer::setupFrameBuffer()
 {
@@ -597,13 +634,66 @@ void CRenderer::submitFrame()
 	VK_CHECK_RESULT(vkQueueWaitIdle(m_queue));
 }
 
-void CRenderer::addGraphicPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name)
+void CRenderer::addGraphicsPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name)
 {
 	pipelineCreateInfo.pVertexInputState = &inputState;
-	m_pipelineName.push_back(name);
-	m_pipelines.push_back(nullptr);
+	m_pipelines.pipelineNames.push_back(name);
+	m_pipelines.pipelines.push_back(nullptr);
 	
-	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.back()));
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
+}
+
+void CRenderer::addGraphicsPipeline(VkPipelineLayout pipelineLayout ,VkRenderPass renderPass, VkPipelineCreateFlags flags, VkPrimitiveTopology topology, VkPolygonMode polyMode, uint32_t shaderStagesCount, VkPipelineShaderStageCreateInfo * shaderStages, VkPipelineVertexInputStateCreateInfo const & inputState, std::string name)
+{
+	m_pipelines.pipelinesState.push_back({});
+	VkGraphicsPipelineCreateInfo pipelineCreateInfo = 
+		vkTools::initializers::pipelineCreateInfo(&m_pipelines.pipelinesState.back(), pipelineLayout, renderPass, flags, topology, polyMode, shaderStagesCount, shaderStages);
+	
+	pipelineCreateInfo.pVertexInputState = &inputState;
+	m_pipelines.pipelineNames.push_back(name);
+	m_pipelines.pipelines.push_back(nullptr);
+
+	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
+}
+
+void CRenderer::addShader(std::string vsPath, std::string fsPath, std::string * shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)
+{
+	//Checking if the name is not already use
+	for (size_t i = 0;i<m_shaders.shaders.size();i++){
+		if (*shaderName==m_shaders.names[i]) {
+			printf("WARNING : addShader, shaderName %s already used, it as been replaced by %s%i", m_shaders.names[i], m_shaders.names[i], i);
+			*shaderName += std::to_string(i);
+		}
+	}
+
+	m_shaders.names.push_back(*shaderName);
+	m_shaders.shaders.push_back(new vkTools::CShader(vsPath, fsPath, setLayoutBindings, bindingDescription, attributeDescription));
+}
+
+void CRenderer::addIndexedDraw(SIndexedDrawInfo drawInfo)
+{
+}
+
+void CRenderer::initRessources()
+{
+	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
+		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+	};
+
+	std::vector<VkVertexInputBindingDescription> bindings = 
+	{
+		vkTools::initializers::vertexInputBindingDescription(0, sizeof(VertexT), VK_VERTEX_INPUT_RATE_VERTEX)
+	};
+
+	std::vector<VkVertexInputAttributeDescription> attributes =
+	{
+		vkTools::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
+		vkTools::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32_SFLOAT, 2 * sizeof(float))
+	};
+	
+	//addShader(gEnv->getAssetpath()+"shaders/", );
+
 }
 
 void CRenderer::handleMessages(WPARAM wParam, LPARAM lParam)
@@ -666,7 +756,7 @@ void CRenderer::buildCommandBuffer()
 
 		//vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, dev_data.pipelineLayout, 0, 1, &dev_data.descriptorSet, 0, NULL);
 		vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, dev_data.shader->getPipelineLayout(), 0, 1, &dev_data.descriptorSet, 0, NULL);
-		vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines.back());
+		vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines.pipelines.back());
 
 		VkDeviceSize offsets[1] = {0};
 		vkCmdBindVertexBuffers(m_drawCmdBuffers[i], VERTEX_BUFFER_BIND_ID, 1, &m_smem.buf, offsets);
@@ -732,6 +822,10 @@ void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, 
 	//tex.imageLayout = 
 	VkMemoryRequirements memReqs;
 	VkMemoryAllocateInfo allocInfo = vkTools::initializers::memoryAllocateInfo();
+
+	if (m_vulkanDevice->enableDebugMarkers) {
+		vkDebug::setObjectName(m_vulkanDevice->logicalDevice, (uint64_t)tex.image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, "texture");
+	}
 
 	VK_CHECK_RESULT(vkCreateImage(m_vulkanDevice->logicalDevice, &imageCreateInfo, nullptr, &tex.image));
 
@@ -991,7 +1085,7 @@ void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 	dev_data.shader->load(m_device);
 	//addGraphicPipeline(pipelineCreateInfo, dev_data.inputState, "devp");
 
-	m_pipelinesState.push_back({});
+	m_pipelines.pipelinesState.push_back({});
 
 	/*VkGraphicsPipelineCreateInfo pipelineCreateInfo =
 		vkTools::initializers::pipelineCreateInfo(
@@ -1008,7 +1102,7 @@ void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
 		vkTools::initializers::pipelineCreateInfo(
-			&m_pipelinesState.back(),
+			&m_pipelines.pipelinesState.back(),
 			dev_data.shader->getPipelineLayout(),
 			m_renderPass,
 			0,
@@ -1020,7 +1114,7 @@ void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 	
 	//std::cout << &dev_data.shader->getShaderStages() << std::endl;
 
-	addGraphicPipeline(pipelineCreateInfo, dev_data.shader->getInputState(), "devp");
+	addGraphicsPipeline(pipelineCreateInfo, dev_data.shader->getInputState(), "devp");
 	
 	writeInBuffer(&m_smem.buf, sizeof(dev_data.uboVS), &dev_data.uboVS, vsize + isize);
 	
@@ -1135,7 +1229,7 @@ void CRenderer::dev_test2(float x, float y, float w, float h, float depth)
 	dev_data.shader->load(m_device);
 	//addGraphicPipeline(pipelineCreateInfo, dev_data.inputState, "devp");
 
-	m_pipelinesState.push_back({});
+	m_pipelines.pipelinesState.push_back({});
 
 	/*VkGraphicsPipelineCreateInfo pipelineCreateInfo =
 	vkTools::initializers::pipelineCreateInfo(
@@ -1152,7 +1246,7 @@ void CRenderer::dev_test2(float x, float y, float w, float h, float depth)
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
 		vkTools::initializers::pipelineCreateInfo(
-			&m_pipelinesState.back(),
+			&m_pipelines.pipelinesState.back(),
 			dev_data.shader->getPipelineLayout(),
 			m_renderPass,
 			0,
@@ -1164,7 +1258,7 @@ void CRenderer::dev_test2(float x, float y, float w, float h, float depth)
 
 	//std::cout << &dev_data.shader->getShaderStages() << std::endl;
 
-	addGraphicPipeline(pipelineCreateInfo, dev_data.shader->getInputState(), "devp");
+	addGraphicsPipeline(pipelineCreateInfo, dev_data.shader->getInputState(), "devp");
 
 	writeInBuffer(&m_smem.buf, sizeof(dev_data.uboVS), &dev_data.uboVS, vsize + isize);
 
@@ -1259,7 +1353,6 @@ void CRenderer::dev_updateUniform_2() //v0
 	vkUnmapMemory(m_device, m_smem.mem);*/
 
 }
-
 
 void CRenderer::clean_dev()
 {

@@ -11,6 +11,25 @@
 #include "System.h"
 #include "vulkanTools\vulkandebug.h"
 
+struct character_info
+{
+	float ax; //x advance
+	float ay;
+
+	float bw; //bitmap width
+	float bh;
+
+	float w; //font width
+	float h; //font height
+	
+	float bx; //X bearing
+	float by; //Y bearing
+
+	float tx; //x offset of glyph in texture coordinates
+	float ty; //y offset of glyph in texture coordinates
+
+};
+
 class CFont
 {
 public:
@@ -31,7 +50,9 @@ protected:
 	uint32_t m_atlas_width;
 	uint32_t m_atlas_height;
 
-	uint8_t* m_data;
+	uint8_t* m_data; //this is the atlas in the buffer
+	character_info* m_characterInfo;
+
 
 	uint32_t m_texId;
 

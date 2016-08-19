@@ -72,6 +72,9 @@
     <ClCompile Include="vulkandevice.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="MemoryManager.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="I3DEngine.h">
@@ -118,6 +121,12 @@
     </ClInclude>
     <ClInclude Include="vulkandevice.h">
       <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="IMemoryManager.h">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryManager.h">
+      <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -13,9 +13,13 @@ namespace vkTools {
 	{
 		uint32_t extensionCount = 0;
 		std::vector<VkExtensionProperties> extensions;
-		vkEnumerateInstanceExtensionProperties(NULL, &extensionCount, NULL);
+
+		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
 		extensions.resize(extensionCount);
-		vkEnumerateInstanceExtensionProperties(NULL, &extensionCount, extensions.data());
+		vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions.data());
+		/*vkEnumerateInstanceExtensionProperties(NULL, &extensionCount, NULL);
+		extensions.resize(extensionCount);
+		vkEnumerateInstanceExtensionProperties(NULL, &extensionCount, extensions.data());*/
 		for (auto& ext : extensions)
 		{
 			if (!strcmp(extensionName, ext.extensionName))
@@ -763,6 +767,9 @@ namespace vkTools {
 	void CShader::clear(VkDevice device)
 	{
 		vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
+		for (size_t i = 0; i < m_shaderModules.size();i++) {
+			vkDestroyShaderModule(device, m_shaderModules[i], nullptr);
+		}
 	}
 
 	std::vector<VkShaderModule> CShader::getShaderModules() const

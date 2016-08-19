@@ -6,15 +6,18 @@
 #include <thread>
 
 #include "Renderer.h"
+#include "MemoryManager.h"
 #include "Input.h"
 #include "Font.h"
 
 class CSystem;
 class CRenderer;
 class IInput;
-struct IRenderer;
+class IRenderer;
+class IMemoryManager;
 struct I3DEngine;
 class CFont;
+
 
 
 struct SSystemGlobalEnvironement
@@ -23,7 +26,11 @@ struct SSystemGlobalEnvironement
 	IInput* pInput;
 	CSystem* pSystem;
 	IRenderer* pRenderer;
+	IMemoryManager* pMemoryManager;
 	bool enableValidation; //if you want to debug or not. Must be false if release
+
+	const std::string getAssetpath() { return "./../data/"; };
+
 };
 
 extern SSystemGlobalEnvironement* gEnv;

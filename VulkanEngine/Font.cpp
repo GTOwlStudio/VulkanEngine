@@ -31,9 +31,20 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 
 	m_numOfCharacter = 256;
 
+	m_characterInfo = new character_info[m_numOfCharacter];
+
 	for (uint32_t i = 0;i<m_numOfCharacter;i++){
 		error = FT_Load_Char(m_face, i, FT_LOAD_RENDER);
 		if (error) { printf("Error : while loading the character %c (%i)\n", i, i); }
+
+		m_characterInfo[i].ax = slot->advance.x >> 6;
+		m_characterInfo[i].ay = slot->advance.y >> 6;
+		m_characterInfo[i].bx = slot->metrics.horiBearingX /64;
+		m_characterInfo[i].by= slot->metrics.horiBearingY /64;
+		m_characterInfo[i].w = slot->metrics.width / 64;
+		m_characterInfo[i].h = slot->metrics.height /64;
+		m_characterInfo[i].bw = slot->bitmap.width;
+		m_characterInfo[i].bh = slot->bitmap.rows;
 
 		tmpWidth += slot->bitmap.width;
 		tmpMaxHeight = std::max(tmpMaxHeight, slot->bitmap.rows);
@@ -50,14 +61,15 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 	m_atlas_height = texture_height + tmpMaxHeight;
 
 	m_data = new uint8_t[m_atlas_width*m_atlas_width];
+	
 
 	int lastX = 0;
 	int lastY = 0;
 
 	tmpMaxHeight = 0;
 
-	std::ofstream stream;
-	stream.open("output.txt");
+	/*std::ofstream stream;
+	stream.open("output.txt");*/
 
 	for (uint32_t i = 0; i < m_numOfCharacter;i++) {
 		FT_Load_Char(m_face, i, FT_LOAD_RENDER);
@@ -68,10 +80,12 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 			tmpMaxHeight = 0;
 		}
 
+		m_characterInfo[i].tx = (float) lastX/ m_atlas_width;
+		m_characterInfo[i].ty = (float)lastY / m_atlas_height;
 		for (uint32_t y = 0; y < slot->bitmap.rows; y++) {
 			for (uint32_t x = 0; x < slot->bitmap.width;x++) {
 				m_data[(y+lastY)*m_atlas_width+ x + lastX] = slot->bitmap.buffer[(slot->bitmap.width)*y+x];
-				stream << (uint32_t)m_data[(y+lastY)*m_atlas_width + x+ lastX] << "\t";
+				//stream << (uint32_t)m_data[(y+lastY)*m_atlas_width + x+ lastX] << "\t";
 			}
 			//stream << std::endl;
 		}
@@ -80,10 +94,11 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 		
 	}
 
-	stream.close();
+//	stream.close();
 
 	printf("w:%i h:%i\n", texture_width, texture_height+tmpMaxHeight);
 
+	gEnv->pMemoryManager->requestMemory(uint64_t(sizeof(float) * m_numOfCharacter*4)); //*4 cos a quad is 4 vertices
 
 }
 
@@ -91,6 +106,7 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 CFont::~CFont()
 {
 	delete[] m_data;
+	delete[] m_characterInfo;
 	m_data = 0;
 	FT_Done_Face(m_face);
 	FT_Done_FreeType(m_lib);
@@ -113,6 +129,13 @@ void CFont::load()
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 	gEnv->pRenderer->createTexture(&m_texId, imageInfo, m_data, m_atlas_width, m_atlas_height);
+	//request buffer for a quad
+	//request pipeline and shader
+
+/*	VkGraphicsPipelineCreateInfo pipelineCreateInfo = 
+		vkTools::initializers::pipelineCreateInfo();
+	gEnv->pRenderer->addGraphicPipeline();*/
+	printf("tex id : %i\n", m_texId);
 
 }
 

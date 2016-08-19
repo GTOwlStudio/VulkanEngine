@@ -19,7 +19,7 @@ namespace vk
 
 		VkPhysicalDeviceProperties properties;
 
-		VkPhysicalDeviceFeatures features;
+		VkPhysicalDeviceFeatures features;	
 
 		VkPhysicalDeviceMemoryProperties memoryProperties;
 

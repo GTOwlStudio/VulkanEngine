@@ -74,14 +74,43 @@ using namespace glm;
 
 class CSystem;
 
-struct IRenderer
+struct SIndexedDrawInfo
 {
+	VkDescriptorSet* descriptorSets; //explicit
+	VkPipelineLayout* pipelineLayout;
+	VkPipeline* pipeline;
+	VkBuffer* vertexBuffer; //The buffer where the data are located
+	VkDeviceSize* pVertexOffset; //The offset inside the buffer where the data are located
+	VkBuffer* indexBuffer; //The buffer where the indices are located (it CAN be the same as the vertexBuffer)
+	VkDeviceSize indexOffset; //The offset inside the buffer where the indices are located
+	uint32_t indexCount; //is the number of vertices to draw.
+	uint32_t instanceCount; //is the number of instances to draw.
+	uint32_t firstIndex; //is the base index within the index buffer.
+	uint32_t vertexOffset; //is the value added to the vertex index before indexing into the vertex buffer.
+	uint32_t firstInstance; //It's the instance ID of the first instance to draw.
+};
+
+class IRenderer
+{
+public:
 	virtual ~IRenderer() {}
 	virtual void Init() = 0;
 	virtual void InitVulkan() = 0;
 	virtual void render() = 0;
-	virtual void addGraphicPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name) = 0;
+	virtual void addGraphicsPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name) = 0;
+	virtual void addGraphicsPipeline(
+		VkPipelineLayout pipelineLayout,
+		VkRenderPass renderPass,
+		VkPipelineCreateFlags flags,
+		VkPrimitiveTopology topology,
+		VkPolygonMode polyMode,
+		uint32_t shaderStagesCount,
+		VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name) = 0;
+
+	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)=0;
 	
+	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo) = 0;
+
 	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height) = 0;
 
 	//Maybe Not final function
@@ -89,5 +118,6 @@ struct IRenderer
 
 	virtual vk::VulkanDevice* getVulkanDevice() = 0;
 	virtual vkTools::VulkanTextureLoader* getTextureLoader() = 0;
+	virtual vkTools::CShader* getShader(std::string shaderName) = 0;
 	
 };

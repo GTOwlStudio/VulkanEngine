@@ -13,6 +13,12 @@ namespace vkDebug
 	PFN_vkDestroyDebugReportCallbackEXT DestroyDebugReportCallback;
 	PFN_vkDebugReportMessageEXT dbgBreakCallback;
 
+	PFN_vkDebugMarkerSetObjectTagEXT pfnDebugMarkerSetObjetTag = VK_NULL_HANDLE;
+	PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectName = VK_NULL_HANDLE;
+	PFN_vkCmdDebugMarkerBeginEXT pfnCmdDebugMarkerBegin = VK_NULL_HANDLE;
+	PFN_vkCmdDebugMarkerEndEXT pfnCmdDebugMarkerEnd = VK_NULL_HANDLE;
+	PFN_vkCmdDebugMarkerInsertEXT pfnCmdDebugMarkerInsert = VK_NULL_HANDLE;
+
 	VkDebugReportCallbackEXT msgCallback;
 
 	VkBool32 messageCallback(
@@ -69,10 +75,32 @@ namespace vkDebug
 		assert(!err);
 	}
 
+	void setupDebugMarker(VkDevice device)
+	{
+		pfnDebugMarkerSetObjetTag = (PFN_vkDebugMarkerSetObjectTagEXT)vkGetDeviceProcAddr(device, "vkDebugMarkerSetObjectTagEXT");
+		pfnDebugMarkerSetObjectName = (PFN_vkDebugMarkerSetObjectNameEXT)vkGetDeviceProcAddr(device, "vkDebugMarkerSetObjectNameEXT");
+		pfnCmdDebugMarkerBegin = (PFN_vkCmdDebugMarkerBeginEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerBeginEXT");
+		pfnCmdDebugMarkerEnd = (PFN_vkCmdDebugMarkerEndEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerEndEXT");
+		pfnCmdDebugMarkerInsert = (PFN_vkCmdDebugMarkerInsertEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerInsertEXT");
+	}
+
 	void freeDebugCallback(VkInstance instance) {
 		/*if (msgCallback !=VK_NULL_HANDLE) {
 		TODO
 		}*/
+	}
+	void setObjectName(VkDevice device, uint64_t object, VkDebugReportObjectTypeEXT objectType, const char *name)
+	{
+		// Check for a valid function pointer
+		if (pfnDebugMarkerSetObjectName)
+		{
+			VkDebugMarkerObjectNameInfoEXT nameInfo = {};
+			nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
+			nameInfo.objectType = objectType;
+			nameInfo.object = object;
+			nameInfo.pObjectName = name;
+			pfnDebugMarkerSetObjectName(device, &nameInfo);
+		}
 	}
 
 
