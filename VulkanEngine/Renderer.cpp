@@ -15,9 +15,11 @@ CRenderer::CRenderer(PFN_GetEnabledFeatures enabledFeaturesFn)
 
 CRenderer::~CRenderer()
 {
-
+	m_prepared = false;
 	clean_dev();
 	clearRessources();
+
+
 
 	for (size_t i = 0; i < m_pipelines.pipelines.size();i++) {
 		vkDestroyPipeline(m_device, m_pipelines.pipelines[i],nullptr);
@@ -51,6 +53,10 @@ CRenderer::~CRenderer()
 
 	vkDestroySemaphore(m_device, m_semaphores.presentComplete, nullptr);
 	vkDestroySemaphore(m_device, m_semaphores.renderComplete, nullptr);
+
+	/*for (auto& fence : m_waitFences) {
+		vkDestroyFence(m_vulkanDevice->logicalDevice, fence, nullptr);
+	}*/
 
 	delete m_vulkanDevice;
 
@@ -100,7 +106,7 @@ void CRenderer::Init()
 	
 	setupSwapChain();
 	createCommandBuffers();
-	buildPresentCommandBuffers();
+//	buildPresentCommandBuffers();
 	setupDepthStencil();
 	setupRenderPass();
 	createPipelineCache();
@@ -200,6 +206,8 @@ void CRenderer::InitVulkan()
 
 	VK_CHECK_RESULT(vkCreateSemaphore(m_device, &semaphoreCreateInfo, nullptr, &m_semaphores.renderComplete));
 
+	//VkPipelineStageFlags waitStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
 	m_submitInfo = vkTools::initializers::submitInfo();
 	m_submitInfo.pWaitDstStageMask = &submitPipelineStages;
 	m_submitInfo.waitSemaphoreCount = 1;
@@ -290,8 +298,8 @@ void CRenderer::createCommandPool()
 void CRenderer::createCommandBuffers()
 {
 	m_drawCmdBuffers.resize(m_swapChain.imageCount);
-	m_prePresentCmdBuffers.resize(m_swapChain.imageCount);
-	m_postPresentCmdBuffers.resize(m_swapChain.imageCount);
+	/*m_prePresentCmdBuffers.resize(m_swapChain.imageCount);
+	m_postPresentCmdBuffers.resize(m_swapChain.imageCount);*/
 
 	VkCommandBufferAllocateInfo cmdBufAllocateInfo =
 		vkTools::initializers::commandBufferAllocateInfo(
@@ -303,8 +311,8 @@ void CRenderer::createCommandBuffers()
 
 	// Command buffers for submitting present barriers
 	// One pre and post present buffer per swap chain image
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &cmdBufAllocateInfo, m_prePresentCmdBuffers.data()));
-	VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &cmdBufAllocateInfo, m_postPresentCmdBuffers.data()));
+	/*VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &cmdBufAllocateInfo, m_prePresentCmdBuffers.data()));
+	VK_CHECK_RESULT(vkAllocateCommandBuffers(m_device, &cmdBufAllocateInfo, m_postPresentCmdBuffers.data()));*/
 }
 void CRenderer::setupDepthStencil()
 {
@@ -350,19 +358,20 @@ void CRenderer::setupDepthStencil()
 	VK_CHECK_RESULT(vkAllocateMemory(m_device, &mem_alloc, nullptr, &m_depthStencil.mem));
 
 	VK_CHECK_RESULT(vkBindImageMemory(m_device, m_depthStencil.image, m_depthStencil.mem, 0));
-	vkTools::setImageLayout(
+	
+/*	vkTools::setImageLayout(
 		m_setupCmdBuffer,
 		m_depthStencil.image,
 		VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
 		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);*/
 
 	depthStencilView.image = m_depthStencil.image;
 	VK_CHECK_RESULT(vkCreateImageView(m_device, &depthStencilView, nullptr, &m_depthStencil.view));
 }
 void CRenderer::setupRenderPass()
 {
-	VkAttachmentDescription attachments[2] = {};
+	std::array<VkAttachmentDescription,2> attachments = {};
 
 	attachments[0].format = m_colorFormat;
 	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -370,8 +379,10 @@ void CRenderer::setupRenderPass()
 	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	/*attachments[0].initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;*/
 
 	attachments[1].format = m_depthFormat;
 	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
@@ -379,7 +390,8 @@ void CRenderer::setupRenderPass()
 	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	//attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentReference colorReference = {};
@@ -390,27 +402,43 @@ void CRenderer::setupRenderPass()
 	depthReference.attachment = 1;
 	depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.flags = 0;
-	subpass.inputAttachmentCount = 0;
-	subpass.pInputAttachments = NULL;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorReference;
-	subpass.pResolveAttachments = NULL;
-	subpass.pDepthStencilAttachment = &depthReference;
-	subpass.preserveAttachmentCount = 0;
-	subpass.pPreserveAttachments = NULL;
+	VkSubpassDescription subpassDescription = {};
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpassDescription.colorAttachmentCount = 1;
+	subpassDescription.pColorAttachments = &colorReference;
+	subpassDescription.pDepthStencilAttachment = &depthReference;
+	subpassDescription.inputAttachmentCount = 0;
+	subpassDescription.pInputAttachments = nullptr;
+	subpassDescription.preserveAttachmentCount = 0;
+	subpassDescription.pPreserveAttachments = nullptr;
+	subpassDescription.pResolveAttachments = nullptr;
+
+	std::array<VkSubpassDependency, 2> dependencies;
+
+	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies[0].dstSubpass = 0;
+	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	dependencies[1].srcSubpass = 0;
+	dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
 	VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.pNext = NULL;
-	renderPassInfo.attachmentCount = 2;
-	renderPassInfo.pAttachments = attachments;
+	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+	renderPassInfo.pAttachments = attachments.data();
 	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = 0;
-	renderPassInfo.pDependencies = NULL;
+	renderPassInfo.pSubpasses = &subpassDescription;
+	renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+	renderPassInfo.pDependencies = dependencies.data();
 
 	VK_CHECK_RESULT(vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass));
 }
@@ -480,6 +508,7 @@ void CRenderer::flushSetupCommandBuffer()
 	m_setupCmdBuffer = VK_NULL_HANDLE;
 }
 
+/*
 void CRenderer::buildPresentCommandBuffers()
 {
 	VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
@@ -546,6 +575,7 @@ void CRenderer::buildPresentCommandBuffers()
 	}
 
 }
+*/
 
 void CRenderer::initSwapChain()
 {
@@ -560,8 +590,18 @@ void CRenderer::setupSwapChain()
 void CRenderer::destroyCommandBuffer()
 {
 		vkFreeCommandBuffers(m_device, m_cmdPool, static_cast<uint32_t>(m_drawCmdBuffers.size()), m_drawCmdBuffers.data());
-		vkFreeCommandBuffers(m_device, m_cmdPool, static_cast<uint32_t>(m_drawCmdBuffers.size()), m_prePresentCmdBuffers.data());
-		vkFreeCommandBuffers(m_device, m_cmdPool, static_cast<uint32_t>(m_drawCmdBuffers.size()), m_postPresentCmdBuffers.data());
+		/*vkFreeCommandBuffers(m_device, m_cmdPool, static_cast<uint32_t>(m_prePresentCmdBuffers.size()), m_prePresentCmdBuffers.data());
+		vkFreeCommandBuffers(m_device, m_cmdPool, static_cast<uint32_t>(m_postPresentCmdBuffers.size()), m_postPresentCmdBuffers.data());*/
+}
+
+bool CRenderer::checkCommandBuffers()
+{
+	for (auto& cmdBuffer :m_drawCmdBuffers) {
+		if (cmdBuffer == VK_NULL_HANDLE) {
+			return false;
+		}
+	}
+	return true;
 }
 
 VkCommandBuffer CRenderer::createCommandBuffer(VkCommandBufferLevel level, bool begin)
@@ -607,27 +647,33 @@ void CRenderer::draw()
 
 	m_submitInfo.commandBufferCount = 1;
 	m_submitInfo.pCommandBuffers = &m_drawCmdBuffers[m_currentBuffer];
+
 	VK_CHECK_RESULT(vkQueueSubmit(m_queue, 1, &m_submitInfo, VK_NULL_HANDLE));
 
+	/*VK_CHECK_RESULT(vkWaitForFences(m_device, 1, &m_waitFences[m_currentBuffer], VK_TRUE, UINT64_MAX));
+	VK_CHECK_RESULT(vkResetFences(m_device, 1, &m_waitFences[m_currentBuffer]));*/
+
 	submitFrame();
+
+
 }
 
 void CRenderer::prepareFrame()
 {
 	VK_CHECK_RESULT(m_swapChain.acquireNextImage(m_semaphores.presentComplete, &m_currentBuffer));
 
-	VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
+	/*VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &m_postPresentCmdBuffers[m_currentBuffer];
-	VK_CHECK_RESULT(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));
+	VK_CHECK_RESULT(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));*/
 }
 
 void CRenderer::submitFrame()
 {
-	VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
+/*	VkSubmitInfo submitInfo = vkTools::initializers::submitInfo();
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &m_prePresentCmdBuffers[m_currentBuffer];
-	VK_CHECK_RESULT(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));
+	VK_CHECK_RESULT(vkQueueSubmit(m_queue, 1, &submitInfo, VK_NULL_HANDLE));*/
 
 	VK_CHECK_RESULT(m_swapChain.queuePresent(m_queue, m_currentBuffer, m_semaphores.renderComplete));
 
@@ -661,7 +707,7 @@ void CRenderer::addShader(std::string vsPath, std::string fsPath, std::string * 
 	//Checking if the name is not already use
 	for (size_t i = 0;i<m_shaders.shaders.size();i++){
 		if (*shaderName==m_shaders.names[i]) {
-			printf("WARNING : addShader, shaderName %s already used, it as been replaced by %s%i", m_shaders.names[i], m_shaders.names[i], i);
+			printf("WARNING : addShader, shaderName %s already used, it as been replaced by %s%i", m_shaders.names[i], m_shaders.names[i], (int)i);
 			*shaderName += std::to_string(i);
 		}
 	}
@@ -670,8 +716,32 @@ void CRenderer::addShader(std::string vsPath, std::string fsPath, std::string * 
 	m_shaders.shaders.push_back(new vkTools::CShader(vsPath, fsPath, setLayoutBindings, bindingDescription, attributeDescription));
 }
 
+void CRenderer::addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets)
+{
+	for (size_t i = 0; i < writeDescriptorSets.size();i++) {
+		writeDescriptorSets.push_back(writeDescriptorSets[i]);
+	}
+}
+
+void CRenderer::updateDescriptorSets()
+{
+	for (size_t i = 0; i < m_writeDescriptorSets.size();i++) {
+		vkUpdateDescriptorSets(m_device, (uint32_t)m_writeDescriptorSets.size(), m_writeDescriptorSets.data(), 0,nullptr);
+	}
+}
+
 void CRenderer::addIndexedDraw(SIndexedDrawInfo drawInfo)
 {
+	m_indexedDraws.push_back(drawInfo);
+}
+
+void CRenderer::buildDrawCommands()
+{
+	/*if (!checkCommandBuffers()) {
+		destroyCommandBuffers();
+		createCommandBuffers();
+	}*/
+
 }
 
 void CRenderer::initRessources()
@@ -692,7 +762,11 @@ void CRenderer::initRessources()
 		vkTools::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32_SFLOAT, 2 * sizeof(float))
 	};
 	
-	//addShader(gEnv->getAssetpath()+"shaders/", );
+	std::string shaderName = "texture";
+
+	addShader(gEnv->getAssetpath()+"shaders/texture.vert.spv", gEnv->getAssetpath() + "shaders/texture.frag.spv",
+		&shaderName,setLayoutBindings, bindings, attributes);
+
 
 }
 
@@ -718,7 +792,7 @@ void CRenderer::setupDescriptorPool()
 	};
 
 	VkDescriptorPoolCreateInfo descriptorPoolInfo =
-		vkTools::initializers::descriptorPoolCreateInfo(poolSizes.size(), poolSizes.data(), 1);
+		vkTools::initializers::descriptorPoolCreateInfo((uint32_t)poolSizes.size(), poolSizes.data(), 1);
 
 	VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &descriptorPoolInfo, nullptr, &m_descriptorPool));
 
@@ -748,7 +822,7 @@ void CRenderer::buildCommandBuffer()
 
 		vkCmdBeginRenderPass(m_drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		VkViewport viewport = vkTools::initializers::viewport(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+		VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 		vkCmdSetViewport(m_drawCmdBuffers[i],0, 1, &viewport);
 
 		VkRect2D scissor = vkTools::initializers::rect2D(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
@@ -763,7 +837,7 @@ void CRenderer::buildCommandBuffer()
 
 		vkCmdBindIndexBuffer(m_drawCmdBuffers[i], m_smem.buf, dev_data.vertices.size() * sizeof(Vertex), VK_INDEX_TYPE_UINT32);
 
-		vkCmdDrawIndexed(m_drawCmdBuffers[i], dev_data.indices.size(), 1, 0, 0, 0);
+		vkCmdDrawIndexed(m_drawCmdBuffers[i], (uint32_t)dev_data.indices.size(), 1, 0, 0, 0);
 		
 		vkCmdEndRenderPass(m_drawCmdBuffers[i]);
 
@@ -1301,7 +1375,7 @@ void CRenderer::dev_setupDescriptorSet()
 
 	};
 
-	vkUpdateDescriptorSets(m_device, writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
+	vkUpdateDescriptorSets(m_device, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
 }
 
 void CRenderer::dev_prepareUBO()
@@ -1398,7 +1472,7 @@ VkResult CRenderer::createInstance()
 	return vkCreateInstance(&instanceCreateInfo, nullptr, &m_instance);
 }
 
-VkResult CRenderer::createDevice(VkDeviceQueueCreateInfo requestedQueues, bool enableValidation)
+/*VkResult CRenderer::createDevice(VkDeviceQueueCreateInfo requestedQueues, bool enableValidation)
 {
 
 	std::vector<const char*> enabledExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -1420,4 +1494,4 @@ VkResult CRenderer::createDevice(VkDeviceQueueCreateInfo requestedQueues, bool e
 	}
 
 	return vkCreateDevice(m_physicalDevice.physicalDevice, &deviceCreateInfo, nullptr, &m_device);
-}
+}*/

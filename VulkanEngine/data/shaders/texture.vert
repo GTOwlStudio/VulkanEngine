@@ -10,12 +10,9 @@ layout (binding = 0) uniform UBO
 {
 	mat4 projection;
 	mat4 model;
-	//vec4 viewPos;
-	float lodBias;
 } ubo;
 
 layout (location = 0) out vec2 outUV;
-layout (location = 1) out float outLodBias;
 
 out gl_PerVertex
 {
@@ -25,9 +22,6 @@ out gl_PerVertex
 void main()
 {
 	outUV = inUV;
-	outLodBias = ubo.lodBias;
-	
-	//vec3 worldPos = vec3(ubo.model * vec4(inPos, 1.0));
 	
 	gl_Position = ubo.projection * ubo.model * vec4(inPos.xyz, 1.0);
 	

@@ -75,12 +75,14 @@ protected:
 	void createSetupCommandBuffer();
 	void flushSetupCommandBuffer();
 
-	void buildPresentCommandBuffers();
+	//void buildPresentCommandBuffers();
 
 	void initSwapChain();
 	void setupSwapChain();
 
 	void destroyCommandBuffer();
+
+	bool checkCommandBuffers();
 
 	VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin);
 	void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free);
@@ -106,7 +108,12 @@ protected:
 		std::vector<VkVertexInputBindingDescription> bindingDescription,
 		std::vector<VkVertexInputAttributeDescription> attributeDescription);
 
+	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets);
+
+	virtual void updateDescriptorSets();
+
 	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo);
+	virtual void buildDrawCommands();
 
 	virtual void initRessources();
 
@@ -156,8 +163,8 @@ protected:
 		
 	uint32_t m_currentBuffer = 0;
 
-	std::vector<VkCommandBuffer> m_postPresentCmdBuffers = {VK_NULL_HANDLE};
-	std::vector<VkCommandBuffer> m_prePresentCmdBuffers = {VK_NULL_HANDLE};
+/*	std::vector<VkCommandBuffer> m_postPresentCmdBuffers = {VK_NULL_HANDLE};
+	std::vector<VkCommandBuffer> m_prePresentCmdBuffers = {VK_NULL_HANDLE};*/
 
 	VulkanSwapChain m_swapChain;
 
@@ -168,6 +175,8 @@ protected:
 		VkSemaphore renderComplete;
 	} m_semaphores;
 
+	//std::vector<VkFence> m_waitFences;
+
 	struct {
 		VkImage image;
 		VkDeviceMemory mem;
@@ -176,14 +185,17 @@ protected:
 
 
 	VkSubmitInfo m_submitInfo;
-	VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	//VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	VkPipelineStageFlags submitPipelineStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 	VkFormat m_depthFormat;
 	VkFormat m_colorFormat = VK_FORMAT_B8G8R8A8_UNORM;
 
 	VkCommandBuffer m_setupCmdBuffer = VK_NULL_HANDLE;
 
+	
 	VkDescriptorPool m_descriptorPool;
+	std::vector<VkWriteDescriptorSet> m_writeDescriptorSets; //writeDescriptorSets to write, via the method updateDescriptorSets
 
 	struct {
 		VkPipelineCache pipelineCache;
@@ -199,10 +211,6 @@ protected:
 		std::vector<std::string> names;
 	} m_shaders;
 
-	struct{
-		VkBuffer buf;
-		VkDeviceMemory mem;
-	} m_smem;
 
 	std::vector<vk::Buffer> m_buffers;
 	std::vector<vkTools::VulkanTexture> m_textures;
@@ -210,6 +218,12 @@ protected:
 	std::vector<SIndexedDrawInfo> m_indexedDraws;
 	
 	vkTools::VulkanTextureLoader* m_textureLoader = nullptr;
+
+
+	struct {
+		VkBuffer buf;
+		VkDeviceMemory mem;
+	} m_smem;
 
 	void dev_test(float x, float y, float w, float h, float depth);
 	void dev_test2(float x, float y, float w, float h, float depth);
@@ -249,7 +263,7 @@ protected:
 
 private:
 	VkResult createInstance();
-	VkResult createDevice(VkDeviceQueueCreateInfo requestedQueues, bool enableValidation);
+	//VkResult createDevice(VkDeviceQueueCreateInfo requestedQueues, bool enableValidation);
 
 	
 

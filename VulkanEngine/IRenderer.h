@@ -109,7 +109,12 @@ public:
 
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)=0;
 	
+	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets) = 0;
+
+	virtual void updateDescriptorSets() = 0;
+
 	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo) = 0;
+	virtual void buildDrawCommands() = 0;
 
 	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height) = 0;
 

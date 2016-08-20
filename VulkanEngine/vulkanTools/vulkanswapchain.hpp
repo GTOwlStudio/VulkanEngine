@@ -389,13 +389,18 @@ public:
 	}
 
 	// Acquires the next image in the swap chain
-	VkResult acquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t *currentBuffer)
+	/*VkResult acquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t *currentBuffer)
 	{
 		return fpAcquireNextImageKHR(device, swapChain, UINT64_MAX, presentCompleteSemaphore, (VkFence)nullptr, currentBuffer);
+	}*/
+
+	VkResult acquireNextImage(VkSemaphore presentCompleteSemaphore, uint32_t *imageIndex) 
+	{
+		return fpAcquireNextImageKHR(device,swapChain, UINT64_MAX, presentCompleteSemaphore, (VkFence)nullptr, imageIndex);
 	}
 
 	// Present the current image to the queue
-	VkResult queuePresent(VkQueue queue, uint32_t currentBuffer)
+	/*VkResult queuePresent(VkQueue queue, uint32_t currentBuffer)
 	{
 		VkPresentInfoKHR presentInfo = {};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -404,10 +409,10 @@ public:
 		presentInfo.pSwapchains = &swapChain;
 		presentInfo.pImageIndices = &currentBuffer;
 		return fpQueuePresentKHR(queue, &presentInfo);
-	}
+	}*/
 
 	// Present the current image to the queue
-	VkResult queuePresent(VkQueue queue, uint32_t currentBuffer, VkSemaphore waitSemaphore)
+	VkResult queuePresent(VkQueue queue, uint32_t currentBuffer, VkSemaphore waitSemaphore = VK_NULL_HANDLE)
 	{
 		VkPresentInfoKHR presentInfo = {};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

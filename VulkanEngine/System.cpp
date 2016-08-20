@@ -87,6 +87,7 @@ void CSystem::renderLoop()
 
 	}
 #endif
+	vkDeviceWaitIdle(m_env.pRenderer->getVulkanDevice()->logicalDevice);
 }
 
 void CSystem::Update()
