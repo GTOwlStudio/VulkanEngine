@@ -103,6 +103,63 @@ namespace vkDebug
 		}
 	}
 
+	void arrayToFile(void * data, uint32_t size, std::string filename, bool append, bool newLine)
+	{
+	//#simp if
+		std::ofstream file;
+		if (append) {
+			file.open(filename.c_str(),  std::ios::app);
+		}
+
+		else {
+			file.open(filename.c_str());
+		}
+		
+
+		
+
+		if (!file) {
+			printf("ERROR : Cannot open file %s\n", filename.c_str());
+			return;
+		}
+
+		file.write((char*)data, size);
+		//file.write("\0", sizeof("\0"));
+
+		if (newLine) {
+			file << std::endl;
+		}
+
+		file.close();
+
+
+	}
+
+	void stringToFile(std::string s, std::string filename, bool append)
+	{
+
+		std::ofstream file;
+
+		if (append) {
+			file.open(filename.c_str(), /*std::ios::binary |*/ std::ios::app);
+		}
+
+		else {
+			file.open(filename.c_str()/*, std::ios::binary*/);
+		}
+
+
+		if (!file) {
+			printf("ERROR : Cannot open file %s\n", filename.c_str());
+			return;
+		}
+
+		file << s.c_str();
+
+		file.close();
+
+	}
+
 
 	
 	

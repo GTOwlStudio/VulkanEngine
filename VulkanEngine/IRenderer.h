@@ -77,17 +77,36 @@ class CSystem;
 struct SIndexedDrawInfo
 {
 	VkDescriptorSet* descriptorSets; //explicit
-	VkPipelineLayout* pipelineLayout;
-	VkPipeline* pipeline;
+	uint32_t descriptorCount;
+	VkPipelineLayout* pipelineLayout; //A pointer to a pipeline layout
+	VkPipeline* pipeline; //A pointer to a pipeline
 	VkBuffer* vertexBuffer; //The buffer where the data are located
 	VkDeviceSize* pVertexOffset; //The offset inside the buffer where the data are located
+
 	VkBuffer* indexBuffer; //The buffer where the indices are located (it CAN be the same as the vertexBuffer)
 	VkDeviceSize indexOffset; //The offset inside the buffer where the indices are located
+	VkIndexType indexType; //The type used for the indices, uint32_t etc
 	uint32_t indexCount; //is the number of vertices to draw.
 	uint32_t instanceCount; //is the number of instances to draw.
 	uint32_t firstIndex; //is the base index within the index buffer.
 	uint32_t vertexOffset; //is the value added to the vertex index before indexing into the vertex buffer.
 	uint32_t firstInstance; //It's the instance ID of the first instance to draw.
+
+	void bindDescriptorSets(VkPipelineLayout *paramPipelineLayout, uint32_t paramDescriptorCount,VkDescriptorSet* pDescriptorSets) {
+		pipelineLayout = paramPipelineLayout;
+		descriptorCount = paramDescriptorCount;
+		descriptorSets = pDescriptorSets;
+	}
+
+	void bindPipeline(VkPipeline *p_pipeline) {
+		pipeline = p_pipeline;
+	}
+
+	void bindVertexBuffers() 
+	{
+
+	}
+
 };
 
 class IRenderer
@@ -117,6 +136,10 @@ public:
 	virtual void buildDrawCommands() = 0;
 
 	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height) = 0;
+	
+	virtual void createBuffer(uint32_t* id, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size) = 0;
+
+	virtual void bufferSubData(uint32_t bufferID, VkDeviceSize size, VkDeviceSize offset, void*  data) = 0;
 
 	//Maybe Not final function
 	virtual void handleMessages(WPARAM wParam, LPARAM lParam) = 0;
@@ -124,5 +147,6 @@ public:
 	virtual vk::VulkanDevice* getVulkanDevice() = 0;
 	virtual vkTools::VulkanTextureLoader* getTextureLoader() = 0;
 	virtual vkTools::CShader* getShader(std::string shaderName) = 0;
+	virtual VkBuffer getBuffer(uint32_t id)= 0;
 	
 };

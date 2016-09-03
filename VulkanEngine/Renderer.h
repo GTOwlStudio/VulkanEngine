@@ -53,10 +53,12 @@ public:
 	virtual vk::VulkanDevice* getVulkanDevice();
 	virtual vkTools::VulkanTextureLoader* getTextureLoader();
 	virtual vkTools::CShader* getShader(std::string shaderName);
+	virtual VkBuffer getBuffer(uint32_t id);
 
 	VkBool32 getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t *typeIndex);
 	uint32_t getMemoryType(uint32_t typeBits, VkFlags properties);
 	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
+	
 
 protected:
 	
@@ -119,13 +121,17 @@ protected:
 
 	virtual void handleMessages(WPARAM wParam, LPARAM lParam);
 
+	virtual void createBuffer(uint32_t *id, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size);
+
+	virtual void bufferSubData(uint32_t id, VkDeviceSize size, VkDeviceSize offset, void* data);
+
 	void setupDescriptorPool();
 	void buildCommandBuffer();
 
 	VkBool32 createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory);
 	VkBool32 createBuffer(VkBufferUsageFlags usage, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory);
 	VkBool32 createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory, VkDescriptorBufferInfo * descriptor);
-	
+
 	void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height);
 
 	void createSBuffer(VkDeviceSize size, void* data);
@@ -263,6 +269,9 @@ protected:
 
 private:
 	VkResult createInstance();
+
+	std::string buffersLayoutToString();
+
 	//VkResult createDevice(VkDeviceQueueCreateInfo requestedQueues, bool enableValidation);
 
 	

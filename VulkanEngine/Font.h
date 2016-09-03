@@ -46,16 +46,20 @@ protected:
 	FT_Face m_face;
 	uint32_t m_fontSize;
 	uint32_t m_numOfCharacter;
+	uint32_t m_size; // The Size took by the vertices and indices
 
 	uint32_t m_atlas_width;
 	uint32_t m_atlas_height;
 
-	uint8_t* m_data; //this is the atlas in the buffer
+	uint8_t* m_data; //this is the atlas in the buffer, a texture
+	//void* m_verticesData; //data related to vertices and indices
 	character_info* m_characterInfo;
 
 
 	uint32_t m_texId;
+	uint32_t bufferId = 0;
 
+	SIndexedDrawInfo m_draw;
 
 /*	vk::VulkanDevice *vulkanDevice;
 	VkQueue queue;

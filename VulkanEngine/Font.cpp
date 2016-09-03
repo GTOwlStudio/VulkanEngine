@@ -98,7 +98,11 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 
 	printf("w:%i h:%i\n", texture_width, texture_height+tmpMaxHeight);
 
-	gEnv->pMemoryManager->requestMemory(uint64_t(sizeof(float) * m_numOfCharacter*4)); //*4 cos a quad is 4 vertices
+	//gEnv->pMemoryManager->requestMemory(uint64_t(sizeof(float) * m_numOfCharacter*4)); //*4 cos a quad is 4 vertices
+
+	m_size = static_cast<uint32_t>((sizeof(float) * 4*2) + (sizeof(uint32_t) * 6)) * m_numOfCharacter; // For a character there is 4 vertices, a vertices got 2 float(x,y) and there is 6 indices by character
+
+	gEnv->pMemoryManager->requestMemory(m_size);
 
 }
 
@@ -129,13 +133,81 @@ void CFont::load()
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 	gEnv->pRenderer->createTexture(&m_texId, imageInfo, m_data, m_atlas_width, m_atlas_height);
+	
 	//request buffer for a quad
+
+	uint32_t charMem = sizeof(float)*8;//Size of a chracter in memory
+	char* viData = new char[m_size]; //Vertex and Indices data tmp, all the vertex then all the indices
+
+	char* charArray = new char[charMem];
+
+	uint32_t offset = 0;
+
+	struct{
+		float tx; // X
+		float ty; // Y
+		float tw; // X + W
+ 		float th; // Y + H
+	} quad;
+
+	uint32_t indices[6] = {0,1,2,0,2,3};
+
+
+
+
+	vkDebug::stringToFile("", "output.txt", false);
+	vkDebug::stringToFile("", "outputc.txt", false);
+
+	for (uint32_t i = 0; i < m_numOfCharacter;i++) {
+
+		quad.tx = m_characterInfo[i].tx;
+		quad.ty = m_characterInfo[i].ty;
+		quad.tw = quad.tx + m_characterInfo[i].w;
+		quad.th = quad.ty + m_characterInfo[i].h;
+
+		memcpy(charArray  , &quad.tx, sizeof(float));
+		memcpy(sizeof(float) + charArray  , &quad.ty, sizeof(float));
+
+		memcpy(2 * sizeof(float) + charArray  , &quad.tw, sizeof(float));
+		memcpy(3 * sizeof(float) + charArray  , &quad.ty, sizeof(float));
+
+		memcpy(4 * sizeof(float) + charArray  , &quad.tw, sizeof(float));
+		memcpy(5 * sizeof(float) + charArray  , &quad.th, sizeof(float));
+
+		memcpy(6 * sizeof(float) + charArray  , &quad.tx, sizeof(float));
+		memcpy(7 * sizeof(float) + charArray  , &quad.th, sizeof(float));
+
+		//memcpy(256*sizeof(float) + charArray+(6*sizeof(uint32_t)), indices, sizeof(uint32_t)*6);
+
+		memcpy(viData + (charMem*i), charArray, charMem);
+		memcpy(viData + (256*charMem)+(i*6*sizeof(uint32_t)), indices, 6*sizeof(uint32_t));
+		//printf("%i %i %i size = %i\n",i, (charMem*i),8*sizeof(float)+(charMem*i), m_size);
+
+//		vkDebug::arrayToFile(charArray, charMem, "outputc.txt", true, true);
+
+	/*	vkDebug::stringToFile(std::to_string(i)+"\t", "output.txt", true);
+		vkDebug::arrayToFile(viData+(charMem*i), charMem, "output.txt", true, true);*/
+		
+	}
+	//printf("%i\n", 255, );
+	//vkDebug::arrayToFile(viData, charMem*m_numOfCharacter, "output.txt");
+	vkDebug::arrayToFile(viData, m_size, "output.txt");
+//	vkDebug::stringToFile("\0", "outputc.txt", true);
+
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, m_size, 0, viData);
+
+	delete[] viData;
+	delete[] charArray;
+
 	//request pipeline and shader
 
 /*	VkGraphicsPipelineCreateInfo pipelineCreateInfo = 
 		vkTools::initializers::pipelineCreateInfo();
 	gEnv->pRenderer->addGraphicPipeline();*/
 	printf("tex id : %i\n", m_texId);
+
+	m_draw = {};
+	
 
 }
 

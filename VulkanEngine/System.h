@@ -28,7 +28,7 @@ struct SSystemGlobalEnvironement
 	IRenderer* pRenderer;
 	IMemoryManager* pMemoryManager;
 	bool enableValidation; //if you want to debug or not. Must be false if release
-
+	uint32_t bbid; //Big Buffer id
 	const std::string getAssetpath() { return "./../data/"; };
 
 };

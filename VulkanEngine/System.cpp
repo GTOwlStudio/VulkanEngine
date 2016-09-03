@@ -38,6 +38,9 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 	printf("Requested memory size : %i\n",(uint32_t)m_env.pMemoryManager->requestMemorySize());
 	//printf("sizeof(float) = %i\n", sizeof(float));
 
+	//Create the big buffer
+	m_env.pRenderer->createBuffer(&m_env.bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |VK_BUFFER_USAGE_INDEX_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_env.pMemoryManager->requestMemorySize());
+	printf("bbid=%i\n", gEnv->bbid);
 	font.load();
 	return true;
 }
