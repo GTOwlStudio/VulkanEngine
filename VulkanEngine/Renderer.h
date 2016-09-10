@@ -54,6 +54,7 @@ public:
 	virtual vkTools::VulkanTextureLoader* getTextureLoader();
 	virtual vkTools::CShader* getShader(std::string shaderName);
 	virtual VkBuffer getBuffer(uint32_t id);
+	virtual VkPipeline getPipeline(std::string pipelineName);
 
 	VkBool32 getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t *typeIndex);
 	uint32_t getMemoryType(uint32_t typeBits, VkFlags properties);
@@ -110,9 +111,11 @@ protected:
 		std::vector<VkVertexInputBindingDescription> bindingDescription,
 		std::vector<VkVertexInputAttributeDescription> attributeDescription);
 
+	virtual void addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount);
 	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets);
-
 	virtual void updateDescriptorSets();
+
+	void loadShader();
 
 	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo);
 	virtual void buildDrawCommands();
@@ -200,7 +203,7 @@ protected:
 	VkCommandBuffer m_setupCmdBuffer = VK_NULL_HANDLE;
 
 	
-	VkDescriptorPool m_descriptorPool;
+//	VkDescriptorPool m_descriptorPool;
 	std::vector<VkWriteDescriptorSet> m_writeDescriptorSets; //writeDescriptorSets to write, via the method updateDescriptorSets
 
 	struct {
@@ -215,6 +218,8 @@ protected:
 	struct {
 		std::vector<vkTools::CShader*> shaders;
 		std::vector<std::string> names;
+		std::vector<VkDescriptorSet> descriptorSets;
+		VkDescriptorPool descriptorPool;
 	} m_shaders;
 
 

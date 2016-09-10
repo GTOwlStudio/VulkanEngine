@@ -78,12 +78,13 @@ struct SIndexedDrawInfo
 {
 	VkDescriptorSet* descriptorSets; //explicit
 	uint32_t descriptorCount;
-	VkPipelineLayout* pipelineLayout; //A pointer to a pipeline layout
-	VkPipeline* pipeline; //A pointer to a pipeline
+	VkPipelineLayout pipelineLayout; //A pointer to a pipeline layout
+	VkPipeline pipeline; //pipeline
 	VkBuffer* vertexBuffer; //The buffer where the data are located
+	uint32_t offsetCount;
 	VkDeviceSize* pVertexOffset; //The offset inside the buffer where the data are located
 
-	VkBuffer* indexBuffer; //The buffer where the indices are located (it CAN be the same as the vertexBuffer)
+	VkBuffer indexBuffer; //The buffer where the indices are located (it CAN be the same as the vertexBuffer)
 	VkDeviceSize indexOffset; //The offset inside the buffer where the indices are located
 	VkIndexType indexType; //The type used for the indices, uint32_t etc
 	uint32_t indexCount; //is the number of vertices to draw.
@@ -92,19 +93,35 @@ struct SIndexedDrawInfo
 	uint32_t vertexOffset; //is the value added to the vertex index before indexing into the vertex buffer.
 	uint32_t firstInstance; //It's the instance ID of the first instance to draw.
 
-	void bindDescriptorSets(VkPipelineLayout *paramPipelineLayout, uint32_t paramDescriptorCount,VkDescriptorSet* pDescriptorSets) {
+	void bindDescriptorSets(VkPipelineLayout paramPipelineLayout, uint32_t paramDescriptorCount,VkDescriptorSet* pDescriptorSets) {
 		pipelineLayout = paramPipelineLayout;
 		descriptorCount = paramDescriptorCount;
 		descriptorSets = pDescriptorSets;
 	}
 
-	void bindPipeline(VkPipeline *p_pipeline) {
+	void bindPipeline(VkPipeline p_pipeline) {
 		pipeline = p_pipeline;
 	}
 
-	void bindVertexBuffers() 
-	{
+	void bindVertexBuffers(VkBuffer* p_pBuffers, uint32_t p_offsetCount, VkDeviceSize* p_pOffset) {
+		vertexBuffer = p_pBuffers;
+		offsetCount = p_offsetCount;
+		pVertexOffset = p_pOffset;
+	}
 
+	void bindIndexBuffer(VkBuffer p_pBuffer, VkDeviceSize p_offset, VkIndexType p_type) {
+		indexBuffer = p_pBuffer;
+		indexOffset = p_offset;
+		indexType = p_type;
+	}
+
+	void drawIndexed(uint32_t p_indexCount, uint32_t p_instanceCount, uint32_t p_firstIndex, uint32_t p_vertexOffset, uint32_t p_firstInstance)
+	{
+		indexCount = p_indexCount;
+		instanceCount = p_instanceCount;
+		firstIndex = p_firstIndex;
+		vertexOffset = p_vertexOffset;
+		firstInstance = p_firstInstance;
 	}
 
 };
@@ -128,6 +145,7 @@ public:
 
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)=0;
 	
+	virtual void addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount) = 0;
 	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets) = 0;
 
 	virtual void updateDescriptorSets() = 0;
@@ -148,5 +166,6 @@ public:
 	virtual vkTools::VulkanTextureLoader* getTextureLoader() = 0;
 	virtual vkTools::CShader* getShader(std::string shaderName) = 0;
 	virtual VkBuffer getBuffer(uint32_t id)= 0;
+	virtual VkPipeline getPipeline(std::string pipelineName) = 0;
 	
 };

@@ -200,14 +200,13 @@ void CFont::load()
 	delete[] charArray;
 
 	//request pipeline and shader
-
 /*	VkGraphicsPipelineCreateInfo pipelineCreateInfo = 
 		vkTools::initializers::pipelineCreateInfo();
 	gEnv->pRenderer->addGraphicPipeline();*/
 	printf("tex id : %i\n", m_texId);
 
 	m_draw = {};
-	
+	//m_draw.bindDescriptorSets();
 
 }
 

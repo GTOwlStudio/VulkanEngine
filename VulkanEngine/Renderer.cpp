@@ -23,16 +23,22 @@ CRenderer::~CRenderer()
 
 	for (size_t i = 0; i < m_pipelines.pipelines.size();i++) {
 		vkDestroyPipeline(m_device, m_pipelines.pipelines[i],nullptr);
+		//vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_shaders.descriptorSets[i]); //#enhancement avoid the use of iteration
+		vkFreeDescriptorSets(m_device, m_shaders.descriptorPool, 1, &m_shaders.descriptorSets[i]);//#enhancement avoid the use of iteration
 	}
 
-	dev_data.shader->clear(m_device);
+	//dev_data.shader->clear(m_device);
 	delete dev_data.shader;
 	m_swapChain.cleanup();
 
+	if (m_shaders.descriptorPool != VK_NULL_HANDLE) {
+		vkDestroyDescriptorPool(m_device, m_shaders.descriptorPool, nullptr);
+	}
+	/*
 	if (m_descriptorPool != VK_NULL_HANDLE) {
 		vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
 	}
-
+	*/
 	if (m_setupCmdBuffer != VK_NULL_HANDLE) {
 		vkFreeCommandBuffers(m_device, m_cmdPool, 1, &m_setupCmdBuffer);
 	}
@@ -123,10 +129,10 @@ void CRenderer::Init()
 	//dev_test(100.0f, 100.0f, 100.0f, 100.0f, 0.1f);
 	setupDescriptorPool();
 
-
+	initRessources();
 
 	dev_test(-0.5f, -0.5f, 1.0f, 1.0f, 0.1f);
-	
+	//loadShader();
 	/*dev_prepareUBO();
 	dev_setupDescriptorSet();
 	*/
@@ -263,6 +269,17 @@ VkBuffer CRenderer::getBuffer(uint32_t id)
 		return nullptr;
 	}
 	return m_buffers[id].buffer;
+}
+
+VkPipeline CRenderer::getPipeline(std::string pipelineName)
+{
+	for (size_t i = 0; i < m_pipelines.pipelineNames.size();i++) {
+		if (m_pipelines.pipelineNames[i]==pipelineName) {
+			return m_pipelines.pipelines[i];
+		}
+	}
+	printf("ERROR : pipeline %s seems top not exist\n", pipelineName.c_str());
+	return nullptr;
 }
 
 VkBool32 CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex)
@@ -702,11 +719,12 @@ void CRenderer::addGraphicsPipeline(VkGraphicsPipelineCreateInfo pipelineCreateI
 	pipelineCreateInfo.pVertexInputState = &inputState;
 	m_pipelines.pipelineNames.push_back(name);
 	m_pipelines.pipelines.push_back(nullptr);
-	
+
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
 }
 
-void CRenderer::addGraphicsPipeline(VkPipelineLayout pipelineLayout ,VkRenderPass renderPass, VkPipelineCreateFlags flags, VkPrimitiveTopology topology, VkPolygonMode polyMode, uint32_t shaderStagesCount, VkPipelineShaderStageCreateInfo * shaderStages, VkPipelineVertexInputStateCreateInfo const & inputState, std::string name)
+void CRenderer::addGraphicsPipeline(VkPipelineLayout pipelineLayout ,VkRenderPass renderPass, VkPipelineCreateFlags flags, VkPrimitiveTopology topology, VkPolygonMode polyMode, 
+	uint32_t shaderStagesCount, VkPipelineShaderStageCreateInfo * shaderStages, VkPipelineVertexInputStateCreateInfo const & inputState, std::string name)
 {
 	m_pipelines.pipelinesState.push_back({});
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo = 
@@ -731,12 +749,32 @@ void CRenderer::addShader(std::string vsPath, std::string fsPath, std::string * 
 
 	m_shaders.names.push_back(*shaderName);
 	m_shaders.shaders.push_back(new vkTools::CShader(vsPath, fsPath, setLayoutBindings, bindingDescription, attributeDescription));
+	/*m_shaders.descriptorSets.push_back({});
+
+	/*VkDescriptorSetAllocateInfo allocInfo =
+		vkTools::initializers::descriptorSetAllocateInfo(m_descriptorPool, m_shaders.shaders.back()->getDescriptorSetLayoutPtr(), 1);*/
+
+/*	VkDescriptorSetAllocateInfo allocInfo =
+		vkTools::initializers::descriptorSetAllocateInfo(m_shaders.descriptorPool, m_shaders.shaders.back()->getDescriptorSetLayoutPtr(), 1);
+
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_device, &allocInfo, &m_shaders.descriptorSets.back()));*/
+
+
+}
+
+void CRenderer::addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout * pDescriptorLayout, uint32_t descriptorLayoutCount)
+{
+	VkDescriptorSetAllocateInfo allocInfo =
+		vkTools::initializers::descriptorSetAllocateInfo(descriptorPool, pDescriptorLayout, descriptorLayoutCount);
+
+	m_shaders.descriptorSets.push_back({});
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_device, &allocInfo, &m_shaders.descriptorSets.back()))	
 }
 
 void CRenderer::addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets)
 {
 	for (size_t i = 0; i < writeDescriptorSets.size();i++) {
-		writeDescriptorSets.push_back(writeDescriptorSets[i]);
+		m_writeDescriptorSets.push_back(writeDescriptorSets[i]);
 	}
 }
 
@@ -744,6 +782,13 @@ void CRenderer::updateDescriptorSets()
 {
 	for (size_t i = 0; i < m_writeDescriptorSets.size();i++) {
 		vkUpdateDescriptorSets(m_device, (uint32_t)m_writeDescriptorSets.size(), m_writeDescriptorSets.data(), 0,nullptr);
+	}
+}
+
+void CRenderer::loadShader()
+{
+	for (size_t i = 0; i < m_shaders.shaders.size();i++) {
+		m_shaders.shaders[i]->load(m_device);
 	}
 }
 
@@ -787,15 +832,15 @@ void CRenderer::buildDrawCommands()
 		vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
 		for (int32_t j = 0; j < m_indexedDraws.size();j++) {
-			vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, *m_indexedDraws[j].pipelineLayout, 
-				0, 1, m_indexedDraws[j].descriptorSets, 0, nullptr);
+			vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipelineLayout, 
+				0, 1, m_indexedDraws[j].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
 		
-			vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, *m_indexedDraws[j].pipeline);
+			vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipeline);
 			
 			vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, m_indexedDraws[j].vertexBuffer, m_indexedDraws[j].pVertexOffset);
 			
 			vkCmdBindIndexBuffer(m_drawCmdBuffers[i], 
-				*m_indexedDraws[j].vertexBuffer, 
+				m_indexedDraws[j].indexBuffer, 
 				m_indexedDraws[j].indexOffset, 
 				m_indexedDraws[j].indexType);
 			
@@ -817,6 +862,10 @@ void CRenderer::buildDrawCommands()
 
 void CRenderer::initRessources()
 {
+
+	std::vector<VkDescriptorPoolSize> poolSize;
+
+	//Set layout bindings creation
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
 		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
 		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
@@ -838,7 +887,17 @@ void CRenderer::initRessources()
 	addShader(gEnv->getAssetpath()+"shaders/texture.vert.spv", gEnv->getAssetpath() + "shaders/texture.frag.spv",
 		&shaderName,setLayoutBindings, bindings, attributes);
 
+	//Descriptor Pool creation
+	poolSize.resize(setLayoutBindings.size());
+	for (size_t i = 0; i < setLayoutBindings.size();i++) {
+		poolSize[i] = vkTools::initializers::descriptorPoolSize(setLayoutBindings[i].descriptorType, 1);
+	}
+	
+	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = 
+		vkTools::initializers::descriptorPoolCreateInfo((uint32_t)poolSize.size(), poolSize.data(), 1);
 
+	VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &descriptorPoolCreateInfo, nullptr, &m_shaders.descriptorPool));
+	m_shaders.shaders.back()->load(m_device);
 }
 
 void CRenderer::handleMessages(WPARAM wParam, LPARAM lParam)
@@ -888,8 +947,7 @@ void CRenderer::setupDescriptorPool()
 	VkDescriptorPoolCreateInfo descriptorPoolInfo =
 		vkTools::initializers::descriptorPoolCreateInfo((uint32_t)poolSizes.size(), poolSizes.data(), 1);
 
-	VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &descriptorPoolInfo, nullptr, &m_descriptorPool));
-
+	//VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &descriptorPoolInfo, nullptr, &m_descriptorPool));
 }
 
 void CRenderer::buildCommandBuffer()
@@ -923,7 +981,8 @@ void CRenderer::buildCommandBuffer()
 		vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
 		//vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, dev_data.pipelineLayout, 0, 1, &dev_data.descriptorSet, 0, NULL);
-		vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, dev_data.shader->getPipelineLayout(), 0, 1, &dev_data.descriptorSet, 0, NULL);
+		//vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, dev_data.shader->getPipelineLayout(), 0, 1, &dev_data.descriptorSet, 0, NULL);
+		vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, getShader("basic")->getPipelineLayout(), 0, 1, &m_shaders.descriptorSets.back(), 0, NULL);
 		vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines.pipelines.back());
 
 		VkDeviceSize offsets[1] = {0};
@@ -1249,8 +1308,12 @@ void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 	dev_data.inputState.vertexAttributeDescriptionCount = dev_data.attributeDescriptions.size();
 	dev_data.inputState.pVertexAttributeDescriptions = dev_data.attributeDescriptions.data();*/
 
-	dev_data.shader = new vkTools::CShader("./data/shaders/basic.vert.spv", "./data/shaders/basic.frag.spv", setLayoutBindings, dev_data.bindingDescriptions, dev_data.attributeDescriptions);
-	dev_data.shader->load(m_device);
+	/*dev_data.shader = new vkTools::CShader("./data/shaders/basic.vert.spv", "./data/shaders/basic.frag.spv", setLayoutBindings, dev_data.bindingDescriptions, dev_data.attributeDescriptions);
+	dev_data.shader->load(m_device);*/
+	std::string shaderName = "basic";
+	addShader("./data/shaders/basic.vert.spv", "./data/shaders/basic.frag.spv", &shaderName, setLayoutBindings, dev_data.bindingDescriptions, dev_data.attributeDescriptions);
+	m_shaders.shaders.back()->load(m_device);
+	//dev_data.shader->load(m_device);
 	//addGraphicPipeline(pipelineCreateInfo, dev_data.inputState, "devp");
 
 	m_pipelines.pipelinesState.push_back({});
@@ -1266,9 +1329,9 @@ void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 			2,
 			shaderStages.data());*/
 
-	std::vector<VkPipelineShaderStageCreateInfo> shaderStages = dev_data.shader->getShaderStages();
+	//std::vector<VkPipelineShaderStageCreateInfo> shaderStages = dev_data.shader->getShaderStages();
 
-	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
+	/*VkGraphicsPipelineCreateInfo pipelineCreateInfo =
 		vkTools::initializers::pipelineCreateInfo(
 			&m_pipelines.pipelinesState.back(),
 			dev_data.shader->getPipelineLayout(),
@@ -1282,7 +1345,23 @@ void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 	
 	//std::cout << &dev_data.shader->getShaderStages() << std::endl;
 
-	addGraphicsPipeline(pipelineCreateInfo, dev_data.shader->getInputState(), "devp");
+	addGraphicsPipeline(pipelineCreateInfo, dev_data.shader->getInputState(), "devp");*/
+
+	VkGraphicsPipelineCreateInfo pipelineCreateInfo =
+		vkTools::initializers::pipelineCreateInfo(
+			&m_pipelines.pipelinesState.back(),
+			m_shaders.shaders.back()->getPipelineLayout(),
+			m_renderPass,
+			0,
+			VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+			VK_POLYGON_MODE_FILL,
+			2,
+			//shaderStages.data());
+			m_shaders.shaders.back()->getShaderStagesPtr());
+
+	//std::cout << &dev_data.shader->getShaderStages() << std::endl;
+
+	addGraphicsPipeline(pipelineCreateInfo, m_shaders.shaders.back()->getInputState(), "devp");
 	
 	writeInBuffer(&m_smem.buf, sizeof(dev_data.uboVS), &dev_data.uboVS, vsize + isize);
 	
@@ -1452,24 +1531,30 @@ void CRenderer::dev_setupDescriptorSet()
 	/*VkDescriptorSetAllocateInfo allocInfo =
 		vkTools::initializers::descriptorSetAllocateInfo(m_descriptorPool, &dev_data.descriptorSetLayout, 1);*/
 
-	VkDescriptorSetAllocateInfo allocInfo =
+//	addDescriptorSet(m_shaders.descriptorPool, dev_data.shader->getDescriptorSetLayoutPtr(), 1);
+
+	addDescriptorSet(m_shaders.descriptorPool, m_shaders.shaders.back()->getDescriptorSetLayoutPtr(), 1);
+
+/*	VkDescriptorSetAllocateInfo allocInfo =
 		vkTools::initializers::descriptorSetAllocateInfo(m_descriptorPool, dev_data.shader->getDescriptorSetLayoutPtr(), 1);
 
 	VkResult vkRes = vkAllocateDescriptorSets(m_device, &allocInfo, &dev_data.descriptorSet);
-	assert(!vkRes);
+	assert(!vkRes);*/
 
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets =
 	{
 		//Binding 0 for Vertex Shader Uniform Buffer
 		vkTools::initializers::writeDescriptorSet(
-			dev_data.descriptorSet,
+			//dev_data.descriptorSet,
+			m_shaders.descriptorSets.back(),
 			VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			0,
 			&dev_data.uniformDataVS.descriptor),
-
 	};
 
-	vkUpdateDescriptorSets(m_device, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
+	addWriteDescriptorSet(writeDescriptorSets);
+	updateDescriptorSets();
+	//vkUpdateDescriptorSets(m_device, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, NULL);
 }
 
 void CRenderer::dev_prepareUBO()
