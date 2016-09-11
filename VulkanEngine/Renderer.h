@@ -35,6 +35,13 @@ struct Vertex {
 struct VertexT {
 	float pos[3];
 	float tc[2];
+	VertexT(float x, float y, float z, float tx, float ty) {
+		pos[0] = x;
+		pos[1] = y;
+		pos[2] = z;
+		tc[0] = tx;
+		tc[1] = ty;
+	}
 };
 
 class CRenderer : public IRenderer
@@ -52,9 +59,14 @@ public:
 
 	virtual vk::VulkanDevice* getVulkanDevice();
 	virtual vkTools::VulkanTextureLoader* getTextureLoader();
+	virtual VkRenderPass getRenderPass(std::string renderPassName);
 	virtual vkTools::CShader* getShader(std::string shaderName);
+	virtual vkTools::CShader* getShader(uint32_t id);
+	virtual uint32_t getShaderId(std::string shaderName);
 	virtual VkBuffer getBuffer(uint32_t id);
 	virtual VkPipeline getPipeline(std::string pipelineName);
+
+	virtual void getInfo();
 
 	VkBool32 getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t *typeIndex);
 	uint32_t getMemoryType(uint32_t typeBits, VkFlags properties);
@@ -106,12 +118,12 @@ protected:
 			uint32_t shaderStagesCount,
 			VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name);
 
+	virtual void addRenderPass(std::string renderPassName);
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName,
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings,
 		std::vector<VkVertexInputBindingDescription> bindingDescription,
 		std::vector<VkVertexInputAttributeDescription> attributeDescription);
-
-	virtual void addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount);
+		virtual void addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount);
 	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets);
 	virtual void updateDescriptorSets();
 
@@ -205,6 +217,18 @@ protected:
 	
 //	VkDescriptorPool m_descriptorPool;
 	std::vector<VkWriteDescriptorSet> m_writeDescriptorSets; //writeDescriptorSets to write, via the method updateDescriptorSets
+
+
+
+	struct {
+		std::vector<VkRenderPass> renderPasses;
+		std::vector<std::string> names;
+		std::array<VkAttachmentDescription, 2> attachementDescriptions;
+		VkAttachmentReference colorReference;
+		VkAttachmentReference depthReference;
+		VkSubpassDescription subpassDescription;
+		std::array<VkSubpassDependency, 2> subpassDependencies;
+	} m_renderPasses;
 
 	struct {
 		VkPipelineCache pipelineCache;

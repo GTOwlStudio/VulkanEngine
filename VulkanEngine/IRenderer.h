@@ -80,7 +80,7 @@ struct SIndexedDrawInfo
 	uint32_t descriptorCount;
 	VkPipelineLayout pipelineLayout; //A pointer to a pipeline layout
 	VkPipeline pipeline; //pipeline
-	VkBuffer* vertexBuffer; //The buffer where the data are located
+	VkBuffer vertexBuffer; //The buffer where the data are located
 	uint32_t offsetCount;
 	VkDeviceSize* pVertexOffset; //The offset inside the buffer where the data are located
 
@@ -103,7 +103,7 @@ struct SIndexedDrawInfo
 		pipeline = p_pipeline;
 	}
 
-	void bindVertexBuffers(VkBuffer* p_pBuffers, uint32_t p_offsetCount, VkDeviceSize* p_pOffset) {
+	void bindVertexBuffers(VkBuffer p_pBuffers, uint32_t p_offsetCount, VkDeviceSize* p_pOffset) {
 		vertexBuffer = p_pBuffers;
 		offsetCount = p_offsetCount;
 		pVertexOffset = p_pOffset;
@@ -143,8 +143,8 @@ public:
 		uint32_t shaderStagesCount,
 		VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name) = 0;
 
+	virtual void addRenderPass(std::string renderPassName) = 0;
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)=0;
-	
 	virtual void addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount) = 0;
 	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets) = 0;
 
@@ -159,13 +159,19 @@ public:
 
 	virtual void bufferSubData(uint32_t bufferID, VkDeviceSize size, VkDeviceSize offset, void*  data) = 0;
 
-	//Maybe Not final function
-	virtual void handleMessages(WPARAM wParam, LPARAM lParam) = 0;
+	virtual void handleMessages(WPARAM wParam, LPARAM lParam) = 0; //#supposition maybe not a final function
 
 	virtual vk::VulkanDevice* getVulkanDevice() = 0;
 	virtual vkTools::VulkanTextureLoader* getTextureLoader() = 0;
-	virtual vkTools::CShader* getShader(std::string shaderName) = 0;
+	virtual VkRenderPass getRenderPass(std::string renderPassName) = 0;
+	virtual vkTools::CShader* getShader(std::string shaderName) = 0; //Return an adress to the shader named 'shaderName'
+	virtual vkTools::CShader* getShader(uint32_t id) = 0;
+	virtual uint32_t getShaderId(std::string shaderName) = 0; //Return the id of the shader named 'shaderName'
+															  //return UINT32_MAX if there is no shader named 'shader_name'
 	virtual VkBuffer getBuffer(uint32_t id)= 0;
 	virtual VkPipeline getPipeline(std::string pipelineName) = 0;
 	
+	virtual void getInfo() = 0;
+
+
 };

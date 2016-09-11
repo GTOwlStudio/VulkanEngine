@@ -815,6 +815,16 @@ namespace vkTools {
 		return &m_descriptorSetLayout;
 	}
 
+	VkDescriptorSet * CShader::getDescriptorSetPtr()
+	{
+		return m_descriptorSet;
+	}
+
+	void CShader::attachDescriptorSet(VkDescriptorSet * descriptorSet)
+	{
+		m_descriptorSet = descriptorSet;
+	}
+
 }
 
 

@@ -92,6 +92,11 @@ void CRenderer::clearRessources()
 		m_shaders.shaders[i] = 0;
 	}
 
+	//RenderPasses
+	for (VkRenderPass rp : m_renderPasses.renderPasses) {
+		vkDestroyRenderPass(m_device, rp, nullptr);
+	}
+
 	for (size_t i = 0; i < m_buffers.size();i++) {
 		m_buffers[i].destroy();
 	}
@@ -245,6 +250,16 @@ vkTools::VulkanTextureLoader * CRenderer::getTextureLoader()
 	return m_textureLoader;
 }
 
+VkRenderPass CRenderer::getRenderPass(std::string renderPassName)
+{
+	for (size_t i = 0; i < m_renderPasses.renderPasses.size();i++) {
+		if (renderPassName==m_renderPasses.names[i]) {
+			return m_renderPasses.renderPasses[i];
+		}
+	}
+	return nullptr;
+}
+
 vkTools::CShader * CRenderer::getShader(std::string shaderName)
 {
 	for (size_t i = 0; i < m_shaders.shaders.size();i++) {
@@ -258,17 +273,33 @@ vkTools::CShader * CRenderer::getShader(std::string shaderName)
 	return nullptr;
 }
 
+vkTools::CShader * CRenderer::getShader(uint32_t id)
+{
+	printf("ERROR : YOU SHOULDN'T HAVE THIS MESSAGE DISPLAYING, it means that you use getShader(uint32_t id), the function isn't yet implemented");
+	return nullptr;
+}
+
+uint32_t CRenderer::getShaderId(std::string shaderName)
+{
+	for (size_t i = 0; i < m_shaders.shaders.size();i++) {
+		if (shaderName == m_shaders.names[i]) {
+			return static_cast<uint32_t>(i);
+		}
+	}
+	return UINT32_MAX;
+}
+
 VkBuffer CRenderer::getBuffer(uint32_t id)
 {
-	if (id>=m_buffers.size()) {
+	if (id>m_buffers.size()) {
 		printf("ERROR : id %i out of range, buffer.size()=%i\n", id, m_buffers.size());
 		return nullptr;
 	}
-	if (m_buffers[id].buffer==nullptr){
+	if (m_buffers[id-1].buffer==nullptr){
 		printf("ERROR : there is no buffer at id %\n", id);
 		return nullptr;
 	}
-	return m_buffers[id].buffer;
+	return m_buffers[id-1].buffer;
 }
 
 VkPipeline CRenderer::getPipeline(std::string pipelineName)
@@ -280,6 +311,28 @@ VkPipeline CRenderer::getPipeline(std::string pipelineName)
 	}
 	printf("ERROR : pipeline %s seems top not exist\n", pipelineName.c_str());
 	return nullptr;
+}
+
+void CRenderer::getInfo()
+{
+	printf("-------Renderer Info-------\n\nPIPELINES\n");
+	printf("pipelines.count = %i\npipelinesNames.count = %i\npipelineStates.count = %i\nPipeline Names : \n", m_pipelines.pipelines.size(), m_pipelines.pipelineNames.size(), m_pipelines.pipelinesState.size());
+	for (size_t i = 0; i < m_pipelines.pipelineNames.size();i++) 
+	{
+		printf("\t\"%s\"\n", m_pipelines.pipelineNames[i].c_str());
+	}
+	
+	printf("\nSHADERS\n");
+	printf("shaders.count = %i\nshadersNames.count = %i\ndescriptorPool.count = %i\ndescriptorSets.count = %i\nPipeline Names : \n", m_shaders.shaders.size(), m_shaders.names.size(),1, m_shaders.descriptorSets.size());
+	for (size_t i = 0; i < m_shaders.names.size();i++) {
+		printf("\t\"%s\"\n", m_shaders.names[i].c_str());
+	}
+
+	printf("\nRENDER PASSES\n");
+	printf("renderPasses.count = %i\nrenderPassesNames.count = %i\nRenderpasses Name\n", m_renderPasses.renderPasses.size(), m_renderPasses.names.size());
+	for (std::string s : m_renderPasses.names) {
+		printf("\t\"%s\"\n", s.c_str());
+	}
 }
 
 VkBool32 CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex)
@@ -473,6 +526,12 @@ void CRenderer::setupRenderPass()
 	renderPassInfo.pSubpasses = &subpassDescription;
 	renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
 	renderPassInfo.pDependencies = dependencies.data();
+
+	m_renderPasses.attachementDescriptions = attachments;
+	m_renderPasses.colorReference = colorReference;
+	m_renderPasses.depthReference = depthReference;
+	m_renderPasses.subpassDescription = subpassDescription;
+	m_renderPasses.subpassDependencies = dependencies;
 
 	VK_CHECK_RESULT(vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &m_renderPass));
 }
@@ -737,6 +796,90 @@ void CRenderer::addGraphicsPipeline(VkPipelineLayout pipelineLayout ,VkRenderPas
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
 }
 
+void CRenderer::addRenderPass(std::string renderPassName)
+{
+
+	VkAttachmentDescription attachments[2] = {};
+
+	// Color attachment
+	attachments[0].format = m_colorFormat;
+	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	// Don't clear the framebuffer (like the renderpass from the example does)
+	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	// Depth attachment
+	attachments[1].format = m_depthFormat;
+	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference colorReference = {};
+	colorReference.attachment = 0;
+	colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depthReference = {};
+	depthReference.attachment = 1;
+	depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	// Use subpass dependencies for image layout transitions
+	VkSubpassDependency subpassDependencies[2] = {};
+
+	// Transition from final to initial (VK_SUBPASS_EXTERNAL refers to all commmands executed outside of the actual renderpass)
+	subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependencies[0].dstSubpass = 0;
+	subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpassDependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	// Transition from initial to final
+	subpassDependencies[1].srcSubpass = 0;
+	subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	subpassDependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	VkSubpassDescription subpassDescription = {};
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpassDescription.flags = 0;
+	subpassDescription.inputAttachmentCount = 0;
+	subpassDescription.pInputAttachments = NULL;
+	subpassDescription.colorAttachmentCount = 1;
+	subpassDescription.pColorAttachments = &colorReference;
+	subpassDescription.pResolveAttachments = NULL;
+	subpassDescription.pDepthStencilAttachment = &depthReference;
+	subpassDescription.preserveAttachmentCount = 0;
+	subpassDescription.pPreserveAttachments = NULL;
+
+	VkRenderPassCreateInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.pNext = nullptr;
+	renderPassInfo.attachmentCount = 2;
+	renderPassInfo.pAttachments = attachments;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpassDescription;
+	renderPassInfo.dependencyCount = 2;
+	renderPassInfo.pDependencies = subpassDependencies;
+
+	m_renderPasses.renderPasses.push_back(nullptr);
+	m_renderPasses.names.push_back(renderPassName);
+
+	vkCreateRenderPass(m_vulkanDevice->logicalDevice, &renderPassInfo, nullptr, &m_renderPasses.renderPasses.back());
+
+}
+
 void CRenderer::addShader(std::string vsPath, std::string fsPath, std::string * shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)
 {
 	//Checking if the name is not already use
@@ -746,6 +889,8 @@ void CRenderer::addShader(std::string vsPath, std::string fsPath, std::string * 
 			*shaderName += std::to_string(i);
 		}
 	}
+
+
 
 	m_shaders.names.push_back(*shaderName);
 	m_shaders.shaders.push_back(new vkTools::CShader(vsPath, fsPath, setLayoutBindings, bindingDescription, attributeDescription));
@@ -768,7 +913,7 @@ void CRenderer::addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSe
 		vkTools::initializers::descriptorSetAllocateInfo(descriptorPool, pDescriptorLayout, descriptorLayoutCount);
 
 	m_shaders.descriptorSets.push_back({});
-	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_device, &allocInfo, &m_shaders.descriptorSets.back()))	
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_device, &allocInfo, &m_shaders.descriptorSets.back()));
 }
 
 void CRenderer::addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets)
@@ -837,7 +982,7 @@ void CRenderer::buildDrawCommands()
 		
 			vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipeline);
 			
-			vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, m_indexedDraws[j].vertexBuffer, m_indexedDraws[j].pVertexOffset);
+			vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, &m_indexedDraws[j].vertexBuffer, m_indexedDraws[j].pVertexOffset);
 			
 			vkCmdBindIndexBuffer(m_drawCmdBuffers[i], 
 				m_indexedDraws[j].indexBuffer, 
@@ -868,19 +1013,13 @@ void CRenderer::initRessources()
 	//Set layout bindings creation
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
 		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
-		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1)
+		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1),
 	};
 
-	std::vector<VkVertexInputBindingDescription> bindings = 
-	{
-		vkTools::initializers::vertexInputBindingDescription(0, sizeof(VertexT), VK_VERTEX_INPUT_RATE_VERTEX)
-	};
+	std::vector<VkVertexInputBindingDescription> bindings = { vkTools::initializers::vertexInputBindingDescription(0, sizeof(VertexT), VK_VERTEX_INPUT_RATE_VERTEX) };
 
-	std::vector<VkVertexInputAttributeDescription> attributes =
-	{
-		vkTools::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
-		vkTools::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32_SFLOAT, 2 * sizeof(float))
-	};
+	std::vector<VkVertexInputAttributeDescription> attributes =	{ vkTools::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
+		vkTools::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32_SFLOAT, 2 * sizeof(float)) };
 	
 	std::string shaderName = "texture";
 
@@ -888,16 +1027,23 @@ void CRenderer::initRessources()
 		&shaderName,setLayoutBindings, bindings, attributes);
 
 	//Descriptor Pool creation
-	poolSize.resize(setLayoutBindings.size());
+	poolSize.resize(setLayoutBindings.size()+1);
 	for (size_t i = 0; i < setLayoutBindings.size();i++) {
 		poolSize[i] = vkTools::initializers::descriptorPoolSize(setLayoutBindings[i].descriptorType, 1);
 	}
-	
-	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = 
-		vkTools::initializers::descriptorPoolCreateInfo((uint32_t)poolSize.size(), poolSize.data(), 1);
+	poolSize[setLayoutBindings.size()] = 
+		vkTools::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
 
+	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = 
+		vkTools::initializers::descriptorPoolCreateInfo((uint32_t)poolSize.size(), poolSize.data(), 3);
 	VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &descriptorPoolCreateInfo, nullptr, &m_shaders.descriptorPool));
 	m_shaders.shaders.back()->load(m_device);
+
+	addDescriptorSet(m_shaders.descriptorPool, m_shaders.shaders.back()->getDescriptorSetLayoutPtr(), 1);
+	m_shaders.shaders.back()->attachDescriptorSet(&m_shaders.descriptorSets.back());
+
+	addRenderPass("main");
+
 }
 
 void CRenderer::handleMessages(WPARAM wParam, LPARAM lParam)
@@ -1474,6 +1620,10 @@ void CRenderer::dev_test2(float x, float y, float w, float h, float depth)
 
 	dev_data.shader = new vkTools::CShader("./data/shaders/basic.vert.spv", "./data/shaders/basic.frag.spv", setLayoutBindings, dev_data.bindingDescriptions, dev_data.attributeDescriptions);
 	dev_data.shader->load(m_device);
+
+	std::string sname = "basic";//Shader name
+	uint32_t shaderId = 0;
+	addShader("./data/shaders/basic.vert.spv", "./data/shaders/basic.frag.spv", &sname,setLayoutBindings,dev_data.bindingDescriptions, dev_data.attributeDescriptions);
 	//addGraphicPipeline(pipelineCreateInfo, dev_data.inputState, "devp");
 
 	m_pipelines.pipelinesState.push_back({});
@@ -1533,7 +1683,7 @@ void CRenderer::dev_setupDescriptorSet()
 
 //	addDescriptorSet(m_shaders.descriptorPool, dev_data.shader->getDescriptorSetLayoutPtr(), 1);
 
-	addDescriptorSet(m_shaders.descriptorPool, m_shaders.shaders.back()->getDescriptorSetLayoutPtr(), 1);
+	addDescriptorSet( m_shaders.descriptorPool, m_shaders.shaders.back()->getDescriptorSetLayoutPtr(), 1);
 
 /*	VkDescriptorSetAllocateInfo allocInfo =
 		vkTools::initializers::descriptorSetAllocateInfo(m_descriptorPool, dev_data.shader->getDescriptorSetLayoutPtr(), 1);

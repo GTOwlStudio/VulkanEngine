@@ -59,6 +59,8 @@ namespace vkTools {
 		std::vector<VkPipelineShaderStageCreateInfo> getShaderStages();
 		VkPipelineShaderStageCreateInfo* getShaderStagesPtr();
 		VkDescriptorSetLayout* getDescriptorSetLayoutPtr();
+		VkDescriptorSet* getDescriptorSetPtr();
+		void attachDescriptorSet(VkDescriptorSet* descriptorSet);
 
 	private:
 		
@@ -78,6 +80,8 @@ namespace vkTools {
 
 		VkDescriptorSetLayout m_descriptorSetLayout;
 		VkPipelineLayout m_pipelineLayout;
+
+		VkDescriptorSet* m_descriptorSet=nullptr;//This is the attached descriptorSet of the shader
 
 		void addShader(std::string sPath, VkShaderStageFlagBits flag);
 

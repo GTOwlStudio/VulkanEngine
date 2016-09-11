@@ -103,6 +103,7 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 	m_size = static_cast<uint32_t>((sizeof(float) * 4*2) + (sizeof(uint32_t) * 6)) * m_numOfCharacter; // For a character there is 4 vertices, a vertices got 2 float(x,y) and there is 6 indices by character
 
 	gEnv->pMemoryManager->requestMemory(m_size);
+	gEnv->pMemoryManager->requestMemory(sizeof(VertexT)*4+(sizeof(uint32_t)*6));
 
 }
 
@@ -199,13 +200,33 @@ void CFont::load()
 	delete[] viData;
 	delete[] charArray;
 
-	//request pipeline and shader
-/*	VkGraphicsPipelineCreateInfo pipelineCreateInfo = 
-		vkTools::initializers::pipelineCreateInfo();
-	gEnv->pRenderer->addGraphicPipeline();*/
+	//Prepare the render of the full texture
+		//Prepare the vertex for the texture
+	std::array<VertexT, 4> coords = { VertexT(-1.0f, 1.0f, 0.1f, 0.0f,1.0f), VertexT(1.0f,1.0f,0.1f,1.0f,1.0f), VertexT(1.0f,-1.0f,0.1f,1.0f,0.0f), VertexT(-1.0f,-1.0f,0.1f,0.0f,0.0f) };
+	uint32_t gIndices[6] = {0,1,2, 0,2,3};
+
+
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(VertexT)*4, m_size, coords.data());
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(uint32_t)*6, m_size + sizeof(VertexT)*4, gIndices);
+		//request pipeline and shader
+	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture")->getPipelineLayout(),
+										gEnv->pRenderer->getRenderPass("main"),
+										0,
+										VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+										VK_POLYGON_MODE_FILL,
+										2,
+										gEnv->pRenderer->getShader("texture")->getShaderStagesPtr(),
+										gEnv->pRenderer->getShader("texture")->getInputState(), 
+										"texture");
 	printf("tex id : %i\n", m_texId);
 
 	m_draw = {};
+	m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, gEnv->pRenderer->getShader("texture")->getDescriptorSetPtr());
+	m_draw.bindPipeline(gEnv->pRenderer->getPipeline("texture"));
+	VkDeviceSize gOffsets[1] = { m_size };
+	m_draw.bindVertexBuffers(gEnv->pRenderer->getBuffer(gEnv->bbid), 1, gOffsets);
+	m_draw.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), m_size+(sizeof(VertexT) * 4), VK_INDEX_TYPE_UINT32);
+	m_draw.drawIndexed(6, 1, 0, 0, 0);
 	//m_draw.bindDescriptorSets();
 
 }
