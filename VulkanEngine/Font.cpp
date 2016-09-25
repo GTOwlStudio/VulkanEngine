@@ -61,17 +61,17 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 	m_atlas_height = texture_height + tmpMaxHeight;
 
 	m_data = new uint8_t[m_atlas_width*m_atlas_width];
-	
+	memset(m_data, 0, m_atlas_width*m_atlas_height);
 
 	int lastX = 0;
 	int lastY = 0;
 
 	tmpMaxHeight = 0;
 
-	/*std::ofstream stream;
-	stream.open("output.txt");*/
 
+	uint32_t it = 0; //it = iterator
 	for (uint32_t i = 0; i < m_numOfCharacter;i++) {
+	//for (uint32_t i = 66; i < 67; i++) {
 		FT_Load_Char(m_face, i, FT_LOAD_RENDER);
 
 		if (lastX + slot->bitmap.width >= texture_width) {
@@ -84,17 +84,15 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 		m_characterInfo[i].ty = (float)lastY / m_atlas_height;
 		for (uint32_t y = 0; y < slot->bitmap.rows; y++) {
 			for (uint32_t x = 0; x < slot->bitmap.width;x++) {
-				m_data[(y+lastY)*m_atlas_width+ x + lastX] = slot->bitmap.buffer[(slot->bitmap.width)*y+x];
-				//stream << (uint32_t)m_data[(y+lastY)*m_atlas_width + x+ lastX] << "\t";
+				it = (lastY*m_atlas_width) + (y*m_atlas_width) + x + lastX;
+				m_data[it] = slot->bitmap.buffer[(slot->bitmap.width)*y+x];
 			}
-			//stream << std::endl;
 		}
+
 		tmpMaxHeight = std::max(tmpMaxHeight, slot->bitmap.rows);
-		lastX += slot->bitmap.width;
+		lastX += slot->bitmap.width/**slot->bitmap.rows*/;
 		
 	}
-
-//	stream.close();
 
 	printf("w:%i h:%i\n", texture_width, texture_height+tmpMaxHeight);
 
@@ -102,7 +100,7 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 
 	m_size = static_cast<uint32_t>((sizeof(float) * 4*2) + (sizeof(uint32_t) * 6)) * m_numOfCharacter; // For a character there is 4 vertices, a vertices got 2 float(x,y) and there is 6 indices by character
 
-	gEnv->pMemoryManager->requestMemory(m_size);
+	//gEnv->pMemoryManager->requestMemory(m_size);
 	gEnv->pMemoryManager->requestMemory(sizeof(VertexT)*4+(sizeof(uint32_t)*6));
 
 }
@@ -117,11 +115,13 @@ CFont::~CFont()
 	FT_Done_FreeType(m_lib);
 }
 
+
 void CFont::load()
 {
 	VkImageCreateInfo imageInfo = vkTools::initializers::imageCreateInfo();
 	imageInfo.imageType = VK_IMAGE_TYPE_2D;
 	imageInfo.format = VK_FORMAT_R8_UNORM;
+	//imageInfo.format = VK_FORMAT_R8_UINT;
 	imageInfo.extent.width = m_atlas_width;
 	imageInfo.extent.height = m_atlas_height;
 	imageInfo.extent.depth = 1;
@@ -195,19 +195,28 @@ void CFont::load()
 	vkDebug::arrayToFile(viData, m_size, "output.txt");
 //	vkDebug::stringToFile("\0", "outputc.txt", true);
 
-	gEnv->pRenderer->bufferSubData(gEnv->bbid, m_size, 0, viData);
+	//gEnv->pRenderer->bufferSubData(gEnv->bbid, m_size, 0, viData);
+	//gEnv->pRenderer->bufferSubData(gEnv->bbid, m_size, 0, viData);
 
 	delete[] viData;
 	delete[] charArray;
 
 	//Prepare the render of the full texture
 		//Prepare the vertex for the texture
-	std::array<VertexT, 4> coords = { VertexT(-1.0f, 1.0f, 0.1f, 0.0f,1.0f), VertexT(1.0f,1.0f,0.1f,1.0f,1.0f), VertexT(1.0f,-1.0f,0.1f,1.0f,0.0f), VertexT(-1.0f,-1.0f,0.1f,0.0f,0.0f) };
+	float x = -1.0f;
+	float y = -1.0f;
+	float w = 2.0f;
+	float h = 2.0f;
+	std::array<VertexT, 4> coords = { VertexT(x, y+h, 0.1f, 0.0f,1.0f), VertexT(x+w,y+h,0.1f,1.0f,1.0f), VertexT(x+w,y,0.1f,1.0f,0.0f), VertexT(x,y,0.1f,0.0f,0.0f) };
 	uint32_t gIndices[6] = {0,1,2, 0,2,3};
 
 
-	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(VertexT)*4, m_size, coords.data());
-	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(uint32_t)*6, m_size + sizeof(VertexT)*4, gIndices);
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(VertexT)*4, 0, coords.data());
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(uint32_t)*6, sizeof(VertexT)*4, gIndices);
+
+	/*gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(VertexT) * 4, m_size, coords.data());
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(uint32_t) * 6, m_size + sizeof(VertexT) * 4, gIndices);
+	*/
 		//request pipeline and shader
 	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture")->getPipelineLayout(),
 										gEnv->pRenderer->getRenderPass("main"),
@@ -220,13 +229,28 @@ void CFont::load()
 										"texture");
 	printf("tex id : %i\n", m_texId);
 
+	m_imageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	m_imageDescriptor.sampler = gEnv->pRenderer->getTexture(m_texId)->sampler;
+	m_imageDescriptor.imageView = gEnv->pRenderer->getTexture(m_texId)->view;
+
+	std::vector<VkWriteDescriptorSet> wd = {
+		//vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(gEnv->pRenderer->getShader("texture")->getDescriptorSetId()), ),
+		vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(gEnv->pRenderer->getShader("texture")->getDescriptorSetId()), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, &m_imageDescriptor)
+	};
+
+	////gEnv->pRenderer->addDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1);
+ 	gEnv->pRenderer->addWriteDescriptorSet(wd);
+	gEnv->pRenderer->updateDescriptorSets();
+
 	m_draw = {};
-	m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, gEnv->pRenderer->getShader("texture")->getDescriptorSetPtr());
+	//m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, gEnv->pRenderer->getShader("texture")->getDescriptorSetPtr());
+	m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(gEnv->pRenderer->getShader("texture")->getDescriptorSetId()));
 	m_draw.bindPipeline(gEnv->pRenderer->getPipeline("texture"));
-	VkDeviceSize gOffsets[1] = { m_size };
-	m_draw.bindVertexBuffers(gEnv->pRenderer->getBuffer(gEnv->bbid), 1, gOffsets);
-	m_draw.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), m_size+(sizeof(VertexT) * 4), VK_INDEX_TYPE_UINT32);
+	m_gOffsets[1] =  0 ;
+	m_draw.bindVertexBuffers(gEnv->pRenderer->getBuffer(gEnv->bbid), 1, m_gOffsets);
+	m_draw.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), (sizeof(VertexT) * 4), VK_INDEX_TYPE_UINT32);
 	m_draw.drawIndexed(6, 1, 0, 0, 0);
+	gEnv->pRenderer->addIndexedDraw(m_draw);
 	//m_draw.bindDescriptorSets();
 
 }

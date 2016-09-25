@@ -26,7 +26,7 @@ CSystem::~CSystem()
 
 bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 {
-	CFont font("./data/fonts/consola.ttf", 24);
+	CFont font("./data/fonts/consola.ttf", 40);
 
 	m_env.pRenderer->InitVulkan();
 	if (m_env.enableValidation) {
@@ -46,6 +46,8 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 	
 	
 	//DO NOT WRITE UNDER THIS LINE
+	m_env.pRenderer->bcb(); //build command buffers
+	m_env.pRenderer->prepared();
 	m_env.pRenderer->getInfo();
 	return true;
 }

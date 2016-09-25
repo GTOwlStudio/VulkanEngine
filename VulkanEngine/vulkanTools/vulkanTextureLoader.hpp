@@ -26,6 +26,7 @@ namespace vkTools
 		VkImage image;
 		VkImageLayout imageLayout;
 		VkDeviceMemory deviceMemory;
+		//VkDescriptorImageInfo descriptor;
 		VkImageView view;
 		uint32_t width, height;
 		uint32_t mipLevels;

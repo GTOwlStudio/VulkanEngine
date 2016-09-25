@@ -820,9 +820,19 @@ namespace vkTools {
 		return m_descriptorSet;
 	}
 
+	uint32_t CShader::getDescriptorSetId() const
+	{
+		return m_descriptorSetId;
+	}
+
 	void CShader::attachDescriptorSet(VkDescriptorSet * descriptorSet)
 	{
 		m_descriptorSet = descriptorSet;
+		//printf("f");
+	}
+
+	void CShader::attachDescriptorSet(uint32_t id) {
+		m_descriptorSetId = id;
 	}
 
 }

@@ -37,7 +37,7 @@ public:
 	~CFont();
 
 	void load();
-
+	void load_dev();
 	uint32_t getNumOfCharacter() const;
 
 
@@ -60,7 +60,12 @@ protected:
 	uint32_t bufferId = 0;
 
 	SIndexedDrawInfo m_draw;
+	VkDeviceSize m_gOffsets[1];
+	VkDescriptorImageInfo m_imageDescriptor;
 
+	//#dev
+
+	//vkTools::UniformData m_ud; //uniform data
 /*	vk::VulkanDevice *vulkanDevice;
 	VkQueue queue;
 	VkFormat colorFormat;

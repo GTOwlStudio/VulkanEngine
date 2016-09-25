@@ -64,9 +64,15 @@ public:
 	virtual vkTools::CShader* getShader(uint32_t id);
 	virtual uint32_t getShaderId(std::string shaderName);
 	virtual VkBuffer getBuffer(uint32_t id);
+	virtual vk::Buffer* getBufferStruct(uint32_t id);
+	virtual vkTools::VulkanTexture* getTexture(uint32_t texId);
+	virtual VkDescriptorSet* getDescriptorSet(uint32_t id);
 	virtual VkPipeline getPipeline(std::string pipelineName);
+	virtual VkDescriptorPool getDescriptorPool(uint32_t id);
 
 	virtual void getInfo();
+	virtual void bcb();
+	virtual void prepared(); //Set m_prepared to true
 
 	VkBool32 getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t *typeIndex);
 	uint32_t getMemoryType(uint32_t typeBits, VkFlags properties);
@@ -130,7 +136,7 @@ protected:
 	void loadShader();
 
 	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo);
-	virtual void buildDrawCommands();
+	virtual void buildDrawCommands(VkRenderPass renderPass);
 
 	virtual void initRessources();
 
@@ -151,6 +157,7 @@ protected:
 
 	void createSBuffer(VkDeviceSize size, void* data);
 	void writeInBuffer(VkBuffer*buffer, VkDeviceSize size, void* data, VkDeviceSize dstOffset);
+	
 
 
 protected:
@@ -243,6 +250,7 @@ protected:
 		std::vector<vkTools::CShader*> shaders;
 		std::vector<std::string> names;
 		std::vector<VkDescriptorSet> descriptorSets;
+		//std::vector<VkDescriptorSet>
 		VkDescriptorPool descriptorPool;
 	} m_shaders;
 
@@ -291,6 +299,9 @@ protected:
 
 		float rotationSpeed = 1.0f;
 		float rotationZ = 0.0f;
+
+		VkDeviceSize v_offsets[1];
+		SIndexedDrawInfo indexedDraw;
 
 	} dev_data;
 

@@ -151,7 +151,7 @@ public:
 	virtual void updateDescriptorSets() = 0;
 
 	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo) = 0;
-	virtual void buildDrawCommands() = 0;
+	virtual void buildDrawCommands(VkRenderPass renderPass) = 0;
 
 	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height) = 0;
 	
@@ -169,9 +169,13 @@ public:
 	virtual uint32_t getShaderId(std::string shaderName) = 0; //Return the id of the shader named 'shaderName'
 															  //return UINT32_MAX if there is no shader named 'shader_name'
 	virtual VkBuffer getBuffer(uint32_t id)= 0;
+	virtual vk::Buffer* getBufferStruct(uint32_t id) = 0;
+	virtual vkTools::VulkanTexture* getTexture(uint32_t texId) = 0;
+	virtual VkDescriptorSet* getDescriptorSet(uint32_t) = 0;
 	virtual VkPipeline getPipeline(std::string pipelineName) = 0;
+	virtual VkDescriptorPool getDescriptorPool(uint32_t id) = 0;
 	
 	virtual void getInfo() = 0;
-
-
+	virtual void bcb()=0; //Build Command Buffer #dev too heavy
+	virtual void prepared() = 0; //Set m_prepared = true
 };
