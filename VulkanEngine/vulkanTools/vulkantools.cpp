@@ -383,6 +383,14 @@ VkImageViewCreateInfo vkTools::initializers::imageViewCreateInfo()
 	return imgViewCreateInfo;
 }
 
+VkFramebufferCreateInfo vkTools::initializers::framebufferCreateInfo()
+{
+	VkFramebufferCreateInfo fbCreateInfo = {};
+	fbCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	fbCreateInfo.pNext = NULL;
+	return fbCreateInfo;
+}
+
 VkViewport vkTools::initializers::viewport(float width, float height, float minDepth, float maxDepth)
 {
 	VkViewport viewport = {};

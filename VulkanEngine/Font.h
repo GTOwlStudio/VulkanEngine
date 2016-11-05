@@ -58,9 +58,12 @@ protected:
 
 	uint32_t m_texId;
 	uint32_t bufferId = 0;
+	VkDeviceSize m_bufferOffset; //The Offset In The Buffer
 
 	SIndexedDrawInfo m_draw;
 	VkDeviceSize m_gOffsets[1];
+	uint32_t m_descriptorSetId;
+	std::vector<VkFramebuffer> m_fb;
 	VkDescriptorImageInfo m_imageDescriptor;
 
 	//#dev

@@ -23,6 +23,7 @@
 #endif
 
 #include "vulkan/vulkan.h"
+#include "vulkantools.h"
 
 #include <assimp/Importer.hpp> 
 #include <assimp/scene.h>     

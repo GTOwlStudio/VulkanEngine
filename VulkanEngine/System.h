@@ -18,8 +18,6 @@ class IMemoryManager;
 struct I3DEngine;
 class CFont;
 
-
-
 struct SSystemGlobalEnvironement
 {
 	I3DEngine* p3DEngine;
@@ -30,6 +28,7 @@ struct SSystemGlobalEnvironement
 	bool enableValidation; //if you want to debug or not. Must be false if release
 	uint32_t bbid; //Big Buffer id
 	const std::string getAssetpath() { return "./data/"; };
+	VkDevice getDevice() { return pRenderer->getVulkanDevice()->logicalDevice; };
 
 };
 
@@ -106,8 +105,6 @@ private:
 	uint32_t m_frameTime_millisecond;
 	float frameTimer = 1.0f;
 	float m_fpsTimer = 0.0f;
-
-
 };
 
 

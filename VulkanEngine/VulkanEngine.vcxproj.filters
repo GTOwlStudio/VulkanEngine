@@ -57,22 +57,28 @@
     <ClCompile Include="Renderer.cpp">
       <Filter>Common\ThomasRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="Input.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
     <ClCompile Include="guiutils.h">
       <Filter>Common\ThomasGui</Filter>
     </ClCompile>
     <ClCompile Include="guiutils.cpp">
       <Filter>Common\ThomasGui</Filter>
     </ClCompile>
+    <ClCompile Include="Framebuffer.cpp">
+      <Filter>Common\ThomasRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>Common\ThomasInput</Filter>
+    </ClCompile>
     <ClCompile Include="Font.cpp">
-      <Filter>Fichiers sources</Filter>
+      <Filter>Common\ThomasGui</Filter>
     </ClCompile>
     <ClCompile Include="vulkandevice.cpp">
-      <Filter>Fichiers sources</Filter>
+      <Filter>Common\ThomasSystem</Filter>
     </ClCompile>
     <ClCompile Include="MemoryManager.cpp">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="vulkanTools\Helper.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -113,19 +119,25 @@
     <ClInclude Include="IInput.h">
       <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
-    <ClInclude Include="Input.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
-    <ClInclude Include="Font.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="vulkandevice.h">
       <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
     <ClInclude Include="IMemoryManager.h">
       <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
+    <ClInclude Include="Framebuffer.h">
+      <Filter>Common\ThomasRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Font.h">
+      <Filter>Common\ThomasGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
+      <Filter>Common\ThomasInput</Filter>
+    </ClInclude>
     <ClInclude Include="MemoryManager.h">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkanTools\Helper.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>

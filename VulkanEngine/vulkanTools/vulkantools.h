@@ -178,6 +178,8 @@ namespace vkTools
 		VkSamplerCreateInfo samplerCreateInfo();
 		VkImageViewCreateInfo imageViewCreateInfo();
 
+		VkFramebufferCreateInfo framebufferCreateInfo();
+
 		VkViewport viewport(float width , float height, float minDepth, float maxDepth);
 
 		VkRect2D rect2D(int32_t width, int32_t height, int32_t offsetX, int32_t offsetY);

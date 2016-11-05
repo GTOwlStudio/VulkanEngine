@@ -3,7 +3,7 @@
 SSystemGlobalEnvironement* gEnv = NULL;
 
 CSystem::CSystem(bool enableValidation)
-{
+{ 
 	m_frameTime_millisecond = (uint32_t)(1000.0f/(float)m_cap);
 	std::cout << m_frameTime_millisecond << std::endl;
 	memset(&m_env, 0, sizeof(m_env));
@@ -26,20 +26,22 @@ CSystem::~CSystem()
 
 bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 {
-	CFont font("./data/fonts/consola.ttf", 40);
+	//CFont font("./data/fonts/consola.ttf", 40);
 
 	m_env.pRenderer->InitVulkan();
 	if (m_env.enableValidation) {
 		setupConsole("tEngine Console");
 	}
 	setupWindow(hInstance, wndProc);
+	
+	CFont font("./data/fonts/consola.ttf", 40);
 	m_env.pRenderer->Init();	
 
-	printf("Requested memory size : %i\n",(uint32_t)m_env.pMemoryManager->requestMemorySize());
-	//printf("sizeof(float) = %i\n", sizeof(float));
+	printf("Requested memory size : %i\n",(uint32_t)m_env.pMemoryManager->requestedMemorySize());
+	printf("Mem's Description : %s\n", m_env.pMemoryManager->getGlobalMemoryDescription().c_str());
 
-	//Create the big buffer
-	m_env.pRenderer->createBuffer(&m_env.bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |VK_BUFFER_USAGE_INDEX_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_env.pMemoryManager->requestMemorySize());
+	//Create the big buffer #edit : the big buffer is now created in the pRenderer->Init() function, much better solution
+	//m_env.pRenderer->createBuffer(&m_env.bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |VK_BUFFER_USAGE_INDEX_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_env.pMemoryManager->requestedMemorySize());
 	printf("bbid=%i\n", gEnv->bbid);
 	font.load();
 	
@@ -49,6 +51,7 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 	m_env.pRenderer->bcb(); //build command buffers
 	m_env.pRenderer->prepared();
 	m_env.pRenderer->getInfo();
+	m_env.pRenderer->getBufferInfo();
 	return true;
 }
 

@@ -145,13 +145,21 @@ public:
 
 	virtual void addRenderPass(std::string renderPassName) = 0;
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)=0;
-	virtual void addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount) = 0;
+	virtual VkDescriptorSet addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount) = 0;
+	virtual void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount, VkDescriptorSet* dstDescriptor) = 0;
+	virtual void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount, uint32_t id) = 0;
 	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets) = 0;
+	virtual VkFramebuffer addFramebuffer(uint32_t width, uint32_t height, VkRenderPass renderPass, uint32_t attachmentCount, VkImageView *pAttachments) = 0;
+
+	virtual VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin) = 0;
 
 	virtual void updateDescriptorSets() = 0;
 
-	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo) = 0;
+	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass) = 0;
+	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers) = 0;
+	virtual void addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, VkFramebuffer framebuffer = VK_NULL_HANDLE) = 0;
 	virtual void buildDrawCommands(VkRenderPass renderPass) = 0;
+	virtual void buildDrawCommands() = 0;
 
 	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height) = 0;
 	
@@ -174,8 +182,16 @@ public:
 	virtual VkDescriptorSet* getDescriptorSet(uint32_t) = 0;
 	virtual VkPipeline getPipeline(std::string pipelineName) = 0;
 	virtual VkDescriptorPool getDescriptorPool(uint32_t id) = 0;
+	virtual VkCommandPool getCommandPool() = 0;
 	
+	virtual uint32_t requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount) = 0;
+
 	virtual void getInfo() = 0;
+	virtual void getBufferInfo() = 0;
 	virtual void bcb()=0; //Build Command Buffer #dev too heavy
 	virtual void prepared() = 0; //Set m_prepared = true
+
+	virtual VkFramebuffer dev_fb() = 0;
+	virtual void dev_offscreenSemaphore() = 0;
+
 };

@@ -101,8 +101,8 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 	m_size = static_cast<uint32_t>((sizeof(float) * 4*2) + (sizeof(uint32_t) * 6)) * m_numOfCharacter; // For a character there is 4 vertices, a vertices got 2 float(x,y) and there is 6 indices by character
 
 	//gEnv->pMemoryManager->requestMemory(m_size);
-	gEnv->pMemoryManager->requestMemory(sizeof(VertexT)*4+(sizeof(uint32_t)*6));
-
+	m_bufferOffset = gEnv->pMemoryManager->requestMemory(sizeof(VertexT)*4+(sizeof(uint32_t)*6), "FONT (4*VertexT + 6*uint32_t)");
+	m_descriptorSetId = gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
 }
 
 
@@ -211,14 +211,14 @@ void CFont::load()
 	uint32_t gIndices[6] = {0,1,2, 0,2,3};
 
 
-	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(VertexT)*4, 0, coords.data());
-	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(uint32_t)*6, sizeof(VertexT)*4, gIndices);
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(VertexT)*4, m_bufferOffset, coords.data());
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(uint32_t)*6, m_bufferOffset + sizeof(VertexT)*4, gIndices);
 
 	/*gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(VertexT) * 4, m_size, coords.data());
 	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(uint32_t) * 6, m_size + sizeof(VertexT) * 4, gIndices);
 	*/
 		//request pipeline and shader
-	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture")->getPipelineLayout(),
+	/*gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture")->getPipelineLayout(),
 										gEnv->pRenderer->getRenderPass("main"),
 										0,
 										VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -226,16 +226,21 @@ void CFont::load()
 										2,
 										gEnv->pRenderer->getShader("texture")->getShaderStagesPtr(),
 										gEnv->pRenderer->getShader("texture")->getInputState(), 
-										"texture");
+										"texture");*/
 	printf("tex id : %i\n", m_texId);
 
 	m_imageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 	m_imageDescriptor.sampler = gEnv->pRenderer->getTexture(m_texId)->sampler;
 	m_imageDescriptor.imageView = gEnv->pRenderer->getTexture(m_texId)->view;
+	//gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, gEnv->pRenderer->getDescriptorSet(m_descriptorSetId));
+
+	gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, m_descriptorSetId);
 
 	std::vector<VkWriteDescriptorSet> wd = {
 		//vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(gEnv->pRenderer->getShader("texture")->getDescriptorSetId()), ),
-		vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(gEnv->pRenderer->getShader("texture")->getDescriptorSetId()), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, &m_imageDescriptor)
+		//vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(gEnv->pRenderer->getShader("texture")->getDescriptorSetId()), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, &m_imageDescriptor)// #changed lately
+		//vkTools::initializers::writeDescriptorSet(m_descriptorSet, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, &m_imageDescriptor)
+		vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_descriptorSetId), VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 0, &m_imageDescriptor)
 	};
 
 	////gEnv->pRenderer->addDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1);
@@ -244,13 +249,17 @@ void CFont::load()
 
 	m_draw = {};
 	//m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, gEnv->pRenderer->getShader("texture")->getDescriptorSetPtr());
-	m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(gEnv->pRenderer->getShader("texture")->getDescriptorSetId()));
+	//m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(gEnv->pRenderer->getShader("texture")->getDescriptorSetId())); #changed lately
+	//m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, &m_descriptorSet);
+	m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(m_descriptorSetId));
 	m_draw.bindPipeline(gEnv->pRenderer->getPipeline("texture"));
-	m_gOffsets[1] =  0 ;
+	m_gOffsets[0] =  m_bufferOffset ;
 	m_draw.bindVertexBuffers(gEnv->pRenderer->getBuffer(gEnv->bbid), 1, m_gOffsets);
-	m_draw.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), (sizeof(VertexT) * 4), VK_INDEX_TYPE_UINT32);
-	m_draw.drawIndexed(6, 1, 0, 0, 0);
-	gEnv->pRenderer->addIndexedDraw(m_draw);
+	m_draw.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), m_bufferOffset+(sizeof(VertexT) * 4), VK_INDEX_TYPE_UINT32);
+	m_draw.drawIndexed(6,1,0,0,0);
+	//m_fb.push_back(gEnv->pRenderer->dev_fb());
+	//gEnv->pRenderer->addOffscreenIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("offscreen"));
+	gEnv->pRenderer->addIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("offscreen"));
 	//m_draw.bindDescriptorSets();
 
 }

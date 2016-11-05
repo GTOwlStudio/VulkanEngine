@@ -412,14 +412,14 @@ public:
 	}*/
 
 	// Present the current image to the queue
-	VkResult queuePresent(VkQueue queue, uint32_t currentBuffer, VkSemaphore waitSemaphore = VK_NULL_HANDLE)
+	VkResult queuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore = VK_NULL_HANDLE)
 	{
 		VkPresentInfoKHR presentInfo = {};
 		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.pNext = NULL;
 		presentInfo.swapchainCount = 1;
 		presentInfo.pSwapchains = &swapChain;
-		presentInfo.pImageIndices = &currentBuffer;
+		presentInfo.pImageIndices = &imageIndex;
 		if (waitSemaphore != VK_NULL_HANDLE)
 		{
 			presentInfo.pWaitSemaphores = &waitSemaphore;

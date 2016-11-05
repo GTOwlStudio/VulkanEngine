@@ -2,7 +2,7 @@
 
 
 
-CRenderer::CRenderer(PFN_GetEnabledFeatures enabledFeaturesFn) 
+CRenderer::CRenderer(PFN_GetEnabledFeatures enabledFeaturesFn)
 {
 
 	if (enabledFeaturesFn != nullptr) {
@@ -51,11 +51,14 @@ CRenderer::~CRenderer()
 	if (m_setupCmdBuffer != VK_NULL_HANDLE) {
 		vkFreeCommandBuffers(m_device, m_cmdPool, 1, &m_setupCmdBuffer);
 	}
+	if (m_offscreenCmdBuffer != VK_NULL_HANDLE) {
+		vkFreeCommandBuffers(m_device, m_cmdPool, 1, &m_offscreenCmdBuffer);
+	}
 	destroyCommandBuffer();
 	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 
-	for (uint32_t i = 0; i < m_frameBuffers.size();i++) {
-		vkDestroyFramebuffer(m_device, m_frameBuffers[i], nullptr);
+	for (uint32_t i = 0; i < m_framebuffers.size();i++) {
+		vkDestroyFramebuffer(m_device, m_framebuffers[i], nullptr);
 	}
 
 	vkDestroyImageView(m_device, m_depthStencil.view, nullptr);
@@ -112,6 +115,8 @@ void CRenderer::clearRessources()
 	for (size_t i = 0; i < m_buffers.size();i++) {
 		m_buffers[i].destroy();
 	}
+
+	delete m_dfb;
 }
 
 void CRenderer::Init()
@@ -120,7 +125,8 @@ void CRenderer::Init()
 	initSwapChain();
 
 	if (gEnv->enableValidation) {
-		vkDebug::setupDebugging(m_instance, VK_DEBUG_REPORT_DEBUG_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT, NULL);
+		VkDebugReportFlagsEXT debugReportFlags = VK_DEBUG_REPORT_ERROR_BIT_EXT;// | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+		vkDebug::setupDebugging(m_instance, debugReportFlags, VK_NULL_HANDLE);
 	}
 
 	if (m_vulkanDevice->enableDebugMarkers) {
@@ -144,11 +150,11 @@ void CRenderer::Init()
 	//createSBuffer(sizeof(uint32_t)*10, 0);
 
 	//dev_test(100.0f, 100.0f, 100.0f, 100.0f, 0.1f);
-	setupDescriptorPool();
+	//setupDescriptorPool();
 
 	initRessources();
 	//printf("%i\n", &m_shaders.descriptorSets[0]);
-	dev_test(-0.5f, -0.5f, 1.0f, 1.0f, 0.1f);
+//	dev_test(-0.5f, -0.5f, 1.0f, 1.0f, 0.1f);
 	//printf("%i\n", &m_shaders.descriptorSets[0]);
 	//loadShader();
 	/*dev_prepareUBO();
@@ -271,7 +277,7 @@ VkRenderPass CRenderer::getRenderPass(std::string renderPassName)
 			return m_renderPasses.renderPasses[i];
 		}
 	}
-	return nullptr;
+	return VK_NULL_HANDLE;
 }
 
 vkTools::CShader * CRenderer::getShader(std::string shaderName)
@@ -307,13 +313,13 @@ VkBuffer CRenderer::getBuffer(uint32_t id)
 {
 	if (id>m_buffers.size()) {
 		printf("ERROR : id %i out of range, buffer.size()=%i\n", id, m_buffers.size());
-		return nullptr;
+		return VK_NULL_HANDLE;
 	}
-	if (m_buffers[id-1].buffer==nullptr){
+	if (m_buffers[id].buffer==VK_NULL_HANDLE){
 		printf("ERROR : there is no buffer at id %\n", id);
-		return nullptr;
+		return VK_NULL_HANDLE;
 	}
-	return m_buffers[id-1].buffer;
+	return m_buffers[id].buffer;
 }
 
 vk::Buffer* CRenderer::getBufferStruct(uint32_t id)
@@ -322,7 +328,7 @@ vk::Buffer* CRenderer::getBufferStruct(uint32_t id)
 		printf("ERROR : id %i out of range, buffer.size()=%i", id, m_buffers.size());
 		return nullptr;
 	}
-	if (m_buffers[id-1].buffer==nullptr) {
+	if (m_buffers[id-1].buffer==VK_NULL_HANDLE) {
 		printf("ERROR : There is no buffer at id %i\n", id);
 		return nullptr;
 	}
@@ -340,13 +346,14 @@ vkTools::VulkanTexture* CRenderer::getTexture(uint32_t texId)
 	return &m_textures[texId-1];
 }
 
+
 VkDescriptorSet * CRenderer::getDescriptorSet(uint32_t id)
 {
 	if (id>=m_shaders.descriptorSets.size()) {
 		printf("The id %i isn't in the array\n", id);
 		return nullptr;
 	}
-	if (m_shaders.descriptorSets[id]==nullptr) 
+	if (m_shaders.descriptorSets[id]==VK_NULL_HANDLE) 
 	{
 		printf("The descriptor at %i doesn't exist\n", id);
 		return nullptr;
@@ -362,12 +369,25 @@ VkPipeline CRenderer::getPipeline(std::string pipelineName)
 		}
 	}
 	printf("ERROR : pipeline %s seems top not exist\n", pipelineName.c_str());
-	return nullptr;
+	return VK_NULL_HANDLE;
 }
 
 VkDescriptorPool CRenderer::getDescriptorPool(uint32_t id)
 {
 	return m_shaders.descriptorPool;
+}
+
+VkCommandPool CRenderer::getCommandPool()
+{
+	return m_cmdPool;
+}
+
+uint32_t CRenderer::requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount)
+{
+	m_shaders.poolSize.push_back(vkTools::initializers::descriptorPoolSize(type, 1));
+	m_shaders.descriptorSets.push_back({});
+	//return m_shaders.descriptorSets.back();
+	return m_shaders.descriptorSets.size()-1;
 }
 
 void CRenderer::getInfo()
@@ -392,10 +412,25 @@ void CRenderer::getInfo()
 	}
 }
 
+void CRenderer::getBufferInfo() 
+{
+	for (size_t i = 0; i < m_buffers.size();i++) {
+		printf("%s\n",helper::flagsToString(m_buffers[i].usageFlags, " ").c_str());
+	}
+}
+
 void CRenderer::bcb()
 {
 	//buildCommandBuffer();
-	buildDrawCommands(m_renderPass);
+	//buildDrawCommands(m_renderPass);
+	//buildDrawCommands(getRenderPass("offscreen"));
+	//buildDrawCommands(getRenderPass("main"));
+	m_offscreen = false; //BIG WARNING
+
+	if (m_offscreen) {
+		buildOffscreenDrawCommands();
+	}
+	buildDrawCommands();
 }
 
 VkBool32 CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex)
@@ -608,21 +643,12 @@ void CRenderer::setupFrameBuffer()
 {
 	VkImageView attachments[2];
 	attachments[1] = m_depthStencil.view;
+	
+	//m_framebuffers.resize(m_swapChain.imageCount);
 
-	VkFramebufferCreateInfo frameBufferCreateInfo = {};
-	frameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	frameBufferCreateInfo.pNext = NULL;
-	frameBufferCreateInfo.renderPass = m_renderPass;
-	frameBufferCreateInfo.attachmentCount = 2;
-	frameBufferCreateInfo.pAttachments = attachments;
-	frameBufferCreateInfo.width = gEnv->pSystem->getWidth();
-	frameBufferCreateInfo.height = gEnv->pSystem->getHeight();
-	frameBufferCreateInfo.layers = 1;
-
-	m_frameBuffers.resize(m_swapChain.imageCount);
-	for (uint32_t i = 0; i < m_frameBuffers.size(); i++) {
+	for (uint32_t i = 0; i < m_swapChain.imageCount; i++) {
 		attachments[0] = m_swapChain.buffers[i].view;
-		VK_CHECK_RESULT(vkCreateFramebuffer(m_device, &frameBufferCreateInfo, nullptr, &m_frameBuffers[i]));
+		addFramebuffer(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), m_renderPass, 2, attachments);
 	}
 }
 void CRenderer::createSetupCommandBuffer()
@@ -800,12 +826,30 @@ void CRenderer::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue,
 void CRenderer::draw()
 {
 	prepareFrame();
+	if (m_offscreen) {
 
-	m_submitInfo.commandBufferCount = 1;
-	m_submitInfo.pCommandBuffers = &m_drawCmdBuffers[m_currentBuffer];
+		m_submitInfo.pWaitSemaphores = &m_semaphores.presentComplete;
+		m_submitInfo.pSignalSemaphores = &m_offscreenSemaphore;
+		
+		m_submitInfo.commandBufferCount = 1;
+		m_submitInfo.pCommandBuffers = &m_offscreenCmdBuffer;
 
-	VK_CHECK_RESULT(vkQueueSubmit(m_queue, 1, &m_submitInfo, VK_NULL_HANDLE));
+		VK_CHECK_RESULT(vkQueueSubmit(m_queue,1,&m_submitInfo,VK_NULL_HANDLE));
 
+		m_submitInfo.pWaitSemaphores = &m_offscreenSemaphore;
+		m_submitInfo.pSignalSemaphores = &m_semaphores.renderComplete;
+		
+		m_submitInfo.commandBufferCount = 1;
+		m_submitInfo.pCommandBuffers = &m_drawCmdBuffers[m_currentBuffer];
+
+		VK_CHECK_RESULT(vkQueueSubmit(m_queue, 1, &m_submitInfo, VK_NULL_HANDLE));
+	}
+	else {
+		m_submitInfo.commandBufferCount = 1;
+		m_submitInfo.pCommandBuffers = &m_drawCmdBuffers[m_currentBuffer];
+
+		VK_CHECK_RESULT(vkQueueSubmit(m_queue, 1, &m_submitInfo, VK_NULL_HANDLE));
+	}
 	/*VK_CHECK_RESULT(vkWaitForFences(m_device, 1, &m_waitFences[m_currentBuffer], VK_TRUE, UINT64_MAX));
 	VK_CHECK_RESULT(vkResetFences(m_device, 1, &m_waitFences[m_currentBuffer]));*/
 
@@ -840,7 +884,7 @@ void CRenderer::addGraphicsPipeline(VkGraphicsPipelineCreateInfo pipelineCreateI
 {
 	pipelineCreateInfo.pVertexInputState = &inputState;
 	m_pipelines.pipelineNames.push_back(name);
-	m_pipelines.pipelines.push_back(nullptr);
+	m_pipelines.pipelines.push_back(VK_NULL_HANDLE);
 
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
 }
@@ -854,7 +898,7 @@ void CRenderer::addGraphicsPipeline(VkPipelineLayout pipelineLayout ,VkRenderPas
 	
 	pipelineCreateInfo.pVertexInputState = &inputState;
 	m_pipelines.pipelineNames.push_back(name);
-	m_pipelines.pipelines.push_back(nullptr);
+	m_pipelines.pipelines.push_back(VK_NULL_HANDLE);
 
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
 }
@@ -916,15 +960,16 @@ void CRenderer::addRenderPass(std::string renderPassName)
 
 	VkSubpassDescription subpassDescription = {};
 	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpassDescription.flags = 0;
-	subpassDescription.inputAttachmentCount = 0;
-	subpassDescription.pInputAttachments = NULL;
 	subpassDescription.colorAttachmentCount = 1;
 	subpassDescription.pColorAttachments = &colorReference;
-	subpassDescription.pResolveAttachments = NULL;
 	subpassDescription.pDepthStencilAttachment = &depthReference;
+	
+	/*subpassDescription.flags = 0;
+	subpassDescription.inputAttachmentCount = 0;
+	subpassDescription.pInputAttachments = NULL;
+	subpassDescription.pResolveAttachments = NULL;
 	subpassDescription.preserveAttachmentCount = 0;
-	subpassDescription.pPreserveAttachments = NULL;
+	subpassDescription.pPreserveAttachments = NULL;*/
 
 	VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -936,11 +981,10 @@ void CRenderer::addRenderPass(std::string renderPassName)
 	renderPassInfo.dependencyCount = 2;
 	renderPassInfo.pDependencies = subpassDependencies;
 
-	m_renderPasses.renderPasses.push_back(nullptr);
+	m_renderPasses.renderPasses.push_back(VK_NULL_HANDLE);
 	m_renderPasses.names.push_back(renderPassName);
 
 	vkCreateRenderPass(m_vulkanDevice->logicalDevice, &renderPassInfo, nullptr, &m_renderPasses.renderPasses.back());
-
 }
 
 void CRenderer::addShader(std::string vsPath, std::string fsPath, std::string * shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)
@@ -970,13 +1014,29 @@ void CRenderer::addShader(std::string vsPath, std::string fsPath, std::string * 
 
 }
 
-void CRenderer::addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout * pDescriptorLayout, uint32_t descriptorLayoutCount)
+VkDescriptorSet CRenderer::addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout * pDescriptorLayout, uint32_t descriptorLayoutCount)
 {
 	VkDescriptorSetAllocateInfo allocInfo =
 		vkTools::initializers::descriptorSetAllocateInfo(descriptorPool, pDescriptorLayout, descriptorLayoutCount);
 
 	m_shaders.descriptorSets.push_back({});
 	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_device, &allocInfo, &m_shaders.descriptorSets.back()));
+	return m_shaders.descriptorSets.back();
+}
+
+void CRenderer::createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout * pDescriptorLayout, uint32_t descriptorLayoutCount, VkDescriptorSet * dstDescriptor)
+{
+	VkDescriptorSetAllocateInfo allocInfo = vkTools::initializers::descriptorSetAllocateInfo(descriptorPool, pDescriptorLayout, 1);
+
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_device, &allocInfo, dstDescriptor));
+}
+
+void CRenderer::createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout * pDescriptorLayout, uint32_t descriptorLayoutCount, uint32_t id)
+{
+	VkDescriptorSetAllocateInfo allocInfo = vkTools::initializers::descriptorSetAllocateInfo(descriptorPool, pDescriptorLayout, 1);
+
+	VK_CHECK_RESULT(vkAllocateDescriptorSets(m_device, &allocInfo, &m_shaders.descriptorSets[id]));
+
 }
 
 void CRenderer::addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets)
@@ -988,9 +1048,28 @@ void CRenderer::addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDes
 	}
 }
 
+VkFramebuffer CRenderer::addFramebuffer(uint32_t width, uint32_t height, VkRenderPass renderPass, uint32_t attachmentCount, VkImageView *pAttachments)
+{
+	VkFramebufferCreateInfo fbufCreateInfo = {};
+	fbufCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	fbufCreateInfo.renderPass = renderPass;
+	fbufCreateInfo.attachmentCount = attachmentCount;
+	fbufCreateInfo.pAttachments = pAttachments;
+	fbufCreateInfo.width = width;
+	fbufCreateInfo.height = height;
+	fbufCreateInfo.layers = 1;
+	m_framebuffers.push_back(VK_NULL_HANDLE);
+	
+	vkCreateFramebuffer(m_device, &fbufCreateInfo, nullptr, &m_framebuffers.back());
+	if (m_vulkanDevice->enableDebugMarkers) {
+		vkDebug::setObjectName(m_vulkanDevice->logicalDevice, (uint64_t)m_framebuffers.back(), VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT, "texture" + (m_textures.size() - 1));
+	}
+	return m_framebuffers.back();
+}
+
 void CRenderer::updateDescriptorSets()
 {
-	vkUpdateDescriptorSets(m_device, (uint32_t)m_writeDescriptorSets.size(), m_writeDescriptorSets.data(), 0, nullptr);
+	vkUpdateDescriptorSets(m_device, (uint32_t)m_writeDescriptorSets.size(), m_writeDescriptorSets.data(), 0, VK_NULL_HANDLE);
 
 	//vkUpdateDescriptorSets(m_device, (uint32_t)m_writeDescriptorSets.size(), m_writeDescriptorSets[0], 0, nullptr);
 	
@@ -1007,9 +1086,38 @@ void CRenderer::loadShader()
 	}
 }
 
-void CRenderer::addIndexedDraw(SIndexedDrawInfo drawInfo)
+void CRenderer::addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass)
 {
 	m_indexedDraws.push_back(drawInfo);
+	m_renderAttachments.renderPasses.push_back(renderPass);
+	m_renderAttachments.framebuffers.push_back(m_framebuffers[0]);
+	m_renderAttachments.framebuffers.push_back(m_framebuffers[1]);
+	m_renderAttachments.framebufferOffsets.push_back(2);
+	m_renderAttachments.isOffscreen.push_back(false);
+}
+
+void CRenderer::addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers)
+{
+	m_indexedDraws.push_back(drawInfo);
+	m_renderAttachments.renderPasses.push_back(renderPass);
+	m_renderAttachments.framebufferOffsets.push_back(framebuffers.size());
+	for (uint32_t i = 0; i < framebuffers.size();i++) {
+		m_renderAttachments.framebuffers.push_back(framebuffers[i]);
+	}
+}
+
+void CRenderer::addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, VkFramebuffer framebuffer)
+{
+	m_indexedDraws.push_back(drawInfo);
+	m_renderAttachments.renderPasses.push_back(renderPass);
+	m_renderAttachments.framebuffers.push_back(framebuffer);
+	m_renderAttachments.framebufferOffsets.push_back(1);
+	m_renderAttachments.isOffscreen.push_back(true);
+	if (m_offscreen==false) {
+		m_offscreenCmdBuffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, false);
+	}
+	m_offscreen = true;
+
 }
 
 void CRenderer::buildDrawCommands(VkRenderPass renderPass)
@@ -1034,7 +1142,7 @@ void CRenderer::buildDrawCommands(VkRenderPass renderPass)
 	renderPassBeginInfo.pClearValues = clearValue;
 
 	for (int32_t i = 0; i < m_drawCmdBuffers.size();i++) {
-		renderPassBeginInfo.framebuffer = m_frameBuffers[i];
+		renderPassBeginInfo.framebuffer = m_framebuffers[i];
 
 		VK_CHECK_RESULT(vkBeginCommandBuffer(m_drawCmdBuffers[i], &cmdBufInfo));
 
@@ -1075,8 +1183,159 @@ void CRenderer::buildDrawCommands(VkRenderPass renderPass)
 
 }
 
+void CRenderer::buildDrawCommands()
+{
+
+	if (!checkCommandBuffers()) {
+		destroyCommandBuffer();
+		createCommandBuffers();
+	}
+
+	for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r++) {
+
+		if (m_renderAttachments.renderPasses[r]==VK_NULL_HANDLE) {
+			continue;
+		}
+		if (m_renderAttachments.isOffscreen[r]==true) { //If the draw is offscreen it's not proccesed here
+			continue;
+		}
+		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
+
+		VkClearValue clearValue[2];
+		clearValue[0].color = { 1.0f, 0.25f, 0.25f, 1.0f };
+		clearValue[1].depthStencil = { 1.0f, 0 };
+
+		VkRenderPassBeginInfo renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
+		renderPassBeginInfo.renderPass = m_renderAttachments.renderPasses[r];
+		renderPassBeginInfo.renderArea.offset.x = 0;
+		renderPassBeginInfo.renderArea.offset.y = 0;
+		renderPassBeginInfo.renderArea.extent.width = gEnv->pSystem->getWidth();
+		renderPassBeginInfo.renderArea.extent.height = gEnv->pSystem->getHeight();
+		renderPassBeginInfo.clearValueCount = 2;
+		renderPassBeginInfo.pClearValues = clearValue;
+
+		for (int32_t i = 0; i < m_drawCmdBuffers.size(); i++) {
+			renderPassBeginInfo.framebuffer = m_framebuffers[i];
+
+			VK_CHECK_RESULT(vkBeginCommandBuffer(m_drawCmdBuffers[i], &cmdBufInfo));
+
+			vkCmdBeginRenderPass(m_drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+			vkCmdSetViewport(m_drawCmdBuffers[i], 0, 1, &viewport);
+
+			VkRect2D scissor = vkTools::initializers::rect2D((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+			vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
+
+			for (int32_t j = 0; j < m_indexedDraws.size(); j++) {
+				vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipelineLayout,
+					0, 1, m_indexedDraws[j].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
+
+				vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipeline);
+
+				vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, &m_indexedDraws[j].vertexBuffer, m_indexedDraws[j].pVertexOffset);
+
+				vkCmdBindIndexBuffer(m_drawCmdBuffers[i],
+					m_indexedDraws[j].indexBuffer,
+					m_indexedDraws[j].indexOffset,
+					m_indexedDraws[j].indexType);
+
+				vkCmdDrawIndexed(m_drawCmdBuffers[i],
+					m_indexedDraws[j].indexCount,
+					m_indexedDraws[j].indexCount,
+					m_indexedDraws[j].firstIndex,
+					m_indexedDraws[j].vertexOffset,
+					m_indexedDraws[j].firstInstance);
+			}
+
+			vkCmdEndRenderPass(m_drawCmdBuffers[i]);
+
+			VK_CHECK_RESULT(vkEndCommandBuffer(m_drawCmdBuffers[i]));
+
+		}
+	}
+
+}
+
+void CRenderer::buildOffscreenDrawCommands()
+{
+	if (!checkCommandBuffers()) {
+		destroyCommandBuffer();
+		createCommandBuffers();
+	}
+
+	for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r++) {
+
+		if (m_renderAttachments.renderPasses[r] == VK_NULL_HANDLE) {
+			continue;
+		}
+
+		if (m_renderAttachments.isOffscreen[r]==false) {
+			continue;
+		}
+
+		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
+
+		VkClearValue clearValue[2];
+		clearValue[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+		clearValue[1].depthStencil = { 1.0f, 0 };
+
+		VkRenderPassBeginInfo renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
+		renderPassBeginInfo.renderPass = m_renderAttachments.renderPasses[r];
+		renderPassBeginInfo.renderArea.offset.x = 0;
+		renderPassBeginInfo.renderArea.offset.y = 0;
+		renderPassBeginInfo.renderArea.extent.width = gEnv->pSystem->getWidth();
+		renderPassBeginInfo.renderArea.extent.height = gEnv->pSystem->getHeight();
+		renderPassBeginInfo.clearValueCount = 2;
+		renderPassBeginInfo.pClearValues = clearValue;
+
+		for (int32_t i = 0; i < 1; i++) { //#enhancement = flexibility
+			renderPassBeginInfo.framebuffer = m_framebuffers[2];
+			//renderPassBeginInfo.framebuffer = m_framebuffers[0];
+
+			VK_CHECK_RESULT(vkBeginCommandBuffer(m_offscreenCmdBuffer, &cmdBufInfo));
+
+			vkCmdBeginRenderPass(m_offscreenCmdBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE); //#error causé par la ligne du dessus, framebuffers
+		
+			VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+			vkCmdSetViewport(m_offscreenCmdBuffer, 0, 1, &viewport);
+
+			VkRect2D scissor = vkTools::initializers::rect2D((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+			vkCmdSetScissor(m_offscreenCmdBuffer, 0, 1, &scissor);
+
+			for (int32_t j = 0; j < m_indexedDraws.size(); j++) {
+				vkCmdBindDescriptorSets(m_offscreenCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipelineLayout,
+					0, 1, m_indexedDraws[j].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
+
+				vkCmdBindPipeline(m_offscreenCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipeline);
+
+				vkCmdBindVertexBuffers(m_offscreenCmdBuffer, 0, 1, &m_indexedDraws[j].vertexBuffer, m_indexedDraws[j].pVertexOffset);
+
+				vkCmdBindIndexBuffer(m_offscreenCmdBuffer,
+					m_indexedDraws[j].indexBuffer,
+					m_indexedDraws[j].indexOffset,
+					m_indexedDraws[j].indexType);
+
+				vkCmdDrawIndexed(m_offscreenCmdBuffer,
+					m_indexedDraws[j].indexCount,
+					m_indexedDraws[j].indexCount,
+					m_indexedDraws[j].firstIndex,
+					m_indexedDraws[j].vertexOffset,
+					m_indexedDraws[j].firstInstance);
+			}
+
+			vkCmdEndRenderPass(m_offscreenCmdBuffer);
+
+			VK_CHECK_RESULT(vkEndCommandBuffer(m_offscreenCmdBuffer));
+
+		}
+	}
+}
+
 void CRenderer::initRessources()
 {
+	//vkDebug::
+	m_dfb = new CFramebuffer();
 
 	std::vector<VkDescriptorPoolSize> poolSize;
 
@@ -1086,6 +1345,7 @@ void CRenderer::initRessources()
 		//vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0),
 		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0),
 	};
+
 
 	std::vector<VkVertexInputBindingDescription> bindings = { vkTools::initializers::vertexInputBindingDescription(0, sizeof(VertexT), VK_VERTEX_INPUT_RATE_VERTEX) };
 
@@ -1098,12 +1358,27 @@ void CRenderer::initRessources()
 		&shaderName,setLayoutBindings, bindings, attributes);
 
 	//Descriptor Pool creation
-	poolSize.resize(setLayoutBindings.size()+1);
+
+	/*for (size_t i = 0; i < setLayoutBindings.size();i++) {
+		requestDescriptorSet(setLayoutBindings[i].descriptorType, 1);
+	}*/
+
+	poolSize.resize(m_shaders.poolSize.size());
+
+	for (size_t i = 0; i < poolSize.size();i++) {
+		poolSize[i] = m_shaders.poolSize[i];
+	}
+
+	/*poolSize.resize(setLayoutBindings.size()+1+m_shaders.poolSize.size());
 	for (size_t i = 0; i < setLayoutBindings.size();i++) {
 		poolSize[i] = vkTools::initializers::descriptorPoolSize(setLayoutBindings[i].descriptorType, 1);
 	}
-	poolSize[setLayoutBindings.size()] = 
-		vkTools::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);
+
+/*	poolSize[setLayoutBindings.size()] = 
+		vkTools::initializers::descriptorPoolSize(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1);*/
+	/*for (size_t i = setLayoutBindings.size()+1; i < poolSize.size();i++) {
+		poolSize[i] = m_shaders.poolSize[i-setLayoutBindings.size()-1];
+	}*/
 
 	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = 
 		vkTools::initializers::descriptorPoolCreateInfo((uint32_t)poolSize.size(), poolSize.data(), 2);
@@ -1111,7 +1386,7 @@ void CRenderer::initRessources()
 	//m_shaders.shaders.back()->load(m_device);
 	getShader("texture")->load(m_device);
 
-	addDescriptorSet(m_shaders.descriptorPool, m_shaders.shaders.back()->getDescriptorSetLayoutPtr(), 1);
+
 
 	//std::vector<VkDescriptorSet>::iterator it = m_shaders.descriptorSets.begin();
 
@@ -1119,9 +1394,28 @@ void CRenderer::initRessources()
 	//m_shaders.shaders.back()->attachDescriptorSet(&(*it));
 	
 	//m_shaders.shaders.back()->attachDescriptorSet(&m_shaders.descriptorSets.back());
-	m_shaders.shaders.back()->attachDescriptorSet(m_shaders.descriptorSets.size()-1);
+//	m_shaders.shaders.back()->attachDescriptorSet(m_shaders.descriptorSets.size()-1-m_shaders.poolSize.size());
+
+	//addDescriptorSet(m_shaders.descriptorPool, m_shaders.shaders.back()->getDescriptorSetLayoutPtr(), 1); //#changed lately
+	//m_shaders.shaders.back()->attachDescriptorSet(uint32_t(0));
+
 	//printf("%i\n", &m_shaders.descriptorSets[0]);
 	addRenderPass("main");
+	addRenderPass("offscreen");
+
+	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture")->getPipelineLayout(),
+		gEnv->pRenderer->getRenderPass("main"),
+		0,
+		VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		VK_POLYGON_MODE_FILL,
+		2,
+		gEnv->pRenderer->getShader("texture")->getShaderStagesPtr(),
+		gEnv->pRenderer->getShader("texture")->getInputState(),
+		"texture");
+	
+	createBuffer(&gEnv->bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize());
+
+	m_dfb->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(),getRenderPass("offscreen"));
 
 }
 
@@ -1141,25 +1435,6 @@ void CRenderer::handleMessages(WPARAM wParam, LPARAM lParam)
 		printf("%s\n",buffersLayoutToString().c_str());
 		break;
 	}
-}
-
-void CRenderer::createBuffer(uint32_t * id, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size)
-{
-	m_buffers.push_back({});
-	if (id!=nullptr){
-		*id = m_buffers.size();
-	}
-	m_buffers.back().device = m_device;
-	m_buffers.back().usageFlags = usageFlags;
-	m_buffers.back().memoryPropertyFlags = memoryFlags;
-	m_buffers.back().size = size;
-
-	createBuffer(m_buffers.back().usageFlags, m_buffers.back().memoryPropertyFlags, size, 0, &m_buffers.back().buffer, &m_buffers.back().memory);
-}
-
-void CRenderer::bufferSubData(uint32_t id, VkDeviceSize size, VkDeviceSize offset, void * data)
-{
-	writeInBuffer(&m_buffers[id-1].buffer, size, data, offset);
 }
 
 void CRenderer::setupDescriptorPool()
@@ -1193,7 +1468,7 @@ void CRenderer::buildCommandBuffer()
 	renderPassBeginInfo.pClearValues = clearValue;
 	
 	for (int32_t i = 0; i < m_drawCmdBuffers.size();i++) {
-		renderPassBeginInfo.framebuffer = m_frameBuffers[i];
+		renderPassBeginInfo.framebuffer = m_framebuffers[i];
 
 		VK_CHECK_RESULT(vkBeginCommandBuffer(m_drawCmdBuffers[i], &cmdBufInfo));
 
@@ -1221,7 +1496,6 @@ void CRenderer::buildCommandBuffer()
 		vkCmdEndRenderPass(m_drawCmdBuffers[i]);
 
 		VK_CHECK_RESULT(vkEndCommandBuffer(m_drawCmdBuffers[i]));
-
 	}
 
 }
@@ -1267,6 +1541,26 @@ VkBool32 CRenderer::createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags
 	}
 }
 
+void CRenderer::createBuffer(uint32_t * id, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size)
+{
+	m_buffers.push_back({});
+	if (id != nullptr) {
+		*id = m_buffers.size()-1;
+	}
+	m_buffers.back().device = m_device;
+	m_buffers.back().usageFlags = usageFlags;
+	m_buffers.back().memoryPropertyFlags = memoryFlags;
+	m_buffers.back().size = size;
+
+	createBuffer(m_buffers.back().usageFlags, m_buffers.back().memoryPropertyFlags, size, 0, &m_buffers.back().buffer, &m_buffers.back().memory);
+}
+
+void CRenderer::bufferSubData(uint32_t id, VkDeviceSize size, VkDeviceSize offset, void * data)
+{
+	writeInBuffer(&m_buffers[id].buffer, size, data, offset);
+}
+
+
 void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, uint8_t *datas, uint32_t width, uint32_t height)
 {
 	vkTools::VulkanTexture tex = {};
@@ -1277,7 +1571,7 @@ void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, 
 	VkMemoryAllocateInfo allocInfo = vkTools::initializers::memoryAllocateInfo();
 
 	if (m_vulkanDevice->enableDebugMarkers) {
-		vkDebug::setObjectName(m_vulkanDevice->logicalDevice, (uint64_t)tex.image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, "texture");
+		vkDebug::setObjectName(m_vulkanDevice->logicalDevice, (uint64_t)tex.image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, "texture" + (m_textures.size()-1));
 	}
 
 	VK_CHECK_RESULT(vkCreateImage(m_vulkanDevice->logicalDevice, &imageCreateInfo, nullptr, &tex.image));
@@ -1365,6 +1659,8 @@ void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, 
 	*id = m_textures.size();
 }
 
+
+
 void CRenderer::createSBuffer(VkDeviceSize size, void* data)
 {
 	/*VkMemoryRequirements memReqs;
@@ -1447,6 +1743,17 @@ void CRenderer::writeInBuffer(VkBuffer * dstBuffer, VkDeviceSize size, void * da
 void CRenderer::prepared()
 {
 	m_prepared = true;
+}
+
+VkFramebuffer CRenderer::dev_fb()
+{
+	return m_dfb->getFramebuffer();
+}
+
+void CRenderer::dev_offscreenSemaphore()
+{
+	VkSemaphoreCreateInfo info = vkTools::initializers::semaphoreCreateInfo();
+	VK_CHECK_RESULT(vkCreateSemaphore(m_device, &info, nullptr, &m_offscreenSemaphore));
 }
 
 void CRenderer::dev_test(float x, float y, float w, float h, float depth)
@@ -1859,10 +2166,14 @@ void CRenderer::dev_updateUniform_2() //v0
 
 void CRenderer::clean_dev()
 {
+	if (m_smem.buf != nullptr) {
+		vkDestroyBuffer(m_device, m_smem.buf, nullptr);
 
-	vkDestroyBuffer(m_device, m_smem.buf, nullptr);
-	vkFreeMemory(m_device, m_smem.mem, nullptr);
+		vkFreeMemory(m_device, m_smem.mem, nullptr);
+	
 	vkDestroyPipelineLayout(m_device, dev_data.pipelineLayout, nullptr);
+
+	}
 }
 
 VkResult CRenderer::createInstance()

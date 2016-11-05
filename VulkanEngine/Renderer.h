@@ -13,18 +13,23 @@
 #include "vulkanTools\vulkanswapchain.hpp"
 #include "vulkanTools\vulkandebug.h"
 #include "vulkanTools\vulkanTextureLoader.hpp"
+#include "vulkanTools\Helper.h"
 #include "IRenderer.h"
+
 
 #include "vulkandevice.h"
 #include "System.h"
+#include "Framebuffer.h"
 
 typedef VkPhysicalDeviceFeatures (*PFN_GetEnabledFeatures)();
 
 #define VERTEX_BUFFER_BIND_ID 0
 
+
 class CSystem;
 class vkTools::CShader;
 class CRenderer;
+class CFramebuffer;
 
 struct Vertex {
 	float pos[3];
@@ -69,10 +74,17 @@ public:
 	virtual VkDescriptorSet* getDescriptorSet(uint32_t id);
 	virtual VkPipeline getPipeline(std::string pipelineName);
 	virtual VkDescriptorPool getDescriptorPool(uint32_t id);
+	virtual VkCommandPool getCommandPool();
+
+	virtual uint32_t requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount);
 
 	virtual void getInfo();
+	virtual void getBufferInfo();
 	virtual void bcb();
 	virtual void prepared(); //Set m_prepared to true
+
+	virtual VkFramebuffer dev_fb();
+	virtual void dev_offscreenSemaphore();
 
 	VkBool32 getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t *typeIndex);
 	uint32_t getMemoryType(uint32_t typeBits, VkFlags properties);
@@ -129,14 +141,22 @@ protected:
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings,
 		std::vector<VkVertexInputBindingDescription> bindingDescription,
 		std::vector<VkVertexInputAttributeDescription> attributeDescription);
-		virtual void addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount);
+	virtual VkDescriptorSet addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount);
+	virtual void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount, VkDescriptorSet* dstDescriptor);
+	virtual void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount, uint32_t descriptorId); //descriptorId is the id of the descriptor in the m_shaders.descriptorSet[id]
 	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets);
+	virtual VkFramebuffer addFramebuffer(uint32_t width, uint32_t height, VkRenderPass renderPass, uint32_t attachmentCount, VkImageView *pAttachments);
+
 	virtual void updateDescriptorSets();
 
 	void loadShader();
 
-	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo);
+	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass);
+	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers);
+	virtual void addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, VkFramebuffer framebuffer);
 	virtual void buildDrawCommands(VkRenderPass renderPass);
+	virtual void buildDrawCommands();
+	virtual void buildOffscreenDrawCommands();
 
 	virtual void initRessources();
 
@@ -162,7 +182,7 @@ protected:
 
 protected:
 
-	bool m_enableDebugMarkers = false;
+	bool m_enableDebugMarkers = true;
 	bool m_enableVSync = false;
 
 	VkPhysicalDeviceFeatures m_enabledFeatures = {};
@@ -186,7 +206,7 @@ protected:
 	VkCommandPool m_cmdPool;
 
 	std::vector<VkCommandBuffer> m_drawCmdBuffers;
-	std::vector<VkFramebuffer> m_frameBuffers;
+	std::vector<VkFramebuffer> m_framebuffers;
 //	std::vector<VkBuffer> m_buffer;
 		
 	uint32_t m_currentBuffer = 0;
@@ -199,8 +219,8 @@ protected:
 
 
 	struct {
-		VkSemaphore presentComplete;
-		VkSemaphore renderComplete;
+		VkSemaphore presentComplete; //Swap chain image presentation
+		VkSemaphore renderComplete; //Command buffer submision and execution
 	} m_semaphores;
 
 	//std::vector<VkFence> m_waitFences;
@@ -252,6 +272,7 @@ protected:
 		std::vector<VkDescriptorSet> descriptorSets;
 		//std::vector<VkDescriptorSet>
 		VkDescriptorPool descriptorPool;
+		std::vector<VkDescriptorPoolSize> poolSize;
 	} m_shaders;
 
 
@@ -259,6 +280,14 @@ protected:
 	std::vector<vkTools::VulkanTexture> m_textures;
 
 	std::vector<SIndexedDrawInfo> m_indexedDraws;
+	struct {
+		std::vector<VkRenderPass> renderPasses; //Render pass used for rendering
+		std::vector<VkFramebuffer> framebuffers; //Framebuffer Target, the render will go in this, you might have, multi
+		std::vector<uint32_t> framebufferOffsets; /*It's if you use multiple buffering (such as we do for rendering swaping buffer etc), If you wan't to use double buffering, you need to have 2 framebuffer as target,
+		you add your 2 framebuffers to renderTarget.framebuffers vector (A VkFramebuffer object is in fact a pointer so you can do like fbA = fbB) and you add the value 2 to framebufferOffsets*/
+		std::vector<bool> isOffscreen;//Offscreen is rendered separately so you have to say if this an offscreen or not
+	} m_renderAttachments;
+
 	
 	vkTools::VulkanTextureLoader* m_textureLoader = nullptr;
 
@@ -304,6 +333,11 @@ protected:
 		SIndexedDrawInfo indexedDraw;
 
 	} dev_data;
+
+	CFramebuffer *m_dfb;
+	VkCommandBuffer m_offscreenCmdBuffer = VK_NULL_HANDLE;
+	VkSemaphore m_offscreenSemaphore = VK_NULL_HANDLE;
+	bool m_offscreen = false;
 
 	bool m_prepared = false;
 

@@ -16,7 +16,7 @@ namespace vk {
 		VkDeviceSize size = 0;
 		VkDeviceSize alignment = 0;
 		void* mapped = nullptr;
-
+		
 		//Usage flags to be filled by external source at buffer creation 
 		VkBufferUsageFlags usageFlags;
 

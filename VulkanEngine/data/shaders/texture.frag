@@ -13,5 +13,6 @@ void main(void)
 {
 	float color = texture(samplerColor, inUV).r;
 	outFragColor = vec4(vec3(color), 1.0);
+	//outFragColor = vec4(1.0, 1.0, 1.0, color) * vec4(1.0,0.0,1.0,1.0);
 	//outFragColor = vec4(1.0f, 1.0f, 1.0f, 1.0);
 }
