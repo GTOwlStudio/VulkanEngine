@@ -19,7 +19,7 @@ CFramebuffer::~CFramebuffer()
 	vkDestroyImage(gEnv->getDevice(), m_depth.image, nullptr);
 	vkFreeMemory(gEnv->getDevice(), m_depth.mem, nullptr);
 
-	vkDestroyFramebuffer(gEnv->getDevice(), m_framebuffer, nullptr);
+	//vkDestroyFramebuffer(gEnv->getDevice(), m_framebuffer, nullptr);
 
 	//vkDestroySemaphore(gEnv->getDevice(), m_semaphore, nullptr);
 	//vkFreeCommandBuffers(gEnv->getDevice(), gEnv->pRenderer->getCommandPool(), 1, &m_cmdBufferOffscreen);
@@ -97,6 +97,7 @@ void CFramebuffer::prepareOffscreen()
 	VkImageViewCreateInfo colorImageView = vkTools::initializers::imageViewCreateInfo();
 	colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	colorImageView.format = m_colorFormat;
+	colorImageView.components = {VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A};
 	colorImageView.subresourceRange = {};
 	colorImageView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	colorImageView.subresourceRange.baseMipLevel = 0;
@@ -134,14 +135,14 @@ void CFramebuffer::prepareOffscreen()
 
 	VkImageViewCreateInfo depthStencilView = vkTools::initializers::imageViewCreateInfo();
 	depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-	depthStencilView.format = m_colorFormat;
+	depthStencilView.format = fbDepthFormat;
 	depthStencilView.subresourceRange = {};
 	depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	depthStencilView.subresourceRange.baseMipLevel = 0;
 	depthStencilView.subresourceRange.levelCount = 1;
 	depthStencilView.subresourceRange.baseArrayLayer = 0;
 	depthStencilView.subresourceRange.layerCount = 1;
-	depthStencilView.image = m_color.image;
+	depthStencilView.image = m_depth.image;
 	VK_CHECK_RESULT(vkCreateImageView(gEnv->pRenderer->getVulkanDevice()->logicalDevice, &depthStencilView, nullptr, &m_depth.view));
 
 	//Framebuffer Description
@@ -161,7 +162,7 @@ void CFramebuffer::prepareDescriptorSet()
 	gEnv->pRenderer->bufferSubData(gEnv->bbid, 4*sizeof(VertexT),draw_data.bufferOffset, vertData.data() );
 	gEnv->pRenderer->bufferSubData(gEnv->bbid, 6 * sizeof(uint32_t), draw_data.bufferOffset + (4*sizeof(VertexT)), indices);
 
-	/*gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0),gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, draw_data.descriptorSetId);
+	gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0),gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, draw_data.descriptorSetId);
 
 	draw_data.imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	draw_data.imageInfo.imageView = m_color.view;
@@ -179,9 +180,9 @@ void CFramebuffer::prepareDescriptorSet()
 	draw_data.gOffset[0] = draw_data.bufferOffset;
 	draw_data.quad.bindVertexBuffers(gEnv->pRenderer->getBuffer(gEnv->bbid),1,draw_data.gOffset);
 	draw_data.quad.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), sizeof(VertexT)*4+draw_data.bufferOffset, VK_INDEX_TYPE_UINT32);
-	draw_data.quad.drawIndexed(6, 1, 0, 0, 0);*/
+	draw_data.quad.drawIndexed(6, 1, 0, 0, 0);
 
-	//gEnv->pRenderer->addIndexedDraw(draw_data.quad, gEnv->pRenderer->getRenderPass("main"));
+	gEnv->pRenderer->addIndexedDraw(draw_data.quad, gEnv->pRenderer->getRenderPass("main"));
 
 	//gEnv->pRenderer->addDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1);
 

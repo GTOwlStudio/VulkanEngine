@@ -1,0 +1,12 @@
+Validation enabled:
+w:512 h:365
+Requested memory size : 208
+Mem's Description : FONT (4*VertexT + 6*uint32_t) | Framebuffer (4*Vertex + 6*uint32_t) | 
+bbid=0
+tex id : 1
+Validation enabled:
+w:512 h:365
+Requested memory size : 208
+Mem's Description : FONT (4*VertexT + 6*uint32_t) | Framebuffer (4*Vertex + 6*uint32_t) | 
+bbid=0
+tex id : 1

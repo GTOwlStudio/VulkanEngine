@@ -1,0 +1,4 @@
+vk_layer_lunarg_api_dump.file = TRUE
+vk_layer_lunarg_api_dump.debug_action = VK_DBG_LAYER_ACTION_LOG_MSG
+vk_layer_lunarg_api_dump.report_flags = error,warn,perf
+vk_layer_lunarg_api_dump.log_filename = layerlog.txt

@@ -425,7 +425,7 @@ void CRenderer::bcb()
 	//buildDrawCommands(m_renderPass);
 	//buildDrawCommands(getRenderPass("offscreen"));
 	//buildDrawCommands(getRenderPass("main"));
-	m_offscreen = false; //BIG WARNING
+//	m_offscreen = false; //BIG WARNING
 
 	if (m_offscreen) {
 		buildOffscreenDrawCommands();
@@ -1191,8 +1191,8 @@ void CRenderer::buildDrawCommands()
 		createCommandBuffers();
 	}
 
+	//for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r+=m_renderAttachments.framebufferOffsets[r]) {
 	for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r++) {
-
 		if (m_renderAttachments.renderPasses[r]==VK_NULL_HANDLE) {
 			continue;
 		}
@@ -1213,6 +1213,7 @@ void CRenderer::buildDrawCommands()
 		renderPassBeginInfo.renderArea.extent.height = gEnv->pSystem->getHeight();
 		renderPassBeginInfo.clearValueCount = 2;
 		renderPassBeginInfo.pClearValues = clearValue;
+		std::cout << "Coucou" << std::endl;
 
 		for (int32_t i = 0; i < m_drawCmdBuffers.size(); i++) {
 			renderPassBeginInfo.framebuffer = m_framebuffers[i];
@@ -1227,26 +1228,25 @@ void CRenderer::buildDrawCommands()
 			VkRect2D scissor = vkTools::initializers::rect2D((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 			vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
-			for (int32_t j = 0; j < m_indexedDraws.size(); j++) {
-				vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipelineLayout,
-					0, 1, m_indexedDraws[j].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
+			vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipelineLayout,
+					0, 1, m_indexedDraws[r].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
 
-				vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipeline);
+			vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipeline);
 
-				vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, &m_indexedDraws[j].vertexBuffer, m_indexedDraws[j].pVertexOffset);
+			vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
 
-				vkCmdBindIndexBuffer(m_drawCmdBuffers[i],
-					m_indexedDraws[j].indexBuffer,
-					m_indexedDraws[j].indexOffset,
-					m_indexedDraws[j].indexType);
+			vkCmdBindIndexBuffer(m_drawCmdBuffers[i],
+					m_indexedDraws[r].indexBuffer,
+					m_indexedDraws[r].indexOffset,
+					m_indexedDraws[r].indexType);
 
-				vkCmdDrawIndexed(m_drawCmdBuffers[i],
-					m_indexedDraws[j].indexCount,
-					m_indexedDraws[j].indexCount,
-					m_indexedDraws[j].firstIndex,
-					m_indexedDraws[j].vertexOffset,
-					m_indexedDraws[j].firstInstance);
-			}
+			vkCmdDrawIndexed(m_drawCmdBuffers[i],
+					m_indexedDraws[r].indexCount,
+					m_indexedDraws[r].indexCount,
+					m_indexedDraws[r].firstIndex,
+					m_indexedDraws[r].vertexOffset,
+					m_indexedDraws[r].firstInstance);
+		//	}
 
 			vkCmdEndRenderPass(m_drawCmdBuffers[i]);
 
@@ -1264,8 +1264,8 @@ void CRenderer::buildOffscreenDrawCommands()
 		createCommandBuffers();
 	}
 
-	for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r++) {
-
+	//for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r+=m_renderAttachments.framebufferOffsets[r]) {
+	for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r ++) {
 		if (m_renderAttachments.renderPasses[r] == VK_NULL_HANDLE) {
 			continue;
 		}
@@ -1279,7 +1279,7 @@ void CRenderer::buildOffscreenDrawCommands()
 		VkClearValue clearValue[2];
 		clearValue[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
 		clearValue[1].depthStencil = { 1.0f, 0 };
-
+		//std::cout << std::unitbuf;
 		VkRenderPassBeginInfo renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
 		renderPassBeginInfo.renderPass = m_renderAttachments.renderPasses[r];
 		renderPassBeginInfo.renderArea.offset.x = 0;
@@ -1288,22 +1288,21 @@ void CRenderer::buildOffscreenDrawCommands()
 		renderPassBeginInfo.renderArea.extent.height = gEnv->pSystem->getHeight();
 		renderPassBeginInfo.clearValueCount = 2;
 		renderPassBeginInfo.pClearValues = clearValue;
-
+		
 		for (int32_t i = 0; i < 1; i++) { //#enhancement = flexibility
 			renderPassBeginInfo.framebuffer = m_framebuffers[2];
 			//renderPassBeginInfo.framebuffer = m_framebuffers[0];
 
 			VK_CHECK_RESULT(vkBeginCommandBuffer(m_offscreenCmdBuffer, &cmdBufInfo));
 
-			vkCmdBeginRenderPass(m_offscreenCmdBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE); //#error causé par la ligne du dessus, framebuffers
-		
+			vkCmdBeginRenderPass(m_offscreenCmdBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 			VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 			vkCmdSetViewport(m_offscreenCmdBuffer, 0, 1, &viewport);
 
 			VkRect2D scissor = vkTools::initializers::rect2D((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 			vkCmdSetScissor(m_offscreenCmdBuffer, 0, 1, &scissor);
 
-			for (int32_t j = 0; j < m_indexedDraws.size(); j++) {
+			/*for (int32_t j = 0; j < m_indexedDraws.size(); j++) {
 				vkCmdBindDescriptorSets(m_offscreenCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipelineLayout,
 					0, 1, m_indexedDraws[j].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
 
@@ -1322,7 +1321,28 @@ void CRenderer::buildOffscreenDrawCommands()
 					m_indexedDraws[j].firstIndex,
 					m_indexedDraws[j].vertexOffset,
 					m_indexedDraws[j].firstInstance);
-			}
+			}*/
+
+			//for (int32_t j = 0; j < m_indexedDraws.size(); j++) {
+				vkCmdBindDescriptorSets(m_offscreenCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipelineLayout,
+					0, 1, m_indexedDraws[r].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
+
+				vkCmdBindPipeline(m_offscreenCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipeline);
+
+				vkCmdBindVertexBuffers(m_offscreenCmdBuffer, 0, 1, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
+
+				vkCmdBindIndexBuffer(m_offscreenCmdBuffer,
+					m_indexedDraws[r].indexBuffer,
+					m_indexedDraws[r].indexOffset,
+					m_indexedDraws[r].indexType);
+
+				vkCmdDrawIndexed(m_offscreenCmdBuffer,
+					m_indexedDraws[r].indexCount,
+					m_indexedDraws[r].indexCount,
+					m_indexedDraws[r].firstIndex,
+					m_indexedDraws[r].vertexOffset,
+					m_indexedDraws[r].firstInstance);
+			//}
 
 			vkCmdEndRenderPass(m_offscreenCmdBuffer);
 
