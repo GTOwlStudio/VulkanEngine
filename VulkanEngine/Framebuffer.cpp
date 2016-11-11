@@ -157,7 +157,9 @@ void CFramebuffer::prepareOffscreen()
 void CFramebuffer::prepareDescriptorSet()
 {
 
-	std::array<VertexT,4> vertData = { VertexT(-0.5f, -0.5f, 0.1f, 0.0f,0.0f), VertexT(-0.5f, 0.5f, 0.1f, 0.0f,1.0f), VertexT(0.5f, 0.5f, 0.1f, 1.0f,1.0f), VertexT(0.5f, -0.5f,0.1f, 1.0f,0.0f) };
+	//std::array<VertexT,4> vertData = { VertexT(-0.5f, -0.5f, 0.1f, 0.0f,0.0f), VertexT(-0.5f, 0.5f, 0.1f, 0.0f,1.0f), VertexT(0.5f, 0.5f, 0.1f, 1.0f,1.0f), VertexT(0.5f, -0.5f,0.1f, 1.0f,0.0f) };
+
+	std::array<VertexT, 4> vertData = { VertexT(-1.0f, -1.0f, 0.1f, 0.0f,0.0f), VertexT(-1.0f, 1.0f, 0.1f, 0.0f,1.0f), VertexT(1.0f, 1.0f, 0.1f, 1.0f,1.0f), VertexT(1.0f, -1.0f,0.1f, 1.0f,0.0f) };
 	uint32_t indices[6] = {0,1,2,2,3,0};
 	gEnv->pRenderer->bufferSubData(gEnv->bbid, 4*sizeof(VertexT),draw_data.bufferOffset, vertData.data() );
 	gEnv->pRenderer->bufferSubData(gEnv->bbid, 6 * sizeof(uint32_t), draw_data.bufferOffset + (4*sizeof(VertexT)), indices);

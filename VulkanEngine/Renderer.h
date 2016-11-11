@@ -89,11 +89,11 @@ public:
 	VkBool32 getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t *typeIndex);
 	uint32_t getMemoryType(uint32_t typeBits, VkFlags properties);
 	VkPipelineShaderStageCreateInfo loadShader(std::string fileName, VkShaderStageFlagBits stage);
-	
+
 
 protected:
-	
-	
+
+
 	void createCommandPool();
 
 	void createCommandBuffers();
@@ -121,22 +121,22 @@ protected:
 	void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free);
 
 protected:
-	
+
 	void draw();
 	void prepareFrame();
 	void submitFrame();
 
 	virtual void addGraphicsPipeline(VkGraphicsPipelineCreateInfo pipelineCreateInfo, VkPipelineVertexInputStateCreateInfo const& inputState, std::string name);
 	virtual void addGraphicsPipeline(
-			VkPipelineLayout pipelineLayout,
-			VkRenderPass renderPass,
-			VkPipelineCreateFlags flags,
-			VkPrimitiveTopology topology,
-			VkPolygonMode polyMode,
-			uint32_t shaderStagesCount,
-			VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name);
+		VkPipelineLayout pipelineLayout,
+		VkRenderPass renderPass,
+		VkPipelineCreateFlags flags,
+		VkPrimitiveTopology topology,
+		VkPolygonMode polyMode,
+		uint32_t shaderStagesCount,
+		VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name);
 
-	virtual void addRenderPass(std::string renderPassName);
+	virtual void addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName,
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings,
 		std::vector<VkVertexInputBindingDescription> bindingDescription,
@@ -177,7 +177,7 @@ protected:
 
 	void createSBuffer(VkDeviceSize size, void* data);
 	void writeInBuffer(VkBuffer*buffer, VkDeviceSize size, void* data, VkDeviceSize dstOffset);
-	
+
 
 
 protected:
@@ -188,7 +188,7 @@ protected:
 	VkPhysicalDeviceFeatures m_enabledFeatures = {};
 
 	VkInstance m_instance;
-	
+
 	vk::VulkanDevice *m_vulkanDevice;
 
 	struct {

@@ -25,7 +25,7 @@ namespace vk
 
 		VkCommandPool commandPool = VK_NULL_HANDLE;
 
-		bool enableDebugMarkers = false;
+		bool enableDebugMarkers = true;
 
 		struct {
 			uint32_t graphics = 0;

@@ -20,8 +20,6 @@ CRenderer::~CRenderer()
 	clean_dev();
 	clearRessources();
 
-
-
 	for (size_t i = 0; i < m_pipelines.pipelines.size();i++) {
 		vkDestroyPipeline(m_device, m_pipelines.pipelines[i],nullptr);
 		//vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_shaders.descriptorSets[i]); //#enhancement avoid the use of iteration
@@ -67,7 +65,7 @@ CRenderer::~CRenderer()
 
 	vkDestroyPipelineCache(m_device, m_pipelines.pipelineCache, nullptr);
 
-	vkDestroyCommandPool(m_device, m_cmdPool, nullptr);
+	//vkDestroyCommandPool(m_device, m_cmdPool, nullptr);
 
 	vkDestroySemaphore(m_device, m_semaphores.presentComplete, nullptr);
 	vkDestroySemaphore(m_device, m_semaphores.renderComplete, nullptr);
@@ -312,11 +310,11 @@ uint32_t CRenderer::getShaderId(std::string shaderName)
 VkBuffer CRenderer::getBuffer(uint32_t id)
 {
 	if (id>m_buffers.size()) {
-		printf("ERROR : id %i out of range, buffer.size()=%i\n", id, m_buffers.size());
+		printf("ERROR : id %i out of range, buffer.size()=%i\n", id, static_cast<int>(m_buffers.size()));
 		return VK_NULL_HANDLE;
 	}
 	if (m_buffers[id].buffer==VK_NULL_HANDLE){
-		printf("ERROR : there is no buffer at id %\n", id);
+		printf("ERROR : there is no buffer at id %i\n", id);
 		return VK_NULL_HANDLE;
 	}
 	return m_buffers[id].buffer;
@@ -325,7 +323,7 @@ VkBuffer CRenderer::getBuffer(uint32_t id)
 vk::Buffer* CRenderer::getBufferStruct(uint32_t id)
 {
 	if (id>m_buffers.size()) {
-		printf("ERROR : id %i out of range, buffer.size()=%i", id, m_buffers.size());
+		printf("ERROR : id %i out of range, buffer.size()=%i", id, static_cast<int>(m_buffers.size()));
 		return nullptr;
 	}
 	if (m_buffers[id-1].buffer==VK_NULL_HANDLE) {
@@ -345,7 +343,6 @@ vkTools::VulkanTexture* CRenderer::getTexture(uint32_t texId)
 	}
 	return &m_textures[texId-1];
 }
-
 
 VkDescriptorSet * CRenderer::getDescriptorSet(uint32_t id)
 {
@@ -387,26 +384,26 @@ uint32_t CRenderer::requestDescriptorSet(VkDescriptorType type, uint32_t descrip
 	m_shaders.poolSize.push_back(vkTools::initializers::descriptorPoolSize(type, 1));
 	m_shaders.descriptorSets.push_back({});
 	//return m_shaders.descriptorSets.back();
-	return m_shaders.descriptorSets.size()-1;
+	return static_cast<uint32_t>(m_shaders.descriptorSets.size()-1);
 }
 
 void CRenderer::getInfo()
 {
 	printf("-------Renderer Info-------\n\nPIPELINES\n");
-	printf("pipelines.count = %i\npipelinesNames.count = %i\npipelineStates.count = %i\nPipeline Names : \n", m_pipelines.pipelines.size(), m_pipelines.pipelineNames.size(), m_pipelines.pipelinesState.size());
+	printf("pipelines.count = %i\npipelinesNames.count = %i\npipelineStates.count = %i\nPipeline Names : \n", static_cast<int>(m_pipelines.pipelines.size()), static_cast<int>(m_pipelines.pipelineNames.size()), static_cast<int>(m_pipelines.pipelinesState.size()));
 	for (size_t i = 0; i < m_pipelines.pipelineNames.size();i++) 
 	{
 		printf("\t\"%s\"\n", m_pipelines.pipelineNames[i].c_str());
 	}
 	
 	printf("\nSHADERS\n");
-	printf("shaders.count = %i\nshadersNames.count = %i\ndescriptorPool.count = %i\ndescriptorSets.count = %i\nShader Names : \n", m_shaders.shaders.size(), m_shaders.names.size(),1, m_shaders.descriptorSets.size());
+	printf("shaders.count = %i\nshadersNames.count = %i\ndescriptorPool.count = %i\ndescriptorSets.count = %i\nShader Names : \n", static_cast<int>(m_shaders.shaders.size()), static_cast<int>(m_shaders.names.size()),1, static_cast<int>(m_shaders.descriptorSets.size()));
 	for (size_t i = 0; i < m_shaders.names.size();i++) {
 		printf("\t\"%s\"\n", m_shaders.names[i].c_str());
 	}
 
 	printf("\nRENDER PASSES\n");
-	printf("renderPasses.count = %i\nrenderPassesNames.count = %i\nRenderpasses Name\n", m_renderPasses.renderPasses.size(), m_renderPasses.names.size());
+	printf("renderPasses.count = %i\nrenderPassesNames.count = %i\nRenderpasses Name\n", static_cast<int>(m_renderPasses.renderPasses.size()), static_cast<int>(m_renderPasses.names.size()));
 	for (std::string s : m_renderPasses.names) {
 		printf("\t\"%s\"\n", s.c_str());
 	}
@@ -436,7 +433,7 @@ void CRenderer::bcb()
 VkBool32 CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex)
 {
 	for (uint32_t i = 0; i < 32; i++) {
-		if ((typeBits & 1 == 1)) {
+		if ((typeBits & 1) == 1) {//#MCE operator priorities
 			if ((m_physicalDevice.deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
 				*typeIndex = i;
 				return true;
@@ -474,11 +471,13 @@ VkPipelineShaderStageCreateInfo CRenderer::loadShader(std::string fileName, VkSh
 
 void CRenderer::createCommandPool()
 {
-	VkCommandPoolCreateInfo cmdPoolInfo = {};
+	m_cmdPool = m_vulkanDevice->createCommandPool(m_swapChain.queueNodeIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	/*VkCommandPoolCreateInfo cmdPoolInfo = {};
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cmdPoolInfo.queueFamilyIndex = m_swapChain.queueNodeIndex;
 	cmdPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	VK_CHECK_RESULT(vkCreateCommandPool(m_device, &cmdPoolInfo, nullptr, &m_cmdPool));
+	VK_CHECK_RESULT(vkCreateCommandPool(m_device, &cmdPoolInfo, nullptr, &m_cmdPool));*/
+
 }
 void CRenderer::createCommandBuffers()
 {
@@ -903,7 +902,7 @@ void CRenderer::addGraphicsPipeline(VkPipelineLayout pipelineLayout ,VkRenderPas
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
 }
 
-void CRenderer::addRenderPass(std::string renderPassName)
+void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp)
 {
 
 	VkAttachmentDescription attachments[2] = {};
@@ -912,7 +911,8 @@ void CRenderer::addRenderPass(std::string renderPassName)
 	attachments[0].format = m_colorFormat;
 	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
 	// Don't clear the framebuffer (like the renderpass from the example does)
-	attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	//attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	attachments[0].loadOp = loadOp;
 	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -992,7 +992,7 @@ void CRenderer::addShader(std::string vsPath, std::string fsPath, std::string * 
 	//Checking if the name is not already use
 	for (size_t i = 0;i<m_shaders.shaders.size();i++){
 		if (*shaderName==m_shaders.names[i]) {
-			printf("WARNING : addShader, shaderName %s already used, it as been replaced by %s%i", m_shaders.names[i], m_shaders.names[i], (int)i);
+			printf("WARNING : addShader, shaderName %s already used, it as been replaced by %s%i", m_shaders.names[i].c_str(), m_shaders.names[i].c_str(), (int)i);
 			*shaderName += std::to_string(i);
 		}
 	}
@@ -1100,7 +1100,7 @@ void CRenderer::addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPas
 {
 	m_indexedDraws.push_back(drawInfo);
 	m_renderAttachments.renderPasses.push_back(renderPass);
-	m_renderAttachments.framebufferOffsets.push_back(framebuffers.size());
+	m_renderAttachments.framebufferOffsets.push_back(static_cast<uint32_t>(framebuffers.size()));
 	for (uint32_t i = 0; i < framebuffers.size();i++) {
 		m_renderAttachments.framebuffers.push_back(framebuffers[i]);
 	}
@@ -1151,7 +1151,7 @@ void CRenderer::buildDrawCommands(VkRenderPass renderPass)
 		VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 		vkCmdSetViewport(m_drawCmdBuffers[i], 0, 1, &viewport);
 
-		VkRect2D scissor = vkTools::initializers::rect2D((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+		VkRect2D scissor = vkTools::initializers::rect2D(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
 		vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
 		for (int32_t j = 0; j < m_indexedDraws.size();j++) {
@@ -1225,7 +1225,7 @@ void CRenderer::buildDrawCommands()
 			VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 			vkCmdSetViewport(m_drawCmdBuffers[i], 0, 1, &viewport);
 
-			VkRect2D scissor = vkTools::initializers::rect2D((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+			VkRect2D scissor = vkTools::initializers::rect2D(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
 			vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
 			vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipelineLayout,
@@ -1296,10 +1296,11 @@ void CRenderer::buildOffscreenDrawCommands()
 			VK_CHECK_RESULT(vkBeginCommandBuffer(m_offscreenCmdBuffer, &cmdBufInfo));
 
 			vkCmdBeginRenderPass(m_offscreenCmdBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
 			VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 			vkCmdSetViewport(m_offscreenCmdBuffer, 0, 1, &viewport);
 
-			VkRect2D scissor = vkTools::initializers::rect2D((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+			VkRect2D scissor = vkTools::initializers::rect2D(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
 			vkCmdSetScissor(m_offscreenCmdBuffer, 0, 1, &scissor);
 
 			/*for (int32_t j = 0; j < m_indexedDraws.size(); j++) {
@@ -1565,7 +1566,7 @@ void CRenderer::createBuffer(uint32_t * id, VkBufferUsageFlags usageFlags, VkMem
 {
 	m_buffers.push_back({});
 	if (id != nullptr) {
-		*id = m_buffers.size()-1;
+		*id = static_cast<uint32_t>(m_buffers.size()-1);
 	}
 	m_buffers.back().device = m_device;
 	m_buffers.back().usageFlags = usageFlags;
@@ -1676,7 +1677,7 @@ void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, 
 	VK_CHECK_RESULT(vkCreateSampler(m_vulkanDevice->logicalDevice, &samplerInfo, nullptr, &tex.sampler));
 
 	m_textures.push_back(tex);
-	*id = m_textures.size();
+	*id = static_cast<uint32_t>(m_textures.size());
 }
 
 
@@ -2108,7 +2109,7 @@ void CRenderer::dev_setupDescriptorSet()
 //	addDescriptorSet(m_shaders.descriptorPool, dev_data.shader->getDescriptorSetLayoutPtr(), 1);
 
 	addDescriptorSet( m_shaders.descriptorPool, m_shaders.shaders.back()->getDescriptorSetLayoutPtr(), 1);
-	m_shaders.shaders.back()->attachDescriptorSet(m_shaders.shaders.size()-1);
+	m_shaders.shaders.back()->attachDescriptorSet(static_cast<uint32_t>(m_shaders.shaders.size()-1));
 	//printf("%i\tad\n", &m_shaders.descriptorSets[0]);
 /*	VkDescriptorSetAllocateInfo allocInfo =
 		vkTools::initializers::descriptorSetAllocateInfo(m_descriptorPool, dev_data.shader->getDescriptorSetLayoutPtr(), 1);

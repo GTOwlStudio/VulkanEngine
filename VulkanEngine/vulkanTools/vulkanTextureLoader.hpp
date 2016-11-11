@@ -101,7 +101,7 @@ namespace vkTools
 
 			texture->width = (uint32_t)tex2D[0].dimensions().x;
 			texture->height = (uint32_t)tex2D[0].dimensions().y;
-			texture->mipLevels = tex2D.levels();
+			texture->mipLevels = static_cast<uint32_t>(tex2D.levels());
 
 			// Get device properites for the requested texture format
 			VkFormatProperties formatProperties;
@@ -147,8 +147,8 @@ namespace vkTools
 				// Copy mip levels
 				for (uint32_t level = 0; level < texture->mipLevels; ++level)
 				{
-					imageCreateInfo.extent.width = tex2D[level].dimensions().x;
-					imageCreateInfo.extent.height = tex2D[level].dimensions().y;
+					imageCreateInfo.extent.width = static_cast<uint32_t>(tex2D[level].dimensions().x);
+					imageCreateInfo.extent.height = static_cast<uint32_t>(tex2D[level].dimensions().y);
 					imageCreateInfo.extent.depth = 1;
 
 					vkTools::checkResult(vkCreateImage(device, &imageCreateInfo, nullptr, &mipLevels[level].image));
@@ -231,8 +231,8 @@ namespace vkTools
 					copyRegion.dstSubresource.layerCount = 1;
 					copyRegion.dstOffset = { 0, 0, 0 };
 
-					copyRegion.extent.width = tex2D[level].dimensions().x;
-					copyRegion.extent.height = tex2D[level].dimensions().y;
+					copyRegion.extent.width = static_cast<uint32_t>(tex2D[level].dimensions().x);
+					copyRegion.extent.height = static_cast<uint32_t>(tex2D[level].dimensions().y);
 					copyRegion.extent.depth = 1;
 
 					// Put image copy into command buffer
@@ -676,9 +676,9 @@ namespace vkTools
 
 			assert(!tex2DArray.empty());
 
-			texture->width = tex2DArray.dimensions().x;
-			texture->height = tex2DArray.dimensions().y;
-			texture->layerCount = tex2DArray.layers();
+			texture->width = static_cast<uint32_t>(tex2DArray.dimensions().x);
+			texture->height = static_cast<uint32_t>(tex2DArray.dimensions().y);
+			texture->layerCount = static_cast<uint32_t>(tex2DArray.layers());
 
 			// Get device properites for the requested texture format
 			VkFormatProperties formatProperties;

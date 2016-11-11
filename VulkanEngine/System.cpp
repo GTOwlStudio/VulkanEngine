@@ -39,7 +39,7 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 	
 	CFont font("./data/fonts/consola.ttf", 40);
 	m_env.pRenderer->Init();	
-
+	printf("%s\n",gEnv->pRenderer->getVulkanDevice()->properties.deviceName);
 	printf("Requested memory size : %i\n",(uint32_t)m_env.pMemoryManager->requestedMemorySize());
 	printf("Mem's Description : %s\n", m_env.pMemoryManager->getGlobalMemoryDescription().c_str());
 

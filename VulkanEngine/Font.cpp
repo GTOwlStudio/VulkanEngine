@@ -37,12 +37,12 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 		error = FT_Load_Char(m_face, i, FT_LOAD_RENDER);
 		if (error) { printf("Error : while loading the character %c (%i)\n", i, i); }
 
-		m_characterInfo[i].ax = slot->advance.x >> 6;
-		m_characterInfo[i].ay = slot->advance.y >> 6;
-		m_characterInfo[i].bx = slot->metrics.horiBearingX /64;
-		m_characterInfo[i].by= slot->metrics.horiBearingY /64;
-		m_characterInfo[i].w = slot->metrics.width / 64;
-		m_characterInfo[i].h = slot->metrics.height /64;
+		m_characterInfo[i].ax = static_cast<float>(slot->advance.x >> 6);
+		m_characterInfo[i].ay = static_cast<float>(slot->advance.y >> 6);
+		m_characterInfo[i].bx = static_cast<float>(slot->metrics.horiBearingX /64);
+		m_characterInfo[i].by= static_cast<float>(slot->metrics.horiBearingY /64);
+		m_characterInfo[i].w = static_cast<float>(slot->metrics.width / 64);
+		m_characterInfo[i].h = static_cast<float>(slot->metrics.height /64);
 		m_characterInfo[i].bw = slot->bitmap.width;
 		m_characterInfo[i].bh = slot->bitmap.rows;
 

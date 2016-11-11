@@ -16,8 +16,8 @@ struct character_info
 	float ax; //x advance
 	float ay;
 
-	float bw; //bitmap width
-	float bh;
+	uint32_t bw; //bitmap width
+	uint32_t bh;
 
 	float w; //font width
 	float h; //font height
