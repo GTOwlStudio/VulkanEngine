@@ -36,9 +36,14 @@ public:
 	CFont(std::string path, uint32_t size);
 	~CFont();
 
+	
 	void load();
-	void load_dev();
+	void getCharacterInfo(character_info* dst, uint32_t beg = 0, uint32_t end = 255);
 	uint32_t getNumOfCharacter() const;
+	uint32_t getFontSize() const;
+	std::string getFontName() const;
+	std::string getStyleName() const;
+	
 
 
 protected:
@@ -54,7 +59,8 @@ protected:
 	uint8_t* m_data; //this is the atlas in the buffer, a texture
 	//void* m_verticesData; //data related to vertices and indices
 	character_info* m_characterInfo;
-
+	std::string m_fontname;
+	std::string m_stylename;
 
 	uint32_t m_texId;
 	uint32_t bufferId = 0;
@@ -80,7 +86,6 @@ protected:
 	VkSampler sampler;
 	VkImage image;
 	VkImageView view;*/
-
 };
 
 

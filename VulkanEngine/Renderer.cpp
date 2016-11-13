@@ -65,7 +65,8 @@ CRenderer::~CRenderer()
 
 	vkDestroyPipelineCache(m_device, m_pipelines.pipelineCache, nullptr);
 
-	//vkDestroyCommandPool(m_device, m_cmdPool, nullptr);
+	/*vkDestroyCommandPool(m_device, m_cmdPool, nullptr);
+	m_cmdPool = VK_NULL_HANDLE;*/
 
 	vkDestroySemaphore(m_device, m_semaphores.presentComplete, nullptr);
 	vkDestroySemaphore(m_device, m_semaphores.renderComplete, nullptr);
@@ -471,7 +472,8 @@ VkPipelineShaderStageCreateInfo CRenderer::loadShader(std::string fileName, VkSh
 
 void CRenderer::createCommandPool()
 {
-	m_cmdPool = m_vulkanDevice->createCommandPool(m_swapChain.queueNodeIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+	m_cmdPool = m_vulkanDevice->commandPool;
+	//m_cmdPool = m_vulkanDevice->createCommandPool(m_swapChain.queueNodeIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 	/*VkCommandPoolCreateInfo cmdPoolInfo = {};
 	cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	cmdPoolInfo.queueFamilyIndex = m_swapChain.queueNodeIndex;

@@ -17,7 +17,7 @@ namespace vk
 	{
 
 		{
-			if (commandPool)
+			if (commandPool!=VK_NULL_HANDLE)
 			{
 				vkDeviceWaitIdle(logicalDevice);
 				vkDestroyCommandPool(logicalDevice, commandPool, nullptr);

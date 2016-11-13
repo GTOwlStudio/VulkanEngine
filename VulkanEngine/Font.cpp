@@ -1,7 +1,5 @@
 #include "Font.h"
 
-
-
 CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 {
 	int error;
@@ -20,7 +18,7 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 	}
 
 	FT_GlyphSlot slot = m_face->glyph;
-
+	printf("Font name %s\n", static_cast<std::string>(m_face->style_name).c_str());
 	FT_Set_Pixel_Sizes(m_face, 0, m_fontSize );
 	
 	uint32_t texture_width = 512;
@@ -93,6 +91,12 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 		lastX += slot->bitmap.width/**slot->bitmap.rows*/;
 		
 	}
+	
+	m_fontname = static_cast<std::string>(m_face->family_name);
+	m_stylename = static_cast<std::string>(m_face->style_name);
+
+	FT_Done_Face(m_face);
+	FT_Done_FreeType(m_lib);
 
 	printf("w:%i h:%i\n", texture_width, texture_height+tmpMaxHeight);
 
@@ -111,10 +115,16 @@ CFont::~CFont()
 	delete[] m_data;
 	delete[] m_characterInfo;
 	m_data = 0;
-	FT_Done_Face(m_face);
-	FT_Done_FreeType(m_lib);
+	
 }
 
+
+void CFont::getCharacterInfo(character_info * dst, uint32_t beg, uint32_t end)
+{
+	for (uint32_t i = beg; i < end; i++) {
+		dst[i - beg] = m_characterInfo[i];
+	}
+}
 
 void CFont::load()
 {
@@ -267,4 +277,19 @@ void CFont::load()
 uint32_t CFont::getNumOfCharacter() const
 {
 	return m_numOfCharacter;
+}
+
+uint32_t CFont::getFontSize() const
+{
+	return m_fontSize;
+}
+
+std::string CFont::getFontName() const
+{
+	return m_fontname;
+}
+
+std::string CFont::getStyleName() const
+{
+	return m_stylename;
 }

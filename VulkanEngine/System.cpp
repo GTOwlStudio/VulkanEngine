@@ -9,6 +9,7 @@ CSystem::CSystem(bool enableValidation)
 	memset(&m_env, 0, sizeof(m_env));
 
 	m_env.pSystem = this;
+	m_env.pRessourcesManager = new RessourcesManager();
 	m_env.enableValidation = enableValidation;
 	m_env.pRenderer = new CRenderer();
 	m_env.pInput = new CInput();
@@ -16,7 +17,8 @@ CSystem::CSystem(bool enableValidation)
 	gEnv = &m_env;
 }
 CSystem::~CSystem() 
-{
+{	
+	delete(m_env.pRessourcesManager);
 	delete(m_env.pRenderer);
 	delete(m_env.pInput);
 	delete(m_env.pMemoryManager);
@@ -37,7 +39,7 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 	m_env.pRenderer->InitVulkan();
 	
 	
-	CFont font("./data/fonts/consola.ttf", 40);
+	CFont font("./data/fonts/segoeui.ttf", 40);
 	m_env.pRenderer->Init();	
 	printf("%s\n",gEnv->pRenderer->getVulkanDevice()->properties.deviceName);
 	printf("Requested memory size : %i\n",(uint32_t)m_env.pMemoryManager->requestedMemorySize());

@@ -57,12 +57,6 @@
     <ClCompile Include="Renderer.cpp">
       <Filter>Common\ThomasRenderer</Filter>
     </ClCompile>
-    <ClCompile Include="guiutils.h">
-      <Filter>Common\ThomasGui</Filter>
-    </ClCompile>
-    <ClCompile Include="guiutils.cpp">
-      <Filter>Common\ThomasGui</Filter>
-    </ClCompile>
     <ClCompile Include="Framebuffer.cpp">
       <Filter>Common\ThomasRenderer</Filter>
     </ClCompile>
@@ -80,6 +74,24 @@
     </ClCompile>
     <ClCompile Include="vulkanTools\Helper.cpp">
       <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="guitools.h">
+      <Filter>Common\ThomasGui</Filter>
+    </ClCompile>
+    <ClCompile Include="guitools.cpp">
+      <Filter>Common\ThomasGui</Filter>
+    </ClCompile>
+    <ClCompile Include="RessourcesManager.cpp">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI.cpp">
+      <Filter>Common\ThomasGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Label.cpp">
+      <Filter>Common\ThomasGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Widget.cpp">
+      <Filter>Common\ThomasGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +151,18 @@
     </ClInclude>
     <ClInclude Include="vulkanTools\Helper.h">
       <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="RessourcesManager.h">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="GUI.h">
+      <Filter>Common\ThomasGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Label.h">
+      <Filter>Common\ThomasGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Widget.h">
+      <Filter>Common\ThomasGui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

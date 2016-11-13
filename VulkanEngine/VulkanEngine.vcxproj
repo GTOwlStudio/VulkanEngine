@@ -21,29 +21,36 @@
   <ItemGroup>
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="Framebuffer.cpp" />
-    <ClCompile Include="guiutils.cpp" />
-    <ClCompile Include="guiutils.h" />
+    <ClCompile Include="GUI.cpp" />
+    <ClCompile Include="guitools.cpp" />
+    <ClCompile Include="guitools.h" />
     <ClCompile Include="Input.cpp" />
+    <ClCompile Include="Label.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryManager.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="RessourcesManager.cpp" />
     <ClCompile Include="System.cpp" />
     <ClCompile Include="vulkandevice.cpp" />
     <ClCompile Include="vulkanTools\Helper.cpp" />
     <ClCompile Include="vulkanTools\vulkandebug.cpp" />
     <ClCompile Include="vulkanTools\vulkantools.cpp" />
+    <ClCompile Include="Widget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Font.h" />
     <ClInclude Include="Framebuffer.h" />
+    <ClInclude Include="GUI.h" />
     <ClInclude Include="I3DEngine.h" />
     <ClInclude Include="IInput.h" />
     <ClInclude Include="IMemoryManager.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="IProcess.h" />
     <ClInclude Include="IRenderer.h" />
+    <ClInclude Include="Label.h" />
     <ClInclude Include="MemoryManager.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="RessourcesManager.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="vulkanbuffer.hpp" />
     <ClInclude Include="vulkandevice.h" />
@@ -53,6 +60,7 @@
     <ClInclude Include="vulkanTools\vulkanswapchain.hpp" />
     <ClInclude Include="vulkanTools\vulkanTextureLoader.hpp" />
     <ClInclude Include="vulkanTools\vulkantools.h" />
+    <ClInclude Include="Widget.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="platform_impl.inl" />

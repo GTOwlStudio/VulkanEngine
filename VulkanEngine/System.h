@@ -9,6 +9,7 @@
 #include "MemoryManager.h"
 #include "Input.h"
 #include "Font.h"
+#include "RessourcesManager.h"
 
 class CSystem;
 class CRenderer;
@@ -17,6 +18,10 @@ class IRenderer;
 class IMemoryManager;
 struct I3DEngine;
 class CFont;
+class RessourcesManager;
+class Label;
+class Widget;
+class Action;
 
 struct SSystemGlobalEnvironement
 {
@@ -25,6 +30,7 @@ struct SSystemGlobalEnvironement
 	CSystem* pSystem;
 	IRenderer* pRenderer;
 	IMemoryManager* pMemoryManager;
+	RessourcesManager* pRessourcesManager;
 	bool enableValidation; //if you want to debug or not. Must be false if release
 	uint32_t bbid; //Big Buffer id
 	const std::string getAssetpath() { return "./data/"; };
