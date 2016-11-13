@@ -28,7 +28,7 @@ namespace guitools
 
 	}*/
 
-	/*offset2D center(rect2D parent, extent2D child)
+	offset2D center(rect2D parent, extent2D child)
 	{
 		offset2D centeredPos = {};
 		centeredPos.x = parent.offset.x + (parent.extent.width / 2.0f) - (child.width / 2.0f);
@@ -58,7 +58,7 @@ namespace guitools
 			return true;
 		}
 		return false;
-	}*/
+	}
 
 }
 

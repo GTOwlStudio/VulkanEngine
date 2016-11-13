@@ -26,7 +26,6 @@ struct rect2D {
 	rect2D(float x, float y, float w, float h) : offset(x, y), extent(w, h) {}
 };
 
-
 namespace guitools
 {
 	void getMiddleCoord(rect2D const& parentRect,
@@ -38,8 +37,8 @@ namespace guitools
 	
 	//void generateHorizontalList(extent2D startCoord,rect2D* objList, size_t size); 
 
-	/*offset2D center(rect2D parent, extent2D child);
+	offset2D center(rect2D parent, extent2D child);
 	extent2D getTextSize(std::string text, CFont font);
-	bool entered(rect2D surface, offset2D xy);*/
+	bool entered(rect2D surface, offset2D xy);
 
 }

@@ -93,6 +93,12 @@
     <ClCompile Include="Widget.cpp">
       <Filter>Common\ThomasGui</Filter>
     </ClCompile>
+    <ClCompile Include="Panel.cpp">
+      <Filter>Common\ThomasGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Event.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="I3DEngine.h">
@@ -163,6 +169,12 @@
     </ClInclude>
     <ClInclude Include="Widget.h">
       <Filter>Common\ThomasGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Panel.h">
+      <Filter>Common\ThomasGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Event.h">
+      <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

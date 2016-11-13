@@ -1409,8 +1409,6 @@ void CRenderer::initRessources()
 	//m_shaders.shaders.back()->load(m_device);
 	getShader("texture")->load(m_device);
 
-
-
 	//std::vector<VkDescriptorSet>::iterator it = m_shaders.descriptorSets.begin();
 
 
@@ -1681,8 +1679,6 @@ void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, 
 	m_textures.push_back(tex);
 	*id = static_cast<uint32_t>(m_textures.size());
 }
-
-
 
 void CRenderer::createSBuffer(VkDeviceSize size, void* data)
 {

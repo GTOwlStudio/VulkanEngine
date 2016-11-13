@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Event.cpp" />
     <ClCompile Include="Font.cpp" />
     <ClCompile Include="Framebuffer.cpp" />
     <ClCompile Include="GUI.cpp" />
@@ -28,6 +29,7 @@
     <ClCompile Include="Label.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryManager.cpp" />
+    <ClCompile Include="Panel.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RessourcesManager.cpp" />
     <ClCompile Include="System.cpp" />
@@ -38,6 +40,7 @@
     <ClCompile Include="Widget.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Event.h" />
     <ClInclude Include="Font.h" />
     <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="GUI.h" />
@@ -49,6 +52,7 @@
     <ClInclude Include="IRenderer.h" />
     <ClInclude Include="Label.h" />
     <ClInclude Include="MemoryManager.h" />
+    <ClInclude Include="Panel.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RessourcesManager.h" />
     <ClInclude Include="System.h" />
@@ -116,12 +120,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\VulkanSDK\1.0.17.0\Include;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\VulkanSDK\1.0.17.0\Bin;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\lib;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\lib\amd64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.10240.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\8.1\lib\winv6.3\um\x64</LibraryPath>
+    <IncludePath>C:\VulkanSDK\1.0.30.0\Include;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\VulkanSDK\1.0.30.0\Bin;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\lib;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\lib\amd64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.10240.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\8.1\lib\winv6.3\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\VulkanSDK\1.0.17.0\Include;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\VulkanSDK\1.0.17.0\Bin;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\lib;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\lib\amd64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.10240.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\8.1\lib\winv6.3\um\x64</LibraryPath>
+    <IncludePath>C:\VulkanSDK\1.0.30.0\Include;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\VulkanSDK\1.0.30.0\Bin;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\lib;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\lib\amd64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.10240.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\8.1\lib\winv6.3\um\x64</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>C:\VulkanSDK\1.0.17.0\Include;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\include;$(IncludePath)</IncludePath>

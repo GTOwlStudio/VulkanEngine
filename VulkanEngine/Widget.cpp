@@ -16,3 +16,28 @@ void Widget::addWidget(Widget * widget)
 {
 	m_childs.push_back(widget);
 }
+
+void Widget::move(offset2D pos)
+{
+	m_boundary.offset = pos;
+}
+
+void Widget::resize(extent2D newSize)
+{
+	m_boundary.extent = newSize;
+}
+
+std::string Widget::getName() const
+{
+	return m_name;
+}
+
+rect2D Widget::getBoundary() const
+{
+	return m_boundary;
+}
+
+std::vector<Widget*> Widget::getChilds()
+{
+	return m_childs;
+}
