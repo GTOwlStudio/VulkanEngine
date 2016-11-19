@@ -36,4 +36,24 @@ namespace helper {
 		}
 		return s.substr(0,s.size()-prefix.size());
 	}
+
+	bool nameUsed(std::string nameProposed, std::vector<std::string> collection) {
+		for (std::string s : collection) {
+			if (s==nameProposed) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	uint32_t stringToId(std::string id, std::vector<std::string> collection)
+	{
+		for (size_t i = 0; i < collection.size();i++) {
+			if (collection[i] == id) {
+				return static_cast<uint32_t>(i);
+			}
+		}
+		return UINT32_MAX;
+	}
+
 }

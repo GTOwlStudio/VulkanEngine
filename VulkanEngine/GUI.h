@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "Widget.h"
 #include "Label.h"
+#include "Framebuffer.h"
 
 
 class GUI
@@ -20,6 +21,7 @@ protected:
 	struct {
 		glm::mat4 projection;
 		SIndexedDrawInfo draw;
+		CFramebuffer fb;
 	} m_draw;
 
 

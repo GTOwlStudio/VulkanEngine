@@ -75,6 +75,7 @@ public:
 	virtual VkPipeline getPipeline(std::string pipelineName);
 	virtual VkDescriptorPool getDescriptorPool(uint32_t id);
 	virtual VkCommandPool getCommandPool();
+	virtual CFramebuffer* getOffscreen(std::string name);
 
 	virtual uint32_t requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount);
 
@@ -146,6 +147,7 @@ protected:
 	virtual void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount, uint32_t descriptorId); //descriptorId is the id of the descriptor in the m_shaders.descriptorSet[id]
 	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets);
 	virtual VkFramebuffer addFramebuffer(uint32_t width, uint32_t height, VkRenderPass renderPass, uint32_t attachmentCount, VkImageView *pAttachments);
+	virtual CFramebuffer* addOffscreen(std::string name);
 
 	virtual void updateDescriptorSets();
 
@@ -174,7 +176,7 @@ protected:
 	VkBool32 createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory, VkDescriptorBufferInfo * descriptor);
 
 	void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height);
-
+	uint32_t getRenderAttachementFramebufferOffset(uint32_t id);
 	void createSBuffer(VkDeviceSize size, void* data);
 	void writeInBuffer(VkBuffer*buffer, VkDeviceSize size, void* data, VkDeviceSize dstOffset);
 
@@ -334,7 +336,8 @@ protected:
 
 	} dev_data;
 
-	CFramebuffer *m_dfb;
+	std::vector<CFramebuffer*> m_offscreenTargets;
+	std::vector<std::string> m_offscreenNames;
 	VkCommandBuffer m_offscreenCmdBuffer = VK_NULL_HANDLE;
 	VkSemaphore m_offscreenSemaphore = VK_NULL_HANDLE;
 	bool m_offscreen = false;

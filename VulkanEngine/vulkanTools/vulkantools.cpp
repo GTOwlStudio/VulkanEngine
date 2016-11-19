@@ -600,7 +600,7 @@ VkGraphicsPipelineCreateInfo vkTools::initializers::pipelineCreateInfo(
 	dst->dynamicStateEnables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
 	dst->dynamicState =
-		vkTools::initializers::pipelineDynamicStateCreateInfo(dst->dynamicStateEnables.data(), dst->dynamicStateEnables.size(), 0);
+		vkTools::initializers::pipelineDynamicStateCreateInfo(dst->dynamicStateEnables.data(), static_cast<uint32_t>(dst->dynamicStateEnables.size()), 0);
 
 
 	pipelineCreateInfo.pInputAssemblyState = &dst->inputAssemblyState;
@@ -737,17 +737,15 @@ namespace vkTools {
 		m_layoutBindings = setLayoutBindings;
 		m_bindingDescription = bindingDescription;
 		m_attributeDescription = attributeDescription;
-		m_descriptorLayoutCreateInfo = vkTools::initializers::descriptorSetLayoutCreateInfo(m_layoutBindings.data(), m_layoutBindings.size());
+		m_descriptorLayoutCreateInfo = vkTools::initializers::descriptorSetLayoutCreateInfo(m_layoutBindings.data(), static_cast<uint32_t>(m_layoutBindings.size()));
 		m_pipelineLayoutCreateInfo = vkTools::initializers::pipelineLayoutCreateInfo(&m_descriptorSetLayout, 1);
 		
-		setInputState(m_bindingDescription.size(), m_bindingDescription.data(), m_attributeDescription.size(), m_attributeDescription.data());
+		setInputState(static_cast<uint32_t>(m_bindingDescription.size()), m_bindingDescription.data(), static_cast<uint32_t>(m_attributeDescription.size()), (m_attributeDescription.data()));
 	}
 
 	CShader::~CShader()
 	{
 	}
-
-	
 
 	void CShader::load(VkDevice device) {
 		VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &m_descriptorLayoutCreateInfo, nullptr, &m_descriptorSetLayout));

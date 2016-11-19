@@ -25,6 +25,10 @@ GUI::~GUI()
 
 void GUI::load()
 {
+	gEnv->pRenderer->addRenderPass("gui");
+	
+	
+
 }
 
 void GUI::addWidget(Widget * widget)

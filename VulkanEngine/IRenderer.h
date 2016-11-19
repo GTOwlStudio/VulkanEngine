@@ -7,6 +7,7 @@ using namespace glm;
 
 #include <Windows.h>
 #include "vulkandevice.h"
+//#include "System.h"
 
 ///**/
 //
@@ -73,6 +74,7 @@ using namespace glm;
 //}
 
 class CSystem;
+class CFramebuffer;
 
 struct SIndexedDrawInfo
 {
@@ -150,6 +152,7 @@ public:
 	virtual void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount, uint32_t id) = 0;
 	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets) = 0;
 	virtual VkFramebuffer addFramebuffer(uint32_t width, uint32_t height, VkRenderPass renderPass, uint32_t attachmentCount, VkImageView *pAttachments) = 0;
+	virtual CFramebuffer* addOffscreen(std::string name) = 0;
 
 	virtual VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin) = 0;
 
@@ -183,7 +186,9 @@ public:
 	virtual VkPipeline getPipeline(std::string pipelineName) = 0;
 	virtual VkDescriptorPool getDescriptorPool(uint32_t id) = 0;
 	virtual VkCommandPool getCommandPool() = 0;
-	
+	//virtual CFramebuffer* getOffscreen(uint32_t id) = 0;
+	virtual CFramebuffer* getOffscreen(std::string name) = 0;
+
 	virtual uint32_t requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount) = 0;
 
 	virtual void getInfo() = 0;

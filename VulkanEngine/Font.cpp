@@ -268,7 +268,7 @@ void CFont::load()
 	m_draw.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), m_bufferOffset+(sizeof(VertexT) * 4), VK_INDEX_TYPE_UINT32);
 	m_draw.drawIndexed(6,1,0,0,0);
 	//m_fb.push_back(gEnv->pRenderer->dev_fb());
-	gEnv->pRenderer->addOffscreenIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("offscreen"));
+	gEnv->pRenderer->addOffscreenIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("offscreen"), gEnv->pRenderer->getOffscreen("font")->getFramebuffer());
 	//gEnv->pRenderer->addIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("offscreen"));
 	//m_draw.bindDescriptorSets();
 

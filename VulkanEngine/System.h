@@ -10,6 +10,7 @@
 #include "Input.h"
 #include "Font.h"
 #include "RessourcesManager.h"
+#include "Framebuffer.h"
 
 class CSystem;
 class CRenderer;
@@ -22,6 +23,7 @@ class RessourcesManager;
 class Label;
 class Widget;
 class Action;
+class CFramebuffer;
 
 struct SSystemGlobalEnvironement
 {

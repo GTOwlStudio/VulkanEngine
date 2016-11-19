@@ -13,5 +13,5 @@ Panel::~Panel()
 
 glm::vec4 Panel::getColor() const
 {
-	return (glm::vec4)m_color/glm::vec4(m_colorRef);
+	return (glm::vec4)m_color/glm::vec4(static_cast<float>(m_colorRef));
 }

@@ -115,7 +115,13 @@ void CRenderer::clearRessources()
 		m_buffers[i].destroy();
 	}
 
-	delete m_dfb;
+	//delete m_dfb;
+	for (size_t i = 0; i < m_offscreenTargets.size();i++) {
+		if (m_offscreenTargets[i]!=nullptr) {
+			delete m_offscreenTargets[i];
+			m_offscreenTargets[i] = 0;
+		}
+	}
 }
 
 void CRenderer::Init()
@@ -378,6 +384,11 @@ VkDescriptorPool CRenderer::getDescriptorPool(uint32_t id)
 VkCommandPool CRenderer::getCommandPool()
 {
 	return m_cmdPool;
+}
+
+CFramebuffer* CRenderer::getOffscreen(std::string name)
+{
+	return helper::iterate<CFramebuffer*>(name, m_offscreenTargets,m_offscreenNames);
 }
 
 uint32_t CRenderer::requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount)
@@ -1069,6 +1080,17 @@ VkFramebuffer CRenderer::addFramebuffer(uint32_t width, uint32_t height, VkRende
 	return m_framebuffers.back();
 }
 
+CFramebuffer* CRenderer::addOffscreen(std::string name)
+{
+	if (helper::nameUsed(name, m_offscreenNames)) {
+		return nullptr;
+	}
+	m_offscreenTargets.push_back(new CFramebuffer());
+	m_offscreenNames.push_back(name);
+	return m_offscreenTargets.back();
+//	return CFramebuffer();
+}
+
 void CRenderer::updateDescriptorSets()
 {
 	vkUpdateDescriptorSets(m_device, (uint32_t)m_writeDescriptorSets.size(), m_writeDescriptorSets.data(), 0, VK_NULL_HANDLE);
@@ -1292,7 +1314,8 @@ void CRenderer::buildOffscreenDrawCommands()
 		renderPassBeginInfo.pClearValues = clearValue;
 		
 		for (int32_t i = 0; i < 1; i++) { //#enhancement = flexibility
-			renderPassBeginInfo.framebuffer = m_framebuffers[2];
+			renderPassBeginInfo.framebuffer = m_renderAttachments.framebuffers[getRenderAttachementFramebufferOffset(r)];
+			//renderPassBeginInfo.framebuffer = m_framebuffers[2];
 			//renderPassBeginInfo.framebuffer = m_framebuffers[0];
 
 			VK_CHECK_RESULT(vkBeginCommandBuffer(m_offscreenCmdBuffer, &cmdBufInfo));
@@ -1358,7 +1381,10 @@ void CRenderer::buildOffscreenDrawCommands()
 void CRenderer::initRessources()
 {
 	//vkDebug::
-	m_dfb = new CFramebuffer();
+	//m_dfb = new CFramebuffer();
+	//m_offscreenTargets.push_back(new CFramebuffer());
+	
+	addOffscreen("font");
 
 	std::vector<VkDescriptorPoolSize> poolSize;
 
@@ -1436,7 +1462,8 @@ void CRenderer::initRessources()
 	
 	createBuffer(&gEnv->bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize());
 
-	m_dfb->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(),getRenderPass("offscreen"));
+	m_offscreenTargets[0]->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), getRenderPass("offscreen"));
+	//m_dfb->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(),getRenderPass("offscreen"));
 
 }
 
@@ -1580,7 +1607,6 @@ void CRenderer::bufferSubData(uint32_t id, VkDeviceSize size, VkDeviceSize offse
 {
 	writeInBuffer(&m_buffers[id].buffer, size, data, offset);
 }
-
 
 void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, uint8_t *datas, uint32_t width, uint32_t height)
 {
@@ -1759,6 +1785,18 @@ void CRenderer::writeInBuffer(VkBuffer * dstBuffer, VkDeviceSize size, void * da
 	
 }
 
+uint32_t CRenderer::getRenderAttachementFramebufferOffset(uint32_t id)
+{
+	if (id>=m_renderAttachments.framebufferOffsets.size()) {
+		assert(0);
+	}
+	uint32_t off = 0;
+	for (size_t i = 0; i < static_cast<size_t>(id);i++) {
+		off += m_renderAttachments.framebufferOffsets[i];
+	}
+	return off;
+}
+
 void CRenderer::prepared()
 {
 	m_prepared = true;
@@ -1766,7 +1804,8 @@ void CRenderer::prepared()
 
 VkFramebuffer CRenderer::dev_fb()
 {
-	return m_dfb->getFramebuffer();
+	//return m_dfb->getFramebuffer();
+	return m_offscreenTargets[0]->getFramebuffer();
 }
 
 void CRenderer::dev_offscreenSemaphore()
