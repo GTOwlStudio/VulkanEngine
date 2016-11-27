@@ -5,12 +5,14 @@
 #include <chrono>
 #include <thread>
 
+//#include "ISystem.h"
 #include "Renderer.h"
 #include "MemoryManager.h"
 #include "Input.h"
 #include "Font.h"
 #include "RessourcesManager.h"
 #include "Framebuffer.h"
+#include "GUI.h"
 
 class CSystem;
 class CRenderer;
@@ -20,10 +22,8 @@ class IMemoryManager;
 struct I3DEngine;
 class CFont;
 class RessourcesManager;
-class Label;
-class Widget;
-class Action;
 class CFramebuffer;
+
 
 struct SSystemGlobalEnvironement
 {

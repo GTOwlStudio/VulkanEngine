@@ -24,11 +24,11 @@
     <ClCompile Include="Framebuffer.cpp" />
     <ClCompile Include="GUI.cpp" />
     <ClCompile Include="guitools.cpp" />
-    <ClCompile Include="guitools.h" />
     <ClCompile Include="Input.cpp" />
-    <ClCompile Include="Label.cpp" />
+    <ClCompile Include="guilabel.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryManager.cpp" />
+    <ClCompile Include="MeshHelper.cpp" />
     <ClCompile Include="Panel.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RessourcesManager.cpp" />
@@ -44,17 +44,22 @@
     <ClInclude Include="Font.h" />
     <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="GUI.h" />
+    <ClInclude Include="guitools.h" />
+    <ClInclude Include="guitype.h" />
     <ClInclude Include="I3DEngine.h" />
     <ClInclude Include="IInput.h" />
     <ClInclude Include="IMemoryManager.h" />
     <ClInclude Include="Input.h" />
     <ClInclude Include="IProcess.h" />
     <ClInclude Include="IRenderer.h" />
-    <ClInclude Include="Label.h" />
+    <ClInclude Include="ISystem.h" />
+    <ClInclude Include="guilabel.h" />
     <ClInclude Include="MemoryManager.h" />
+    <ClInclude Include="MeshHelper.h" />
     <ClInclude Include="Panel.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RessourcesManager.h" />
+    <ClInclude Include="stdafx.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="vulkanbuffer.hpp" />
     <ClInclude Include="vulkandevice.h" />
@@ -122,10 +127,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>C:\VulkanSDK\1.0.30.0\Include;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\VulkanSDK\1.0.30.0\Bin;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\lib;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\lib\amd64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.10240.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\8.1\lib\winv6.3\um\x64</LibraryPath>
+    <EnableManagedIncrementalBuild>true</EnableManagedIncrementalBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>C:\VulkanSDK\1.0.30.0\Include;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\VulkanSDK\1.0.30.0\Bin;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\lib;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\lib\amd64;C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\lib\amd64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.10240.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\8.1\lib\winv6.3\um\x64</LibraryPath>
+    <EnableManagedIncrementalBuild>true</EnableManagedIncrementalBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>C:\VulkanSDK\1.0.17.0\Include;C:\Users\Thomas Duborgel\Documents\Visual Studio 2015\Projects\VulkanEngine\VulkanEngine\lib\include;$(IncludePath)</IncludePath>
@@ -152,6 +159,8 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ShowIncludes>false</ShowIncludes>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
       <AdditionalDependencies>vulkan-1.lib;assimp.lib;freetyped.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -180,6 +189,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ShowIncludes>false</ShowIncludes>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

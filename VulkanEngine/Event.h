@@ -1,6 +1,7 @@
 #pragma once
 
 enum EventType {
+	EVENT_TYPE_NONE = 0,
 	EVENT_TYPE_WIDGET_SET_VISIBLE, //Put it in the next render 
 	EVENT_TYPE_WIDGET_SET_UNVISIBLE, //Put it off the next render
 	EVENT_TYPE_WIDGET_RESIZED, //update
@@ -10,12 +11,13 @@ enum EventType {
 	EVENT_TYPE_WIDGET_CHILD_REMOVED,
 	EVENT_TYPE_WIDGET_COLOR_CHANGED,
 	EVENT_TYPE_BUTTON_CLICKED
+	
 };
 
 class Event
 {
 public:
-	Event();
+	Event(EventType eventType = EVENT_TYPE_NONE);
 	~Event();
 	void process();
 

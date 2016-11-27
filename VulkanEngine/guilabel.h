@@ -1,7 +1,9 @@
 #pragma once
+
 #include "Widget.h"
 #include "Font.h"
 
+class CFont;
 
 class Label : public Widget
 {
@@ -14,6 +16,6 @@ public:
 protected:
 	std::string m_text;
 	//f m_f;
-	CFont m_font;
+	CFont* m_font;
 };
 

@@ -1,3 +1,4 @@
+
 #include "System.h"
 
 SSystemGlobalEnvironement* gEnv = NULL;
@@ -115,6 +116,7 @@ void CSystem::Update()
 
 void CSystem::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	gEnv->pInput->update(uMsg, wParam, lParam);
 	switch (uMsg)
 	{
 	case WM_CLOSE:
@@ -126,6 +128,7 @@ void CSystem::handleMessages(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_KEYDOWN:
 		m_env.pRenderer->handleMessages(wParam, lParam);
+		//gEnv->pInput->update(wParam, lParam);
 		switch (wParam) {
 		case VK_ESCAPE:
 			m_isFinished = true;

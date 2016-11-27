@@ -176,11 +176,11 @@ protected:
 	VkBool32 createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory, VkDescriptorBufferInfo * descriptor);
 
 	void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height);
-	uint32_t getRenderAttachementFramebufferOffset(uint32_t id);
+
 	void createSBuffer(VkDeviceSize size, void* data);
 	void writeInBuffer(VkBuffer*buffer, VkDeviceSize size, void* data, VkDeviceSize dstOffset);
 
-
+	uint32_t getRenderAttachementFramebufferOffset(uint32_t id);
 
 protected:
 

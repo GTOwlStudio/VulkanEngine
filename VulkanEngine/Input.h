@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdio.h>
 #include "IInput.h"
 
 class CInput : public IInput
@@ -8,7 +9,7 @@ public:
 	CInput();
 	~CInput();
 
-	virtual void update(WPARAM wParam, LPARAM lParam);
+	virtual void update(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	virtual bool getKey(uint32_t keyCode);
 	virtual bool getMouseButton(uint8_t keyCode);
 	virtual float getX();

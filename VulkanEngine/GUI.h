@@ -1,9 +1,18 @@
 #pragma once
+
 #include <vector>
 #include <assert.h>
-#include "Widget.h"
-#include "Label.h"
+
 #include "Framebuffer.h"
+#include "Widget.h"
+#include "guilabel.h"
+#include "Panel.h"
+//#include <glm\glm.hpp>
+
+class CSystem;
+class CFramebuffer;
+class GUI;
+//struct SIndexedDrawInfo;
 
 
 class GUI
@@ -21,7 +30,7 @@ protected:
 	struct {
 		glm::mat4 projection;
 		SIndexedDrawInfo draw;
-		CFramebuffer fb;
+		CFramebuffer* offscreen;
 	} m_draw;
 
 

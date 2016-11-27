@@ -419,6 +419,12 @@ void CRenderer::getInfo()
 	for (std::string s : m_renderPasses.names) {
 		printf("\t\"%s\"\n", s.c_str());
 	}
+	printf("\nOffscreen Target");
+	printf("offscreenTargets.count = %i\noffscreenNames.count =%i\nOffscreenTargetsName\n", static_cast<int>(m_offscreenTargets.size()), static_cast<int>(m_offscreenNames.size()));
+	for (std::string s : m_offscreenNames) {
+		printf("\t\"%s\"\n", s.c_str());
+	}
+	printf("\n");
 }
 
 void CRenderer::getBufferInfo() 
@@ -1175,7 +1181,7 @@ void CRenderer::buildDrawCommands(VkRenderPass renderPass)
 		VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 		vkCmdSetViewport(m_drawCmdBuffers[i], 0, 1, &viewport);
 
-		VkRect2D scissor = vkTools::initializers::rect2D(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
+		VkRect2D scissor = vkTools::initializers::rect(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
 		vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
 		for (int32_t j = 0; j < m_indexedDraws.size();j++) {
@@ -1249,7 +1255,7 @@ void CRenderer::buildDrawCommands()
 			VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 			vkCmdSetViewport(m_drawCmdBuffers[i], 0, 1, &viewport);
 
-			VkRect2D scissor = vkTools::initializers::rect2D(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
+			VkRect2D scissor = vkTools::initializers::rect(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
 			vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
 			vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipelineLayout,
@@ -1325,7 +1331,7 @@ void CRenderer::buildOffscreenDrawCommands()
 			VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 			vkCmdSetViewport(m_offscreenCmdBuffer, 0, 1, &viewport);
 
-			VkRect2D scissor = vkTools::initializers::rect2D(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
+			VkRect2D scissor = vkTools::initializers::rect(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
 			vkCmdSetScissor(m_offscreenCmdBuffer, 0, 1, &scissor);
 
 			/*for (int32_t j = 0; j < m_indexedDraws.size(); j++) {
@@ -1473,7 +1479,7 @@ void CRenderer::handleMessages(WPARAM wParam, LPARAM lParam)
 	dev_updateUniform_2();
 	printf("here");*/
 
-	switch (wParam) {
+	/*switch (wParam) {
 	case 0x50:
 		//printf("here");
 		dev_data.rotationZ += 1.0f;
@@ -1482,7 +1488,7 @@ void CRenderer::handleMessages(WPARAM wParam, LPARAM lParam)
 	case 0x42: //B
 		printf("%s\n",buffersLayoutToString().c_str());
 		break;
-	}
+	}*/
 }
 
 void CRenderer::setupDescriptorPool()
@@ -1525,7 +1531,7 @@ void CRenderer::buildCommandBuffer()
 		VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 		vkCmdSetViewport(m_drawCmdBuffers[i],0, 1, &viewport);
 
-		VkRect2D scissor = vkTools::initializers::rect2D(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
+		VkRect2D scissor = vkTools::initializers::rect(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
 		vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
 		//vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, dev_data.pipelineLayout, 0, 1, &dev_data.descriptorSet, 0, NULL);
@@ -1788,6 +1794,7 @@ void CRenderer::writeInBuffer(VkBuffer * dstBuffer, VkDeviceSize size, void * da
 uint32_t CRenderer::getRenderAttachementFramebufferOffset(uint32_t id)
 {
 	if (id>=m_renderAttachments.framebufferOffsets.size()) {
+		printf("\nISSUE\n");
 		assert(0);
 	}
 	uint32_t off = 0;

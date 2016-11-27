@@ -2,7 +2,7 @@
 
 
 
-Event::Event()
+Event::Event(EventType eventType) : m_eventType(eventType)
 {
 }
 

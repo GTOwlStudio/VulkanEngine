@@ -40,6 +40,9 @@
     <Filter Include="vulkanTools">
       <UniqueIdentifier>{13576b71-87b7-4a84-8d00-f2bbedc7f1c5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Common\Mesh">
+      <UniqueIdentifier>{e515d96f-3e99-44e0-870f-9620c6e38c4f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -75,29 +78,29 @@
     <ClCompile Include="vulkanTools\Helper.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="guitools.h">
+    <ClCompile Include="RessourcesManager.cpp">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshHelper.cpp">
+      <Filter>Common\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="GUI.cpp">
       <Filter>Common\ThomasGui</Filter>
     </ClCompile>
     <ClCompile Include="guitools.cpp">
       <Filter>Common\ThomasGui</Filter>
     </ClCompile>
-    <ClCompile Include="RessourcesManager.cpp">
-      <Filter>Common\ThomasSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="GUI.cpp">
-      <Filter>Common\ThomasGui</Filter>
-    </ClCompile>
-    <ClCompile Include="Label.cpp">
-      <Filter>Common\ThomasGui</Filter>
-    </ClCompile>
     <ClCompile Include="Widget.cpp">
+      <Filter>Common\ThomasGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Event.cpp">
       <Filter>Common\ThomasGui</Filter>
     </ClCompile>
     <ClCompile Include="Panel.cpp">
       <Filter>Common\ThomasGui</Filter>
     </ClCompile>
-    <ClCompile Include="Event.cpp">
-      <Filter>Fichiers sources</Filter>
+    <ClCompile Include="guilabel.cpp">
+      <Filter>Common\ThomasGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -109,9 +112,6 @@
     </ClInclude>
     <ClInclude Include="IRenderer.h">
       <Filter>Common\ThomasRenderer</Filter>
-    </ClInclude>
-    <ClInclude Include="System.h">
-      <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
     <ClInclude Include="vulkanTools\vulkandebug.h">
       <Filter>vulkanTools</Filter>
@@ -132,9 +132,6 @@
       <Filter>Common\ThomasRenderer</Filter>
     </ClInclude>
     <ClInclude Include="vulkanbuffer.hpp">
-      <Filter>Common\ThomasSystem</Filter>
-    </ClInclude>
-    <ClInclude Include="IInput.h">
       <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
     <ClInclude Include="vulkandevice.h">
@@ -161,20 +158,41 @@
     <ClInclude Include="RessourcesManager.h">
       <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
+    <ClInclude Include="MeshHelper.h">
+      <Filter>Common\Mesh</Filter>
+    </ClInclude>
     <ClInclude Include="GUI.h">
       <Filter>Common\ThomasGui</Filter>
     </ClInclude>
-    <ClInclude Include="Label.h">
+    <ClInclude Include="guitools.h">
       <Filter>Common\ThomasGui</Filter>
     </ClInclude>
     <ClInclude Include="Widget.h">
       <Filter>Common\ThomasGui</Filter>
     </ClInclude>
+    <ClInclude Include="Event.h">
+      <Filter>Common\ThomasGui</Filter>
+    </ClInclude>
+    <ClInclude Include="System.h">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="ISystem.h">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Fichiers sources</Filter>
+    </ClInclude>
+    <ClInclude Include="guitype.h">
+      <Filter>Common\ThomasGui</Filter>
+    </ClInclude>
     <ClInclude Include="Panel.h">
       <Filter>Common\ThomasGui</Filter>
     </ClInclude>
-    <ClInclude Include="Event.h">
-      <Filter>Fichiers d%27en-tête</Filter>
+    <ClInclude Include="guilabel.h">
+      <Filter>Common\ThomasGui</Filter>
+    </ClInclude>
+    <ClInclude Include="IInput.h">
+      <Filter>Common\ThomasInput</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

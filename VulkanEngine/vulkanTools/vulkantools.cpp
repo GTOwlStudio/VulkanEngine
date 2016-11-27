@@ -401,7 +401,7 @@ VkViewport vkTools::initializers::viewport(float width, float height, float minD
 	return viewport;
 }
 
-VkRect2D vkTools::initializers::rect2D(int32_t width, int32_t height, int32_t offsetX, int32_t offsetY)
+VkRect2D vkTools::initializers::rect(int32_t width, int32_t height, int32_t offsetX, int32_t offsetY)
 {
 	VkRect2D rect2D = {};
 	rect2D.extent.width = width;

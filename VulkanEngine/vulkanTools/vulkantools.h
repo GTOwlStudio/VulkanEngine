@@ -182,7 +182,7 @@ namespace vkTools
 
 		VkViewport viewport(float width , float height, float minDepth, float maxDepth);
 
-		VkRect2D rect2D(int32_t width, int32_t height, int32_t offsetX, int32_t offsetY);
+		VkRect2D rect(int32_t width, int32_t height, int32_t offsetX, int32_t offsetY);
 
 		VkBufferCreateInfo bufferCreateInfo();
 		VkBufferCreateInfo bufferCreateInfo(VkBufferUsageFlags usage, VkDeviceSize size);
