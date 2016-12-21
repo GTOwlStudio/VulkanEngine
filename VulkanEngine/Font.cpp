@@ -38,9 +38,9 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 		m_characterInfo[i].ax = static_cast<float>(slot->advance.x >> 6);
 		m_characterInfo[i].ay = static_cast<float>(slot->advance.y >> 6);
 		m_characterInfo[i].bx = static_cast<float>(slot->metrics.horiBearingX /64);
-		m_characterInfo[i].by= static_cast<float>(slot->metrics.horiBearingY /64);
-		m_characterInfo[i].w = static_cast<float>(slot->metrics.width / 64);
-		m_characterInfo[i].h = static_cast<float>(slot->metrics.height /64);
+		m_characterInfo[i].by = static_cast<float>(slot->metrics.horiBearingY /64);
+		m_characterInfo[i].w  = static_cast<float>(slot->metrics.width / 64);
+		m_characterInfo[i].h  = static_cast<float>(slot->metrics.height /64);
 		m_characterInfo[i].bw = slot->bitmap.width;
 		m_characterInfo[i].bh = slot->bitmap.rows;
 
@@ -105,7 +105,8 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 	m_size = static_cast<uint32_t>((sizeof(float) * 4*2) + (sizeof(uint32_t) * 6)) * m_numOfCharacter; // For a character there is 4 vertices, a vertices got 2 float(x,y) and there is 6 indices by character
 
 	//gEnv->pMemoryManager->requestMemory(m_size);
-	m_bufferOffset = gEnv->pMemoryManager->requestMemory(sizeof(VertexT)*4+(sizeof(uint32_t)*6), "FONT (4*VertexT + 6*uint32_t)");
+	m_bufferOffset = gEnv->pMemoryManager->requestMemory(sizeof(VertexT) * 4 + (sizeof(uint32_t) * 6),
+		"FONT (4*VertexT + 6*uint32_t)");
 	m_descriptorSetId = gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
 }
 

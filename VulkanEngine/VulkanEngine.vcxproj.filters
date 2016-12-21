@@ -43,6 +43,9 @@
     <Filter Include="Common\Mesh">
       <UniqueIdentifier>{e515d96f-3e99-44e0-870f-9620c6e38c4f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Ressources">
+      <UniqueIdentifier>{a882eadc-8abf-4eae-8448-b9b0aca8ca7a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -101,6 +104,12 @@
     </ClCompile>
     <ClCompile Include="guilabel.cpp">
       <Filter>Common\ThomasGui</Filter>
+    </ClCompile>
+    <ClCompile Include="VirtualBufferPool.cpp">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="XMLParser.cpp">
+      <Filter>vulkanTools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -176,9 +185,6 @@
     <ClInclude Include="System.h">
       <Filter>Common\ThomasSystem</Filter>
     </ClInclude>
-    <ClInclude Include="ISystem.h">
-      <Filter>Common\ThomasSystem</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>Fichiers sources</Filter>
     </ClInclude>
@@ -194,10 +200,22 @@
     <ClInclude Include="IInput.h">
       <Filter>Common\ThomasInput</Filter>
     </ClInclude>
+    <ClInclude Include="VirtualBufferPool.h">
+      <Filter>Common\ThomasSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="XMLParser.h">
+      <Filter>vulkanTools</Filter>
+    </ClInclude>
+    <ClInclude Include="vulkan_header.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="platform_impl.inl">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </None>
+    <Xml Include="gui.xml">
+      <Filter>Ressources</Filter>
+    </Xml>
+    <Xml Include="GuiSettings.xml">
+      <Filter>Ressources</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

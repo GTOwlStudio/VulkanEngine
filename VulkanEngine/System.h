@@ -23,7 +23,7 @@ struct I3DEngine;
 class CFont;
 class RessourcesManager;
 class CFramebuffer;
-
+class GUI;
 
 struct SSystemGlobalEnvironement
 {
@@ -34,7 +34,7 @@ struct SSystemGlobalEnvironement
 	IMemoryManager* pMemoryManager;
 	RessourcesManager* pRessourcesManager;
 	bool enableValidation; //if you want to debug or not. Must be false if release
-	uint32_t bbid; //Big Buffer id
+	uint64_t bbid; //Big Buffer id
 	const std::string getAssetpath() { return "./data/"; };
 	VkDevice getDevice() { return pRenderer->getVulkanDevice()->logicalDevice; };
 

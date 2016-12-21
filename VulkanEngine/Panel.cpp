@@ -4,6 +4,8 @@
 
 Panel::Panel(std::string wName, rect2D boundary, glm::uvec4 color, glm::uint colorRef) : Widget(wName, boundary), m_color(color), m_colorRef(colorRef)
 {
+	m_className = "Panel";
+	m_memOffset = gEnv->pMemoryManager->requestMemory((meshhelper::QUAD_VERTICES_COUNT*sizeof(VertexC)) + (meshhelper::QUAD_INDICES_COUNT*sizeof(uint32_t)), "Panel");
 }
 
 
@@ -11,9 +13,19 @@ Panel::~Panel()
 {
 }
 
-uint32_t Panel::gSize()
+VkDeviceSize Panel::gSize()
 {
 	return (meshhelper::QUAD_VERTICES_COUNT*sizeof(VertexC)) + (meshhelper::QUAD_INDICES_COUNT*sizeof(uint32_t));
+}
+
+VkDeviceSize Panel::gDataSize()
+{
+	return meshhelper::QUAD_VERTICES_COUNT * sizeof(VertexC);
+}
+
+VkDeviceSize Panel::gIndicesSize()
+{
+	return meshhelper::QUAD_INDICES_COUNT * sizeof(uint32_t);
 }
 
 void Panel::gData(void* arr)

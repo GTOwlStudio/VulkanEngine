@@ -1,7 +1,7 @@
 #include "guitools.h"
 #include "Widget.h"
 
-Widget::Widget(std::string name, rect2D boundary) : m_name(name), m_boundary(boundary)
+Widget::Widget(std::string name, rect2D boundary) : m_name(name), m_boundary(boundary), m_memOffset(), m_className("Widget")
 {
 }
 
@@ -46,9 +46,19 @@ void Widget::addEvent(EventType type)
 	m_events.push_back(Event(type));
 }
 
-uint32_t Widget::gSize()
+VkDeviceSize Widget::gSize()
 {
-	return 0;
+	return VkDeviceSize();
+}
+
+VkDeviceSize Widget::gDataSize()
+{
+	return VkDeviceSize();
+}
+
+VkDeviceSize Widget::gIndicesSize()
+{
+	return VkDeviceSize();
 }
 
 void Widget::gData(void* arr)
@@ -57,6 +67,26 @@ void Widget::gData(void* arr)
 
 void Widget::gIndices(void * arr)
 {
+}
+
+VkDeviceSize Widget::getMemoryOffset()
+{
+	return m_memOffset;
+}
+
+std::vector<uint32_t> Widget::getDescriptorsId()
+{
+	return m_descriptors.ids;
+}
+
+std::vector<VkDescriptorType> Widget::getDescriptorsType()
+{
+	return m_descriptors.types;
+}
+
+std::string Widget::getClassName() const
+{
+	return m_className;
 }
 
 std::string Widget::getName() const
@@ -72,4 +102,10 @@ rect2D Widget::getBoundary()
 std::vector<Widget*> Widget::getChilds()
 {
 	return m_childs;
+}
+
+void Widget::addDescriptors(VkDescriptorType type)
+{
+	m_descriptors.ids.push_back(gEnv->pRenderer->requestDescriptorSet(type, 1));
+	m_descriptors.types.push_back(type);
 }

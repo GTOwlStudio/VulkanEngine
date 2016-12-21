@@ -49,3 +49,14 @@ bool RessourcesManager::exist(std::string fontname, uint32_t size)
 	}
 	return false;
 }
+
+void RessourcesManager::prepareShaders()
+{
+	std::string s_color_name = "color";
+	std::vector<VkVertexInputBindingDescription> s_color_b = {vkTools::initializers::vertexInputBindingDescription(0, sizeof(VertexC), VK_VERTEX_INPUT_RATE_VERTEX)};
+	std::vector<VkVertexInputAttributeDescription> s_color_a = { vkTools::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
+		vkTools::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32B32_SFLOAT, 3*sizeof(float))
+	};
+	gEnv->pRenderer->addShader(gEnv->getAssetpath() + "shaders/color.vert.spv", 
+		gEnv->getAssetpath() + "shaders/color.frag.spv", &s_color_name, std::vector<VkDescriptorSetLayoutBinding>{}, s_color_b, s_color_a);
+}

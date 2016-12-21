@@ -144,6 +144,11 @@ public:
 		VkPolygonMode polyMode,
 		uint32_t shaderStagesCount,
 		VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name) = 0;
+	virtual void addGraphicsPipeline(vkTools::CShader* shader, VkRenderPass renderPass,
+		VkPipelineCreateFlags flags,
+		VkPrimitiveTopology topology,
+		VkPolygonMode polyMode,
+		uint32_t shaderStagesCount ,std::string name) = 0;
 
 	virtual void addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR) = 0;
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)=0;
@@ -166,9 +171,9 @@ public:
 
 	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height) = 0;
 	
-	virtual void createBuffer(uint32_t* id, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size) = 0;
+	virtual void createBuffer(uint64_t* id, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size) = 0;
 
-	virtual void bufferSubData(uint32_t bufferID, VkDeviceSize size, VkDeviceSize offset, void*  data) = 0;
+	virtual void bufferSubData(uint64_t bufferID, VkDeviceSize size, VkDeviceSize offset, void*  data) = 0;
 
 	virtual void handleMessages(WPARAM wParam, LPARAM lParam) = 0; //#supposition maybe not a final function
 
@@ -179,7 +184,7 @@ public:
 	virtual vkTools::CShader* getShader(uint32_t id) = 0;
 	virtual uint32_t getShaderId(std::string shaderName) = 0; //Return the id of the shader named 'shaderName'
 															  //return UINT32_MAX if there is no shader named 'shader_name'
-	virtual VkBuffer getBuffer(uint32_t id)= 0;
+	virtual VkBuffer getBuffer(uint64_t id)= 0;
 	virtual vk::Buffer* getBufferStruct(uint32_t id) = 0;
 	virtual vkTools::VulkanTexture* getTexture(uint32_t texId) = 0;
 	virtual VkDescriptorSet* getDescriptorSet(uint32_t) = 0;

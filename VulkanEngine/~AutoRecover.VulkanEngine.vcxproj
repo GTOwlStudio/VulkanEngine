@@ -71,15 +71,17 @@
     <ClInclude Include="vulkanTools\vulkanswapchain.hpp" />
     <ClInclude Include="vulkanTools\vulkanTextureLoader.hpp" />
     <ClInclude Include="vulkanTools\vulkantools.h" />
-    <ClInclude Include="vulkan_header.h" />
     <ClInclude Include="Widget.h" />
     <ClInclude Include="XMLParser.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="platform_impl.inl" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="gui.xml">
       <SubType>Designer</SubType>
     </Xml>
-    <Xml Include="GuiSettings.xml">
+    <Xml Include="Settings.xml">
       <SubType>Designer</SubType>
     </Xml>
   </ItemGroup>

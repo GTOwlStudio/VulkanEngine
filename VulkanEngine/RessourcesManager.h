@@ -14,6 +14,9 @@ public:
 	CFont* getCFont(std::string fontname, uint32_t size);
 	void addFont(std::string fontname, uint32_t size);
 	bool exist(std::string fontname, uint32_t size);
+
+	void prepareShaders();
+
 protected:
 	//std::list<CFont*/*, std::allocator_traits<CFont*>::pointer*/> m_fonts;
 	std::list<CFont*> m_fonts;

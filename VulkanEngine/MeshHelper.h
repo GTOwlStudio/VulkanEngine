@@ -6,12 +6,12 @@
 
 
 struct VertexC{
-	glm::vec4 pos;
+	glm::vec3 pos;
 	glm::vec4 color;
 	VertexC() {}
-	VertexC(float x, float y, float z, float r, float g, float b, float a = 1.0f) : pos(x, y, z, 1.0f), color(r,g,b,a) {}
-	VertexC(float x, float y, float z, glm::vec3 pColor) : pos(x, y, z, 1.0f), color(pColor, 1.0f) {};
-	VertexC(float x, float y, float z, glm::vec4 pColor) : pos(x, y, z, 1.0f), color(pColor) {};
+	VertexC(float x, float y, float z, float r, float g, float b, float a = 1.0f) : pos(x, y, z), color(r,g,b,a) {}
+	VertexC(float x, float y, float z, glm::vec3 pColor) : pos(x, y, z), color(pColor, 1.0f) {};
+	VertexC(float x, float y, float z, glm::vec4 pColor) : pos(x, y, z), color(pColor) {};
 };
 
 namespace meshhelper {

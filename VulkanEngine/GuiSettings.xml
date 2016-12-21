@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Settings>
+  <DefaultMenuBarWidth value="5.0"/>
+  <DefaultHorizontalSpacerSize value="5.0"/>
+  <DefaultVerticalSpacerSize value="2.0"/>
+
+  <WidgetDefault>
+    <attribute name="position" type="pos"/>
+    <attribute name="size" type="pos"/>
+  </WidgetDefault>
+  
+   
+  <LabelDefault inheritFrom="Widget">
+    <attribute name="" required="false"/>
+  </LabelDefault>
+
+</Settings>

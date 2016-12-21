@@ -4,7 +4,9 @@
 
 CFramebuffer::CFramebuffer()
 {
-	draw_data.bufferOffset = gEnv->pMemoryManager->requestMemory(4*sizeof(VertexT)+(6*sizeof(uint32_t)), "Framebuffer (4*Vertex + 6*uint32_t)");
+	draw_data.bufferOffset = gEnv->pMemoryManager->requestMemory(4 * sizeof(VertexT) + (6 * sizeof(uint32_t)),
+		"Framebuffer (4*Vertex + 6*uint32_t)");
+		//VK_BUFFER_USAGE_VERTEX_BUFFER_BIT|VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 	draw_data.descriptorSetId = gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
 }
 

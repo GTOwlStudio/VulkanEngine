@@ -56,4 +56,15 @@ namespace helper {
 		return UINT32_MAX;
 	}
 
+	uint32_t hexaToInt(std::string hexa)
+	{
+	//#warning unsafe function
+		std::string hexValue = "0123456789abcdef";
+		uint32_t v = 0;
+		for (size_t i = 0; i < hexa.size();i++) {
+			v += hexValue.find(hexa[i]) * static_cast<uint32_t>(pow(16,hexa.size()-1-i));
+		}
+		return v;
+	}
+
 }

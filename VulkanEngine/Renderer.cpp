@@ -314,14 +314,14 @@ uint32_t CRenderer::getShaderId(std::string shaderName)
 	return UINT32_MAX;
 }
 
-VkBuffer CRenderer::getBuffer(uint32_t id)
+VkBuffer CRenderer::getBuffer(uint64_t id)
 {
 	if (id>m_buffers.size()) {
-		printf("ERROR : id %i out of range, buffer.size()=%i\n", id, static_cast<int>(m_buffers.size()));
+		printf("ERROR : id %" PRId64 "out of range, buffer.size()=%i\n", id, static_cast<int>(m_buffers.size()));
 		return VK_NULL_HANDLE;
 	}
 	if (m_buffers[id].buffer==VK_NULL_HANDLE){
-		printf("ERROR : there is no buffer at id %i\n", id);
+		printf("ERROR : there is no buffer at id %" PRId64 "\n", id);
 		return VK_NULL_HANDLE;
 	}
 	return m_buffers[id].buffer;
@@ -921,6 +921,11 @@ void CRenderer::addGraphicsPipeline(VkPipelineLayout pipelineLayout ,VkRenderPas
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
 }
 
+void CRenderer::addGraphicsPipeline(vkTools::CShader * shader, VkRenderPass renderPass, VkPipelineCreateFlags flags, VkPrimitiveTopology topology, VkPolygonMode polyMode, uint32_t shaderStagesCount, std::string name)
+{
+	addGraphicsPipeline(shader->getPipelineLayout(), renderPass, flags, topology, polyMode, shaderStagesCount, shader->getShaderStagesPtr(), shader->getInputState(), name);
+}
+
 void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp)
 {
 
@@ -1412,6 +1417,7 @@ void CRenderer::initRessources()
 	addShader(gEnv->getAssetpath()+"shaders/texture.vert.spv", gEnv->getAssetpath() + "shaders/texture.frag.spv",
 		&shaderName,setLayoutBindings, bindings, attributes);
 
+	gEnv->pRessourcesManager->prepareShaders();
 	//Descriptor Pool creation
 
 	/*for (size_t i = 0; i < setLayoutBindings.size();i++) {
@@ -1439,8 +1445,9 @@ void CRenderer::initRessources()
 		vkTools::initializers::descriptorPoolCreateInfo((uint32_t)poolSize.size(), poolSize.data(), 2);
 	VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &descriptorPoolCreateInfo, nullptr, &m_shaders.descriptorPool));
 	//m_shaders.shaders.back()->load(m_device);
-	getShader("texture")->load(m_device);
 
+	getShader("texture")->load(m_device);
+	getShader("color")->load(m_device);
 	//std::vector<VkDescriptorSet>::iterator it = m_shaders.descriptorSets.begin();
 
 
@@ -1456,7 +1463,7 @@ void CRenderer::initRessources()
 	addRenderPass("main");
 	addRenderPass("offscreen");
 
-	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture")->getPipelineLayout(),
+	/*gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture")->getPipelineLayout(),
 		gEnv->pRenderer->getRenderPass("main"),
 		0,
 		VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
@@ -1464,9 +1471,19 @@ void CRenderer::initRessources()
 		2,
 		gEnv->pRenderer->getShader("texture")->getShaderStagesPtr(),
 		gEnv->pRenderer->getShader("texture")->getInputState(),
+		"texture");*/
+
+	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture"),
+		gEnv->pRenderer->getRenderPass("main"),
+		0,
+		VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		VK_POLYGON_MODE_FILL,
+		2,
 		"texture");
 	
 	createBuffer(&gEnv->bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize());
+
+	gEnv->pMemoryManager->allocateMemory();
 
 	m_offscreenTargets[0]->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), getRenderPass("offscreen"));
 	//m_dfb->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(),getRenderPass("offscreen"));
@@ -1595,11 +1612,11 @@ VkBool32 CRenderer::createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags
 	}
 }
 
-void CRenderer::createBuffer(uint32_t * id, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size)
+void CRenderer::createBuffer(uint64_t * id, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size)
 {
 	m_buffers.push_back({});
 	if (id != nullptr) {
-		*id = static_cast<uint32_t>(m_buffers.size()-1);
+		*id = static_cast<uint64_t>(m_buffers.size()-1);
 	}
 	m_buffers.back().device = m_device;
 	m_buffers.back().usageFlags = usageFlags;
@@ -1609,7 +1626,7 @@ void CRenderer::createBuffer(uint32_t * id, VkBufferUsageFlags usageFlags, VkMem
 	createBuffer(m_buffers.back().usageFlags, m_buffers.back().memoryPropertyFlags, size, 0, &m_buffers.back().buffer, &m_buffers.back().memory);
 }
 
-void CRenderer::bufferSubData(uint32_t id, VkDeviceSize size, VkDeviceSize offset, void * data)
+void CRenderer::bufferSubData(uint64_t id, VkDeviceSize size, VkDeviceSize offset, void * data)
 {
 	writeInBuffer(&m_buffers[id].buffer, size, data, offset);
 }

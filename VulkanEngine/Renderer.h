@@ -8,6 +8,7 @@
 #include <io.h>
 #endif
 #include <array>
+#include <inttypes.h>
 
 #include <vulkan\vulkan.h>
 #include "vulkanTools\vulkanswapchain.hpp"
@@ -68,7 +69,7 @@ public:
 	virtual vkTools::CShader* getShader(std::string shaderName);
 	virtual vkTools::CShader* getShader(uint32_t id);
 	virtual uint32_t getShaderId(std::string shaderName);
-	virtual VkBuffer getBuffer(uint32_t id);
+	virtual VkBuffer getBuffer(uint64_t id);
 	virtual vk::Buffer* getBufferStruct(uint32_t id);
 	virtual vkTools::VulkanTexture* getTexture(uint32_t texId);
 	virtual VkDescriptorSet* getDescriptorSet(uint32_t id);
@@ -137,6 +138,12 @@ protected:
 		uint32_t shaderStagesCount,
 		VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name);
 
+	virtual void addGraphicsPipeline(vkTools::CShader* shader, VkRenderPass renderPass,
+		VkPipelineCreateFlags flags,
+		VkPrimitiveTopology topology,
+		VkPolygonMode polyMode,
+		uint32_t shaderStagesCount, std::string name);
+
 	virtual void addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName,
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings,
@@ -164,9 +171,9 @@ protected:
 
 	virtual void handleMessages(WPARAM wParam, LPARAM lParam);
 
-	virtual void createBuffer(uint32_t *id, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size);
+	virtual void createBuffer(uint64_t *id, VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size);
 
-	virtual void bufferSubData(uint32_t id, VkDeviceSize size, VkDeviceSize offset, void* data);
+	virtual void bufferSubData(uint64_t id, VkDeviceSize size, VkDeviceSize offset, void* data);
 
 	void setupDescriptorPool();
 	void buildCommandBuffer();

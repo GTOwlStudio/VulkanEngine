@@ -1,4 +1,6 @@
 #pragma once
+#include "System.h" //F**CKING IMPORTANT, This header must stay on top of the other
+
 #include "Widget.h"
 #include "MeshHelper.h"
 
@@ -9,7 +11,9 @@ public:
 	Panel(std::string name, rect2D boundary, glm::uvec4 color = glm::uvec4(255,255,255,255), glm::uint refValue = 255);
 	virtual ~Panel();
 	
-	virtual uint32_t gSize();
+	virtual VkDeviceSize gSize();
+	virtual VkDeviceSize gDataSize();
+	virtual VkDeviceSize gIndicesSize();
 	virtual void gData(void* arr);
 	virtual void gIndices(void* arr);
 

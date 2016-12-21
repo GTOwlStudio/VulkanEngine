@@ -15,6 +15,18 @@ namespace guitools
 			(point.y >= obj.offset.y) && (point.y <= (obj.offset.y + obj.extent.height));
 	}
 
+	glm::vec3 hexaColor(std::string hexaCode)
+	{
+		if (hexaCode.size()!=6) {
+			printf("ERROR : invalid hexaCode %s", hexaCode.c_str());
+			return glm::vec3();
+		}
+
+		return glm::vec3(helper::hexaToInt(hexaCode.substr(0,2)),
+			helper::hexaToInt(hexaCode.substr(2,2)), 
+			helper::hexaToInt(hexaCode.substr(4,2)));
+	}
+
 	void generateHorizontalList(offset2D startCoord,rect2D* objList, size_t size)
 	{
 		//First read : get the width of every Object
