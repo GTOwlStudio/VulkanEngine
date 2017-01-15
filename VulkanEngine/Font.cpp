@@ -105,9 +105,14 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 	m_size = static_cast<uint32_t>((sizeof(float) * 4*2) + (sizeof(uint32_t) * 6)) * m_numOfCharacter; // For a character there is 4 vertices, a vertices got 2 float(x,y) and there is 6 indices by character
 
 	//gEnv->pMemoryManager->requestMemory(m_size);
-	m_bufferOffset = gEnv->pMemoryManager->requestMemory(sizeof(VertexT) * 4 + (sizeof(uint32_t) * 6),
-		"FONT (4*VertexT + 6*uint32_t)");
-	m_descriptorSetId = gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
+	/*m_bufferOffset = gEnv->pMemoryManager->requestMemory(sizeof(VertexT) * 4 + (sizeof(uint32_t) * 6),
+		"FONT (4*VertexT + 6*uint32_t)");*/
+	m_vBufferId = gEnv->pMemoryManager->requestMemory(sizeof(VertexT) * 4 + (sizeof(uint32_t) * 6),
+			"FONT (4*VertexT + 6*uint32_t)");
+
+	m_descriptorSetId = gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, "texture");
+	//gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, "texture");
+	printf("CFont descriptorSetRequested\n");
 }
 
 
@@ -221,9 +226,9 @@ void CFont::load()
 	std::array<VertexT, 4> coords = { VertexT(x, y+h, 0.1f, 0.0f,1.0f), VertexT(x+w,y+h,0.1f,1.0f,1.0f), VertexT(x+w,y,0.1f,1.0f,0.0f), VertexT(x,y,0.1f,0.0f,0.0f) };
 	uint32_t gIndices[6] = {0,1,2, 0,2,3};
 
-
-	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(VertexT)*4, m_bufferOffset, coords.data());
-	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(uint32_t)*6, m_bufferOffset + sizeof(VertexT)*4, gIndices);
+	VirtualBuffer tmpVB = gEnv->pMemoryManager->getVirtualBuffer(m_vBufferId);
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(VertexT)*4, tmpVB.bufferInfo.offset, coords.data());
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(uint32_t)*6, tmpVB.bufferInfo.offset + sizeof(VertexT)*4, gIndices);
 
 	/*gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(VertexT) * 4, m_size, coords.data());
 	gEnv->pRenderer->bufferSubData(gEnv->bbid, sizeof(uint32_t) * 6, m_size + sizeof(VertexT) * 4, gIndices);
@@ -245,6 +250,8 @@ void CFont::load()
 	m_imageDescriptor.imageView = gEnv->pRenderer->getTexture(m_texId)->view;
 	//gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, gEnv->pRenderer->getDescriptorSet(m_descriptorSetId));
 
+	printf("CFont descriptorSetCreated\n");
+
 	gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, m_descriptorSetId);
 
 	std::vector<VkWriteDescriptorSet> wd = {
@@ -264,9 +271,9 @@ void CFont::load()
 	//m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, &m_descriptorSet);
 	m_draw.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(m_descriptorSetId));
 	m_draw.bindPipeline(gEnv->pRenderer->getPipeline("texture"));
-	m_gOffsets[0] =  m_bufferOffset ;
+	m_gOffsets[0] =  tmpVB.bufferInfo.offset ;
 	m_draw.bindVertexBuffers(gEnv->pRenderer->getBuffer(gEnv->bbid), 1, m_gOffsets);
-	m_draw.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), m_bufferOffset+(sizeof(VertexT) * 4), VK_INDEX_TYPE_UINT32);
+	m_draw.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), tmpVB.bufferInfo.offset+(sizeof(VertexT) * 4), VK_INDEX_TYPE_UINT32);
 	m_draw.drawIndexed(6,1,0,0,0);
 	//m_fb.push_back(gEnv->pRenderer->dev_fb());
 	gEnv->pRenderer->addOffscreenIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("offscreen"), gEnv->pRenderer->getOffscreen("font")->getFramebuffer());

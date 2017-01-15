@@ -749,7 +749,7 @@ namespace vkTools {
 
 	void CShader::load(VkDevice device) {
 		VK_CHECK_RESULT(vkCreateDescriptorSetLayout(device, &m_descriptorLayoutCreateInfo, nullptr, &m_descriptorSetLayout));
-		vkCreatePipelineLayout(device, &m_pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout);
+		VK_CHECK_RESULT(vkCreatePipelineLayout(device, &m_pipelineLayoutCreateInfo, nullptr, &m_pipelineLayout));
 
 		VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
 		shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

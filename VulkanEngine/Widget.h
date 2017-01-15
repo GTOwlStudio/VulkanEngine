@@ -24,8 +24,9 @@ public:
 	virtual VkDeviceSize gIndicesSize();
 	virtual void gData(void* arr); //Get the data of the object for fill memory VERTEX ONLY
 	virtual void gIndices(void* arr); //Get the indices of the object INDICES ONLY
-	VkDeviceSize getMemoryOffset();
-	std::vector<uint32_t> getDescriptorsId();
+	size_t getBufferId();
+	size_t getDescriptorIdsSize();
+	std::vector<uint32_t> getDescriptorsIds();
 	std::vector<VkDescriptorType> getDescriptorsType();
 
 	std::string getClassName() const;
@@ -44,7 +45,7 @@ protected:
 	std::vector<Event> m_events;
 	std::vector<Widget*> m_childs;
 	
-	VkDeviceSize m_memOffset;
+	size_t m_bufferId;
 	struct {
 		std::vector<uint32_t> ids;
 		std::vector<VkDescriptorType> types;

@@ -22,6 +22,7 @@ class IMemoryManager;
 struct I3DEngine;
 class CFont;
 class RessourcesManager;
+class MemoryManager;
 class CFramebuffer;
 class GUI;
 

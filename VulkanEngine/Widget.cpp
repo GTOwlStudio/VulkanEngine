@@ -1,7 +1,7 @@
 #include "guitools.h"
 #include "Widget.h"
 
-Widget::Widget(std::string name, rect2D boundary) : m_name(name), m_boundary(boundary), m_memOffset(), m_className("Widget")
+Widget::Widget(std::string name, rect2D boundary) : m_name(name), m_boundary(boundary), m_bufferId(), m_className("Widget")
 {
 }
 
@@ -69,12 +69,17 @@ void Widget::gIndices(void * arr)
 {
 }
 
-VkDeviceSize Widget::getMemoryOffset()
+size_t Widget::getBufferId()
 {
-	return m_memOffset;
+	return m_bufferId;
 }
 
-std::vector<uint32_t> Widget::getDescriptorsId()
+size_t Widget::getDescriptorIdsSize()
+{
+	return m_descriptors.ids.size();
+}
+
+std::vector<uint32_t> Widget::getDescriptorsIds()
 {
 	return m_descriptors.ids;
 }

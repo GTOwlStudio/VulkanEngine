@@ -1,7 +1,10 @@
 #pragma once
+#include "vulkan_header.h"
 #include "IMemoryManager.h"
+#include "System.h"
 #include <vector>
-#include "VirtualBufferPool.h"
+
+class CSystem;
 
 class CMemoryManager : public IMemoryManager
 {
@@ -9,11 +12,12 @@ public:
 	CMemoryManager();
 	~CMemoryManager();
 	
-	virtual VkDeviceSize requestMemory(VkDeviceSize requestSize, std::string description, VkBufferUsageFlags flags);
+	virtual size_t requestMemory(VkDeviceSize requestSize, std::string description, VkBufferUsageFlags flags);
 	virtual VkDeviceSize requestedMemorySize() const;
 	virtual std::string getGlobalMemoryDescription(std::string separator = " | ");
-	virtual void allocateMemory();
-	
+	virtual void allocateMemory(VkBuffer buffer);
+	virtual VirtualBuffer getVirtualBuffer(uint64_t id);
+	virtual VirtualBuffer* getVirtualBufferPtr(uint64_t id);
 
 protected:
 	VkDeviceSize m_requestedMemorySize = 0;

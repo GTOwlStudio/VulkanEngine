@@ -144,11 +144,11 @@ public:
 		VkPolygonMode polyMode,
 		uint32_t shaderStagesCount,
 		VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name) = 0;
-	virtual void addGraphicsPipeline(vkTools::CShader* shader, VkRenderPass renderPass,
-		VkPipelineCreateFlags flags,
-		VkPrimitiveTopology topology,
-		VkPolygonMode polyMode,
-		uint32_t shaderStagesCount ,std::string name) = 0;
+	virtual void addGraphicsPipeline(vkTools::CShader* shader, VkRenderPass renderPass, std::string name,
+		VkPipelineCreateFlags flags = 0,
+		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+		VkPolygonMode polyMode = VK_POLYGON_MODE_FILL,
+		uint32_t shaderStagesCount = 2) = 0;
 
 	virtual void addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR) = 0;
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)=0;
@@ -184,6 +184,7 @@ public:
 	virtual vkTools::CShader* getShader(uint32_t id) = 0;
 	virtual uint32_t getShaderId(std::string shaderName) = 0; //Return the id of the shader named 'shaderName'
 															  //return UINT32_MAX if there is no shader named 'shader_name'
+	virtual size_t getShaderLastBinding() = 0;
 	virtual VkBuffer getBuffer(uint64_t id)= 0;
 	virtual vk::Buffer* getBufferStruct(uint32_t id) = 0;
 	virtual vkTools::VulkanTexture* getTexture(uint32_t texId) = 0;
@@ -194,7 +195,7 @@ public:
 	//virtual CFramebuffer* getOffscreen(uint32_t id) = 0;
 	virtual CFramebuffer* getOffscreen(std::string name) = 0;
 
-	virtual uint32_t requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount) = 0;
+	virtual uint32_t requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount, std::string descriptorLayoutName = "null") = 0;
 
 	virtual void getInfo() = 0;
 	virtual void getBufferInfo() = 0;

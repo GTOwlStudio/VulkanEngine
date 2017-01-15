@@ -4,10 +4,12 @@
 
 CFramebuffer::CFramebuffer()
 {
-	draw_data.bufferOffset = gEnv->pMemoryManager->requestMemory(4 * sizeof(VertexT) + (6 * sizeof(uint32_t)),
+	draw_data.bufferId = gEnv->pMemoryManager->requestMemory(4 * sizeof(VertexT) + (6 * sizeof(uint32_t)),
 		"Framebuffer (4*Vertex + 6*uint32_t)");
+	//draw_data.bufferOffset = gEnv->pMemoryManager->requestMemory(4 * sizeof(VertexT) + (6 * sizeof(uint32_t)),
+	//	"Framebuffer (4*Vertex + 6*uint32_t)");
 		//VK_BUFFER_USAGE_VERTEX_BUFFER_BIT|VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-	draw_data.descriptorSetId = gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1);
+	draw_data.descriptorSetId = gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, "texture");
 }
 
 
@@ -163,8 +165,9 @@ void CFramebuffer::prepareDescriptorSet()
 
 	std::array<VertexT, 4> vertData = { VertexT(-1.0f, -1.0f, 0.1f, 0.0f,0.0f), VertexT(-1.0f, 1.0f, 0.1f, 0.0f,1.0f), VertexT(1.0f, 1.0f, 0.1f, 1.0f,1.0f), VertexT(1.0f, -1.0f,0.1f, 1.0f,0.0f) };
 	uint32_t indices[6] = {0,1,2,2,3,0};
-	gEnv->pRenderer->bufferSubData(gEnv->bbid, 4*sizeof(VertexT),draw_data.bufferOffset, vertData.data() );
-	gEnv->pRenderer->bufferSubData(gEnv->bbid, 6 * sizeof(uint32_t), draw_data.bufferOffset + (4*sizeof(VertexT)), indices);
+	size_t tmpOffset = gEnv->pMemoryManager->getVirtualBuffer(draw_data.bufferId).bufferInfo.offset;
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, 4*sizeof(VertexT),tmpOffset, vertData.data() );
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, 6 * sizeof(uint32_t), tmpOffset + (4*sizeof(VertexT)), indices);
 
 	gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0),gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, draw_data.descriptorSetId);
 
@@ -181,9 +184,10 @@ void CFramebuffer::prepareDescriptorSet()
 	draw_data.quad = {};
 	draw_data.quad.bindDescriptorSets(gEnv->pRenderer->getShader("texture")->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(draw_data.descriptorSetId));
 	draw_data.quad.bindPipeline(gEnv->pRenderer->getPipeline("texture"));
-	draw_data.gOffset[0] = draw_data.bufferOffset;
+	//draw_data.gOffset[0] = draw_data.bufferOffset;
+	draw_data.gOffset[0] = tmpOffset;
 	draw_data.quad.bindVertexBuffers(gEnv->pRenderer->getBuffer(gEnv->bbid),1,draw_data.gOffset);
-	draw_data.quad.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), sizeof(VertexT)*4+draw_data.bufferOffset, VK_INDEX_TYPE_UINT32);
+	draw_data.quad.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), sizeof(VertexT)*4+tmpOffset, VK_INDEX_TYPE_UINT32);
 	draw_data.quad.drawIndexed(6, 1, 0, 0, 0);
 
 	gEnv->pRenderer->addIndexedDraw(draw_data.quad, gEnv->pRenderer->getRenderPass("main"));

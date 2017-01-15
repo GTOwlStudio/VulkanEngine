@@ -50,9 +50,9 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 	//Create the big buffer #edit : the big buffer is now created in the pRenderer->Init() function, much better solution
 	//m_env.pRenderer->createBuffer(&m_env.bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |VK_BUFFER_USAGE_INDEX_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_env.pMemoryManager->requestedMemorySize());
 	printf("bbid=%i\n", gEnv->bbid);
-	graphicsInterface.load();
-	font.load();
 	//graphicsInterface.load();
+	font.load();
+	graphicsInterface.load();
 
 	//DO NOT WRITE UNDER THIS LINE
 	m_env.pRenderer->bcb(); //build command buffers

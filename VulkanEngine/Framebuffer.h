@@ -38,7 +38,8 @@ protected:
 	VkRenderPass m_renderPass;
 
 	struct {
-		VkDeviceSize bufferOffset; //Offset of the fisrt data of the object in the buffer
+		//VkDeviceSize bufferOffset; //Offset of the fisrt data of the object in the buffer
+		size_t bufferId;
 		SIndexedDrawInfo quad;
 		VkDeviceSize gOffset[1];
 		//VertexT m_quadcoord[6];

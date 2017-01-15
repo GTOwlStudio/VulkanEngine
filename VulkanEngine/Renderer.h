@@ -39,6 +39,7 @@ struct Vertex {
 
 
 struct VertexT {
+	
 	float pos[3];
 	float tc[2];
 	VertexT(float x, float y, float z, float tx, float ty) {
@@ -69,6 +70,8 @@ public:
 	virtual vkTools::CShader* getShader(std::string shaderName);
 	virtual vkTools::CShader* getShader(uint32_t id);
 	virtual uint32_t getShaderId(std::string shaderName);
+	virtual size_t getShaderLastBinding();
+
 	virtual VkBuffer getBuffer(uint64_t id);
 	virtual vk::Buffer* getBufferStruct(uint32_t id);
 	virtual vkTools::VulkanTexture* getTexture(uint32_t texId);
@@ -78,7 +81,7 @@ public:
 	virtual VkCommandPool getCommandPool();
 	virtual CFramebuffer* getOffscreen(std::string name);
 
-	virtual uint32_t requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount);
+	virtual uint32_t requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount, std::string descriptorLayoutName);
 
 	virtual void getInfo();
 	virtual void getBufferInfo();
@@ -138,11 +141,11 @@ protected:
 		uint32_t shaderStagesCount,
 		VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name);
 
-	virtual void addGraphicsPipeline(vkTools::CShader* shader, VkRenderPass renderPass,
+	virtual void addGraphicsPipeline(vkTools::CShader* shader, VkRenderPass renderPass,std::string name,
 		VkPipelineCreateFlags flags,
 		VkPrimitiveTopology topology,
 		VkPolygonMode polyMode,
-		uint32_t shaderStagesCount, std::string name);
+		uint32_t shaderStagesCount);
 
 	virtual void addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName,
@@ -279,6 +282,8 @@ protected:
 		std::vector<vkTools::CShader*> shaders;
 		std::vector<std::string> names;
 		std::vector<VkDescriptorSet> descriptorSets;
+		//std::vector<VkDescriptorType> descriptorTypes;
+		std::vector<std::string> descriptorLayoutNames;
 		//std::vector<VkDescriptorSet>
 		VkDescriptorPool descriptorPool;
 		std::vector<VkDescriptorPoolSize> poolSize;

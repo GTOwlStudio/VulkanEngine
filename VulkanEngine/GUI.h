@@ -53,8 +53,13 @@ protected:
 	std::vector<Widget*> m_widgets;
 
 	struct {
-		glm::mat4 projection;
+		struct {
+			glm::mat4 projection;
+		} UBO; //Uniform Buffer Object
+		size_t UBO_bufferId;
 		std::vector<SIndexedDrawInfo> draws;
+		std::vector<uint32_t> descriptorSetId;
+		std::vector<VkDescriptorType> descriptorSetTypes;
 		CFramebuffer* offscreen;
 	} m_draw;
 

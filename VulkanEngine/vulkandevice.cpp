@@ -151,6 +151,7 @@ namespace vk
 			// If the device will be used for presenting to a display via a swapchain
 			// we need to request the swapchain extension
 			deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+			//deviceExtensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
 		}
 
 		VkDeviceCreateInfo deviceCreateInfo = {};
@@ -159,7 +160,8 @@ namespace vk
 		deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
 		deviceCreateInfo.pEnabledFeatures = &enabledFeatures;
 
-		// Cnable the debug marker extension if it is present (likely meaning a debugging tool is present)
+		// Enable the debug marker extension if it is present (likely meaning a debugging tool is present)
+		//printf("Debug Marker are present %i\n", vkTools::checkDeviceExtensionPresent(physicalDevice, VK_EXT_DEBUG_MARKER_EXTENSION_NAME));
 		if (vkTools::checkDeviceExtensionPresent(physicalDevice, VK_EXT_DEBUG_MARKER_EXTENSION_NAME))
 		{
 			deviceExtensions.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);

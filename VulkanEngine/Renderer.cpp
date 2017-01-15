@@ -23,7 +23,10 @@ CRenderer::~CRenderer()
 	for (size_t i = 0; i < m_pipelines.pipelines.size();i++) {
 		vkDestroyPipeline(m_device, m_pipelines.pipelines[i],nullptr);
 		//vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_shaders.descriptorSets[i]); //#enhancement avoid the use of iteration
-		vkFreeDescriptorSets(m_device, m_shaders.descriptorPool, 1, &m_shaders.descriptorSets[i]);//#enhancement avoid the use of iteration
+		if (&m_shaders.descriptorSets[i]!=nullptr) {
+			vkFreeDescriptorSets(m_device, m_shaders.descriptorPool, 1, &m_shaders.descriptorSets[i]); //#enhancement avoid the use of iteration
+		}
+		
 
 	}
 	
@@ -314,6 +317,11 @@ uint32_t CRenderer::getShaderId(std::string shaderName)
 	return UINT32_MAX;
 }
 
+size_t CRenderer::getShaderLastBinding()
+{
+	return m_shaders.shaders.size();
+}
+
 VkBuffer CRenderer::getBuffer(uint64_t id)
 {
 	if (id>m_buffers.size()) {
@@ -391,10 +399,12 @@ CFramebuffer* CRenderer::getOffscreen(std::string name)
 	return helper::iterate<CFramebuffer*>(name, m_offscreenTargets,m_offscreenNames);
 }
 
-uint32_t CRenderer::requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount)
+uint32_t CRenderer::requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount, std::string descriptorLayoutName)
 {
 	m_shaders.poolSize.push_back(vkTools::initializers::descriptorPoolSize(type, 1));
 	m_shaders.descriptorSets.push_back({});
+	//m_shaders.descriptorTypes.push_back(type);
+	m_shaders.descriptorLayoutNames.push_back(descriptorLayoutName);
 	//return m_shaders.descriptorSets.back();
 	return static_cast<uint32_t>(m_shaders.descriptorSets.size()-1);
 }
@@ -921,7 +931,7 @@ void CRenderer::addGraphicsPipeline(VkPipelineLayout pipelineLayout ,VkRenderPas
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
 }
 
-void CRenderer::addGraphicsPipeline(vkTools::CShader * shader, VkRenderPass renderPass, VkPipelineCreateFlags flags, VkPrimitiveTopology topology, VkPolygonMode polyMode, uint32_t shaderStagesCount, std::string name)
+void CRenderer::addGraphicsPipeline(vkTools::CShader * shader, VkRenderPass renderPass, std::string name, VkPipelineCreateFlags flags, VkPrimitiveTopology topology, VkPolygonMode polyMode, uint32_t shaderStagesCount)
 {
 	addGraphicsPipeline(shader->getPipelineLayout(), renderPass, flags, topology, polyMode, shaderStagesCount, shader->getShaderStagesPtr(), shader->getInputState(), name);
 }
@@ -1400,7 +1410,7 @@ void CRenderer::initRessources()
 	std::vector<VkDescriptorPoolSize> poolSize;
 
 	//Set layout bindings creation
-	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
+	/*std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {
 		//vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
 		//vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0),
 		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0),
@@ -1416,7 +1426,7 @@ void CRenderer::initRessources()
 
 	addShader(gEnv->getAssetpath()+"shaders/texture.vert.spv", gEnv->getAssetpath() + "shaders/texture.frag.spv",
 		&shaderName,setLayoutBindings, bindings, attributes);
-
+	*/
 	gEnv->pRessourcesManager->prepareShaders();
 	//Descriptor Pool creation
 
@@ -1441,13 +1451,15 @@ void CRenderer::initRessources()
 		poolSize[i] = m_shaders.poolSize[i-setLayoutBindings.size()-1];
 	}*/
 
-	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = 
-		vkTools::initializers::descriptorPoolCreateInfo((uint32_t)poolSize.size(), poolSize.data(), 2);
+	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo =
+		vkTools::initializers::descriptorPoolCreateInfo((uint32_t)poolSize.size(), poolSize.data(), static_cast<uint32_t>(poolSize.size()));
 	VK_CHECK_RESULT(vkCreateDescriptorPool(m_device, &descriptorPoolCreateInfo, nullptr, &m_shaders.descriptorPool));
 	//m_shaders.shaders.back()->load(m_device);
-
+	
 	getShader("texture")->load(m_device);
+	printf("Shader color loaded\n");
 	getShader("color")->load(m_device);
+	//createDescriptorSet(getDescriptorPool(0), getShader("color")->getDescriptorSetLayoutPtr(), 1, 1);
 	//std::vector<VkDescriptorSet>::iterator it = m_shaders.descriptorSets.begin();
 
 
@@ -1463,29 +1475,35 @@ void CRenderer::initRessources()
 	addRenderPass("main");
 	addRenderPass("offscreen");
 
-	/*gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture")->getPipelineLayout(),
-		gEnv->pRenderer->getRenderPass("main"),
-		0,
-		VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		VK_POLYGON_MODE_FILL,
-		2,
-		gEnv->pRenderer->getShader("texture")->getShaderStagesPtr(),
-		gEnv->pRenderer->getShader("texture")->getInputState(),
-		"texture");*/
+	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture"),
+	//	gEnv->pRenderer->getRenderPass("main"), "texture",
+	//	0,
+	//	VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+	//	VK_POLYGON_MODE_FILL,
+	//	2);
+
+	
 
 	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture"),
-		gEnv->pRenderer->getRenderPass("main"),
-		0,
-		VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-		VK_POLYGON_MODE_FILL,
-		2,
-		"texture");
+		gEnv->pRenderer->getRenderPass("main"), "texture");
 	
-	createBuffer(&gEnv->bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize());
+	//gEnv->pRenderer->addRenderPass("gui");
+	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass("gui"), "gui");
 
-	gEnv->pMemoryManager->allocateMemory();
+	createBuffer(&gEnv->bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize());
+
+	gEnv->pMemoryManager->allocateMemory(m_buffers.back().buffer);
+
+	//gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, m_descriptorSetId);
+
+	/*for (size_t i = 0; i < m_shaders.descriptorLayoutNames.size();i++) {
+		if (m_shaders.descriptorLayoutNames[i]!="null") {
+			createDescriptorSet(m_shaders.descriptorPool, getShader(m_shaders.descriptorLayoutNames[i])->getDescriptorSetLayoutPtr(), 1, i);
+		}
+	}*/
 
 	m_offscreenTargets[0]->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), getRenderPass("offscreen"));
+	
 	//m_dfb->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(),getRenderPass("offscreen"));
 
 }
@@ -2264,8 +2282,8 @@ VkResult CRenderer::createInstance()
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = gEnv->pSystem->getAppName().c_str();
 	appInfo.pEngineName = gEnv->pSystem->getAppName().c_str();
-	appInfo.apiVersion = VK_API_VERSION_1_0;
-
+	//appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 30);
 	std::vector<const char*> enabledExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
 
 #if defined (_WIN32)

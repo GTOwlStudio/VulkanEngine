@@ -17,12 +17,14 @@ NO IDEA WHY THE I SET THIS WARRANTLY
 */
 
 struct VirtualBuffer{
-	uint64_t size = 0;
-	uint64_t offset = 0;
+	VkDescriptorBufferInfo bufferInfo = {};
 	//VkBufferUsageFlags usageFlags;
-	uint64_t id;
-	VirtualBuffer(uint64_t psize, uint64_t poffset,/* VkBufferUsageFlags flags,*/ uint64_t pid) : size(psize),
-		offset(poffset),/* usageFlags(flags),*/id(pid){}
+	size_t id; //size_t is in fact a uint64_t
+	VirtualBuffer(uint64_t psize, uint64_t poffset,/* VkBufferUsageFlags flags,*/ uint64_t pid, VkBuffer buffer) :/* usageFlags(flags),*/id(pid){
+		bufferInfo.range = psize;
+		bufferInfo.offset = poffset;
+		bufferInfo.buffer = buffer;
+	}
 };
 
 class VirtualBufferPool
@@ -30,8 +32,11 @@ class VirtualBufferPool
 public:
 	VirtualBufferPool(uint64_t poolSize, VkBufferUsageFlags flags);
 	~VirtualBufferPool();
-	void allocateBuffer(uint64_t* id,VkBufferUsageFlags usageFlags, uint64_t size, std::string tag, uint64_t offset = -1);
-	void allocateBuffer(uint64_t* id,VkBufferUsageFlags usageFlags, uint64_t size, uint64_t offset = -1);
+	void allocateBuffer(uint64_t* id,VkBufferUsageFlags usageFlags, uint64_t size, std::string tag, VkBuffer buffer, uint64_t offset = -1);
+	void allocateBuffer(uint64_t* id,VkBufferUsageFlags usageFlags, uint64_t size, VkBuffer buffer, uint64_t offset = -1);
+	VirtualBuffer getVirtualBuffer(size_t id);
+	VirtualBuffer* getVirtualBufferPtr(size_t id);
+	size_t poolSize();
 	//void createBuffer(uint32_t siz);
 	//bool checkOffset(uint32_t offset);
 	//uint64_t getNextOffset(uint64_t bufferSize = 0, uint64_t offset = 0);
@@ -39,8 +44,8 @@ public:
 
 protected:
 	uint32_t m_poolSize;
-	std::list<VirtualBuffer> m_vbuffers;
-	std::list<std::string> m_buffersTag;
+	std::vector<VirtualBuffer> m_vbuffers;
+	std::vector<std::string> m_buffersTag;
 	VkBufferUsageFlags m_flags;
 	vk::Buffer m_buffer;
 
