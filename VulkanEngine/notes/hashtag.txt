@@ -1,0 +1,19 @@
+#dirty 
+The code is dirty and should be recoded
+
+#enhancement proposition
+The code could be enhanced by following the proposition (the proposition is optional)
+
+#future proposition
+proposition on the future of the code
+
+#dev
+This a dev code
+
+#supposition propostion
+The proposition is a supposition need a deeper study
+
+#warning proposition
+
+#simp proposition
+The code could be shorter

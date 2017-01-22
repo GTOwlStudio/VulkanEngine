@@ -45,7 +45,7 @@ void VirtualBufferPool::allocateBuffer(uint64_t* id, VkBufferUsageFlags usageFla
 		return;
 	}
 	if (id != nullptr) { *id = nextId; }
-	;
+	
 
 	addVirtualBuffer(size, finalOffset, usageFlags, tag);
 	
@@ -54,6 +54,14 @@ void VirtualBufferPool::allocateBuffer(uint64_t* id, VkBufferUsageFlags usageFla
 void VirtualBufferPool::allocateBuffer(uint64_t* id, VkBufferUsageFlags usageFlags, uint64_t size, VkBuffer buffer, uint64_t offset)
 {
 	allocateBuffer(id, usageFlags, size,"", buffer,offset);
+}
+
+void VirtualBufferPool::setBuffer(VkBuffer buffer)
+{
+	m_buffer.buffer = buffer;
+	for (size_t i = 0; i < m_vbuffers.size();i++) {
+		m_vbuffers[i].bufferInfo.buffer = m_buffer.buffer;
+	}
 }
 
 VirtualBuffer VirtualBufferPool::getVirtualBuffer(size_t id)
@@ -66,10 +74,16 @@ VirtualBuffer* VirtualBufferPool::getVirtualBufferPtr(size_t id)
 	return &m_vbuffers[id];
 }
 
-size_t VirtualBufferPool::poolSize()
+size_t VirtualBufferPool::poolLength()
 {
 	return m_vbuffers.size();
 }
+
+VkDeviceSize VirtualBufferPool::getPoolSize()
+{
+	return m_poolSize;
+}
+
 
 std::string VirtualBufferPool::getInfo()
 {

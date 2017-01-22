@@ -322,6 +322,24 @@ size_t CRenderer::getShaderLastBinding()
 	return m_shaders.shaders.size();
 }
 
+uint64_t CRenderer::getBufferAvaibleId()
+{
+	uint64_t id = UINT64_MAX;
+
+	for (size_t i = 0; i < m_buffers.size();i++) {
+		if (m_buffers[i].buffer==nullptr) {
+			id = i;
+			break;
+		}
+	}
+
+	if (id==UINT64_MAX) {
+		id = m_buffers.size() - 1;
+	}
+
+	return id;
+}
+
 VkBuffer CRenderer::getBuffer(uint64_t id)
 {
 	if (id>m_buffers.size()) {
@@ -1490,9 +1508,16 @@ void CRenderer::initRessources()
 	//gEnv->pRenderer->addRenderPass("gui");
 	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass("gui"), "gui");
 
-	createBuffer(&gEnv->bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize());
+	//createBuffer(&gEnv->bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize());
 
-	gEnv->pMemoryManager->allocateMemory(m_buffers.back().buffer);
+	//gEnv->pMemoryManager->allocateMemory(m_buffers.back().buffer);
+
+	//std::vector<VkDeviceSize> tmppp = gEnv->pMemoryManager->requestedBuffers();
+
+	//createBuffer(&gEnv->bbid, gEnv->pMemoryManager->getFlags() | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize());
+
+	gEnv->pMemoryManager->allocateMemory();
+	//gEnv->pMemoryManager->allocateMemory(m_buffers.back().buffer);
 
 	//gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, m_descriptorSetId);
 

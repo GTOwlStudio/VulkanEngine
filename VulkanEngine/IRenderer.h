@@ -185,6 +185,9 @@ public:
 	virtual uint32_t getShaderId(std::string shaderName) = 0; //Return the id of the shader named 'shaderName'
 															  //return UINT32_MAX if there is no shader named 'shader_name'
 	virtual size_t getShaderLastBinding() = 0;
+
+	virtual uint64_t getBufferAvaibleId() = 0;// Return an avaible Id
+
 	virtual VkBuffer getBuffer(uint64_t id)= 0;
 	virtual vk::Buffer* getBufferStruct(uint32_t id) = 0;
 	virtual vkTools::VulkanTexture* getTexture(uint32_t texId) = 0;

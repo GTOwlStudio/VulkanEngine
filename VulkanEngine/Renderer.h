@@ -72,6 +72,8 @@ public:
 	virtual uint32_t getShaderId(std::string shaderName);
 	virtual size_t getShaderLastBinding();
 
+	virtual uint64_t getBufferAvaibleId();
+
 	virtual VkBuffer getBuffer(uint64_t id);
 	virtual vk::Buffer* getBufferStruct(uint32_t id);
 	virtual vkTools::VulkanTexture* getTexture(uint32_t texId);

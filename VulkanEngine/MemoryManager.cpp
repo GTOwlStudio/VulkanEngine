@@ -13,10 +13,19 @@ CMemoryManager::~CMemoryManager()
 
 size_t CMemoryManager::requestMemory(VkDeviceSize requestSize, std::string description, VkBufferUsageFlags flags)
 {
-	m_requestedMemorySize += requestSize;
-	m_memblock.push_back(requestSize);
-	m_descriptions.push_back(description);
-	addFlag(flags);
+	
+	if (flags != VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) {
+		addFlag(flags);
+		m_requestedMemorySize += requestSize;
+		m_memblock.push_back(requestSize);
+		m_descriptions.push_back(description);
+	}
+	else {
+		m_uniformBufferInfo.offsets.push_back(m_uniformBufferInfo.bufferSize);
+		m_uniformBufferInfo.bufferSize += requestSize;
+		m_uniformBufferInfo.sizes.push_back(requestSize);	
+	}
+	
 	
 	return m_memblock.size()-1;//m_requestedMemorySize - requestSize;
 }
@@ -24,6 +33,17 @@ size_t CMemoryManager::requestMemory(VkDeviceSize requestSize, std::string descr
 VkDeviceSize CMemoryManager::requestedMemorySize() const
 {
 	return m_requestedMemorySize;
+}
+
+std::vector<VkDeviceSize> CMemoryManager::requestedBuffers()
+{
+	std::vector<VkDeviceSize> sizes;
+	
+	for (size_t i = 0; i < m_virtualBuffers.size(); i++) {
+		sizes.push_back(m_virtualBuffers[i].getPoolSize());
+	}
+
+	return sizes;
 }
 
 std::string CMemoryManager::getGlobalMemoryDescription(std::string separator)
@@ -35,20 +55,40 @@ std::string CMemoryManager::getGlobalMemoryDescription(std::string separator)
 	return gd;
 }
 
-void CMemoryManager::allocateMemory(VkBuffer buffer)
+void CMemoryManager::allocateMemory()
 {
+	//std::vector<VkDeviceSize> uniformBufferAllocation;
+	//#DIRTY
 	m_virtualBuffers.push_back(VirtualBufferPool(m_requestedMemorySize, m_flags));
 	uint64_t offset = 0;
 	uint64_t testptr;
-	printf("allocateMemory()\n");
+	printf("allocate data\n");
 	for (size_t i = 0; i < m_memblock.size();i++) {
-		m_virtualBuffers.back().allocateBuffer(&testptr, m_flags,m_memblock[i], buffer,offset);
+		m_virtualBuffers.back().allocateBuffer(&testptr, m_flags,m_memblock[i], nullptr,offset);
 		printf("%i\n", testptr);
 		offset += m_memblock[i];
 	}
-	//gEnv->pRenderer->createBuffer(, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize()
+	
+	gEnv->pRenderer->createBuffer(&gEnv->bbid, m_flags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_requestedMemorySize);
+	m_virtualBuffers.back().setBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid));
 
-	printf("[Allocatememory]%s\n",m_virtualBuffers.back().getInfo().c_str());
+	m_virtualBuffers.push_back(VirtualBufferPool(m_uniformBufferInfo.bufferSize, m_uniformBufferInfo.flags));
+	offset = 0;
+	printf("allocate uniformBuffers\n");
+	for (size_t i = 0; i < m_uniformBufferInfo.sizes.size();i++) {
+		m_virtualBuffers.back().allocateBuffer(&testptr, m_uniformBufferInfo.flags, m_uniformBufferInfo.sizes[i], nullptr, m_uniformBufferInfo.offsets[i]);
+		printf("%i\n", testptr);
+	}
+
+	gEnv->pRenderer->createBuffer(&m_uniformBufferInfo.bufferId, m_uniformBufferInfo.flags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_uniformBufferInfo.bufferSize);
+	m_virtualBuffers.back().setBuffer(gEnv->pRenderer->getBuffer(m_uniformBufferInfo.bufferId));
+
+	//gEnv->pRenderer->createBuffer(, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize()
+	printf("\n[Allocatememory]\n");
+	for (size_t i = 0; i < m_virtualBuffers.size();i++) {
+		printf("%s\n\n",m_virtualBuffers[i].getInfo().c_str());
+	}
+	//printf("[Allocatememory]%s\n",m_virtualBuffers.back().getInfo().c_str());
 }
 
 VirtualBuffer CMemoryManager::getVirtualBuffer(uint64_t id)
@@ -57,7 +97,7 @@ VirtualBuffer CMemoryManager::getVirtualBuffer(uint64_t id)
 	size_t lastTmp = 0;
 	for (size_t i = 0; i < m_virtualBuffers.size();i++) {
 		lastTmp = tmp;
-		tmp += m_virtualBuffers[i].poolSize();
+		tmp += m_virtualBuffers[i].poolLength();
 		if (id<tmp) {
 			return m_virtualBuffers[i].getVirtualBuffer(id-lastTmp);
 		}
@@ -76,7 +116,7 @@ VirtualBuffer * CMemoryManager::getVirtualBufferPtr(uint64_t id)
 	size_t lastTmp = 0;
 	for (size_t i = 0; i < m_virtualBuffers.size(); i++) {
 		lastTmp = tmp;
-		tmp += m_virtualBuffers[i].poolSize();
+		tmp += m_virtualBuffers[i].poolLength();
 		if (id<tmp) {
 			//size_t tt = id - lastTmp;
 			//VirrtualBuffer buf = &m_virtualBuffers();
@@ -88,6 +128,11 @@ VirtualBuffer * CMemoryManager::getVirtualBufferPtr(uint64_t id)
 	assert(id < tmp);
 
 	return nullptr;
+}
+
+VkBufferUsageFlags CMemoryManager::getFlags()
+{
+	return m_flags;
 }
 
 void CMemoryManager::addFlag(VkBufferUsageFlags flags)
