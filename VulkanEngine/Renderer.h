@@ -21,6 +21,7 @@
 #include "vulkandevice.h"
 #include "System.h"
 #include "Framebuffer.h"
+#include "OffscreenTarget.h"
 
 typedef VkPhysicalDeviceFeatures (*PFN_GetEnabledFeatures)();
 
@@ -31,6 +32,7 @@ class CSystem;
 class vkTools::CShader;
 class CRenderer;
 class CFramebuffer;
+class COffscreenTarget;
 
 struct Vertex {
 	float pos[3];
@@ -50,6 +52,7 @@ struct VertexT {
 		tc[1] = ty;
 	}
 };
+
 
 class CRenderer : public IRenderer
 {
@@ -144,12 +147,14 @@ protected:
 		VkPipelineShaderStageCreateInfo* shaderStages, VkPipelineVertexInputStateCreateInfo const& inpuState, std::string name);
 
 	virtual void addGraphicsPipeline(vkTools::CShader* shader, VkRenderPass renderPass,std::string name,
+		bool blend,
 		VkPipelineCreateFlags flags,
 		VkPrimitiveTopology topology,
 		VkPolygonMode polyMode,
 		uint32_t shaderStagesCount);
 
 	virtual void addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
+	virtual void addRenderPass(std::string renderPassName, VkAttachmentDescription colorAttachmentDescription);
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName,
 		std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings,
 		std::vector<VkVertexInputBindingDescription> bindingDescription,
@@ -168,9 +173,12 @@ protected:
 	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass);
 	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers);
 	virtual void addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, VkFramebuffer framebuffer);
+	virtual void addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass, std::string targetName);
 	virtual void buildDrawCommands(VkRenderPass renderPass);
-	virtual void buildDrawCommands();
+	virtual void buildDrawCommands(); 
+	virtual void buildDrawCommands2();
 	virtual void buildOffscreenDrawCommands();
+	virtual void buildTargetedDrawCommands();
 
 	virtual void initRessources();
 
@@ -304,6 +312,20 @@ protected:
 		std::vector<bool> isOffscreen;//Offscreen is rendered separately so you have to say if this an offscreen or not
 	} m_renderAttachments;
 
+	struct {
+		std::vector<COffscreenTarget> targets;
+		std::vector<std::string> names;
+	} m_offscreenInfos;
+
+	COffscreenTarget getOffscreenTarget(std::string name);
+	uint64_t getOffscreenTargetId(std::string name);
+
+	struct {
+		std::vector<SIndexedDrawInfo> draws;
+		std::vector<std::string> targetNames;
+		std::vector<VkCommandBuffer> cmdBuffers;
+	} m_offscreenAttachments;
+	
 	
 	vkTools::VulkanTextureLoader* m_textureLoader = nullptr;
 

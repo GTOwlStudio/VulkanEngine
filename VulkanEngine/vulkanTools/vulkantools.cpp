@@ -287,6 +287,11 @@ namespace vkTools {
 
 }
 
+VkAttachmentDescription vkTools::initializers::attachmentDescription(VkFormat format, VkSampleCountFlagBits samples, VkAttachmentLoadOp loadOp, VkAttachmentStoreOp storeOp, VkAttachmentLoadOp stencilLoadOp, VkAttachmentStoreOp stencilStoreOp, VkImageLayout initialLayout, VkImageLayout finalLayout)
+{
+	return VkAttachmentDescription();
+}
+
 VkMemoryAllocateInfo vkTools::initializers::memoryAllocateInfo()
 {
 	VkMemoryAllocateInfo memAllocInfo = {};

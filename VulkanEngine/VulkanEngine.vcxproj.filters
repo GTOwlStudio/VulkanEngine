@@ -111,6 +111,9 @@
     <ClCompile Include="XMLParser.cpp">
       <Filter>vulkanTools</Filter>
     </ClCompile>
+    <ClCompile Include="OffscreenTarget.cpp">
+      <Filter>Common\ThomasRenderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="I3DEngine.h">
@@ -208,6 +211,9 @@
     </ClInclude>
     <ClInclude Include="vulkan_header.h">
       <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="OffscreenTarget.h">
+      <Filter>Common\ThomasRenderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

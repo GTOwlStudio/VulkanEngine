@@ -7,7 +7,7 @@ uint32_t GUI::instance = 0;
 
 GUI::GUI(std::string file) : m_file(file)
 {
-	if (instance>=1) {
+	if (instance >= 1) {
 		assert("Multiple GUI created, must only have one");
 	}
 	instance += 1;
@@ -15,11 +15,14 @@ GUI::GUI(std::string file) : m_file(file)
 	loadCreator();
 	loadGuiSettings("GuiSettings.xml");
 	loadFromXml(m_file);
-	
+
 	//addWidget(new Label("Sample", offset2D(50,50)));
 
-	//addWidget(new Panel("Panel", rect2D(100, 100, 100, 100)));
-	m_draw.UBO.projection = glm::ortho<float>(0.0f, (float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f); //GUI coherent 
+	//addWidget(new Panel("Panel", rect2D(100, 100, 100, 100)));-
+	//float matprojpar[4] = {0.0f, (float)gEnv->pSystem->getWidth(), 0.0f, (float)gEnv->pSystem->getHeight()};
+	m_draw.UBO.projection = glm::ortho(0.0f, (float)gEnv->pSystem->getWidth(), 0.0f, (float)gEnv->pSystem->getHeight());
+	//m_draw.UBO.projection = mat4(1.0f);
+	//m_draw.UBO.projection = glm::ortho<float>(0.0f, (float)gEnv->pSystem->getWidth(), 0.0f, (float)gEnv->pSystem->getHeight());//GUI coherent 
 	m_draw.UBO_bufferId = gEnv->pMemoryManager->requestMemory(sizeof(m_draw.UBO), "gUBO", VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	printf("GUI requestedDescriptorSet\n");
 	m_draw.descriptorSetId.push_back(gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, "color"));
@@ -38,19 +41,32 @@ GUI::~GUI()
 
 void GUI::load()
 {
+	if (m_renderPassName == "gui") {
+		gEnv->pRenderer->addRenderPass("gui", VK_ATTACHMENT_LOAD_OP_LOAD);
+	}
 	
-	
-	gEnv->pRenderer->addRenderPass("gui");
 	////m_draw.offscreen = gEnv->pRenderer->addOffscreen("gui");
 	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass("gui"), "gui");
+	
+	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui", true);
 	printf("GUI renderPass and Graphics Pipeline Created");
 	printf("%i object to be load\n", static_cast<int>(m_widgets.size()));
 	loadWidgets();
-	
+	updateUniformBuffer();	
 }
 
 void GUI::update()
 {
+}
+
+void GUI::updateUniformBuffer()
+{
+	//m_draw.UBO.projection = glm::ortho(0.0f, static_cast<float>(gEnv->pSystem->getWidth()), static_cast<float>(gEnv->pSystem->getHeight()), 0.0f);
+	m_draw.UBO.projection = glm::ortho(0.0f,static_cast<float>(gEnv->pSystem->getWidth()), 0.0f, static_cast<float>(gEnv->pSystem->getHeight()));
+	//m_draw.UBO.projection = glm::mat4(1.0f);
+
+	gEnv->pRenderer->bufferSubData(gEnv->pMemoryManager->getUniformRealBufferId(), sizeof(m_draw.UBO), 0, &m_draw.UBO);
+
 }
 
 void GUI::addWidget(Widget * widget)
@@ -121,7 +137,10 @@ void GUI::loadWidgets()
 	for (size_t i = 0; i < m_widgets.size();i++) {
 		if (m_widgets[i]->getClassName()=="Panel") {
 			printf("PANEL\n");
-			Widget* tw = m_widgets.back(); //tmp widget
+			//Widget* tw = m_widgets.back(); //tmp widget
+			//m_widgets[i]->move(offset2D(-1.0f,-1.0f));
+			//m_widgets[i]->resize(extent2D(1.0f,1.0f));
+			Widget* tw = m_widgets[i]; //tmp widget
 			VertexC* tmpV = new VertexC[meshhelper::QUAD_VERTICES_COUNT];
 			uint32_t* tmpI = new uint32_t[meshhelper::QUAD_INDICES_COUNT];
 			tmpBuffer = gEnv->pMemoryManager->getVirtualBufferPtr(tw->getBufferId());
@@ -131,9 +150,9 @@ void GUI::loadWidgets()
 			printf("%i ",(int)tmpOffset);
 			printf("%i %i\n", (int)tw->gDataSize(), (int)(tw->gDataSize() + tmpOffset));
 			printf("%i %i\n", (int)tw->gIndicesSize(), (int)(tw->gDataSize() + tw->gIndicesSize() + tmpOffset));
+			
 			gEnv->pRenderer->bufferSubData(gEnv->bbid, tw->gDataSize(), tmpOffset, tmpV);
 			gEnv->pRenderer->bufferSubData(gEnv->bbid, tw->gIndicesSize(), tmpOffset + tw->gDataSize(), tmpI);
-			
 
 
 			//gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("color")->getDescriptorSetLayoutPtr(), 1, tw->getDescriptorsIds()[0]);
@@ -149,7 +168,9 @@ void GUI::loadWidgets()
 				printf("GUI descriptorSetCreation");
 				gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("color")->getDescriptorSetLayoutPtr(), 1, m_draw.descriptorSetId[i]);
 
-				writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[i]), m_draw.descriptorSetTypes[i], 0, &gEnv->pMemoryManager->getVirtualBufferPtr(tw->getBufferId())->bufferInfo));
+				//writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[i]), m_draw.descriptorSetTypes[i], 0, &gEnv->pMemoryManager->getVirtualBufferPtr(tw->getBufferId())->bufferInfo));
+				writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[i]), m_draw.descriptorSetTypes[i], 0, &gEnv->pMemoryManager->getVirtualBufferPtr(gEnv->pMemoryManager->getUniformBufferId(m_draw.UBO_bufferId))->bufferInfo));
+
 			}
 		/*	for (size_t i = 0; i < tw->getDescriptorsIds().size();i++) {
 				gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("color")->getDescriptorSetLayoutPtr(), 1, tw->getDescriptorsIds()[i]);
@@ -163,15 +184,23 @@ void GUI::loadWidgets()
 
 			//VkDeviceSize gOffset[1];
 			//gOffset[0] = 
+
+
 			SIndexedDrawInfo drawInfo = {};
 
 			//drawInfo.bindDescriptorSets(gEnv->pRenderer->getShader("color")->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(tw->getDescriptorsIds()[0]));
 			drawInfo.bindDescriptorSets(gEnv->pRenderer->getShader("color")->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[0]));
 			drawInfo.bindPipeline(gEnv->pRenderer->getPipeline("gui"));
-
-			drawInfo.bindVertexBuffers(tmpBuffer->bufferInfo.buffer ,1, &tmpOffset);
+			m_draw.gOffset[0] = {static_cast<VkDeviceSize>(tmpOffset)};
+			//drawInfo.bindVertexBuffers(tmpBuffer->bufferInfo.buffer ,1, &tmpOffset);
+			drawInfo.bindVertexBuffers(tmpBuffer->bufferInfo.buffer, 1, m_draw.gOffset);
 			drawInfo.bindIndexBuffer(tmpBuffer->bufferInfo.buffer, tmpOffset + tw->gDataSize(), VK_INDEX_TYPE_UINT32);
 			drawInfo.drawIndexed(6, 1, 0, 0, 0);
+
+			//gEnv->pRenderer->addIndexedDraw(drawInfo, gEnv->pRenderer->getRenderPass("gui"));
+			gEnv->pRenderer->addIndexedDraw(drawInfo, gEnv->pRenderer->getRenderPass(m_renderPassName));
+			//gEnv->pRenderer->addOffscreenIndexedDraw(drawInfo, gEnv->pRenderer->getRenderPass(m_renderPassName));
+
 			//gEnv->pRenderer->addOffscreenIndexedDraw(drawInfo, gEnv->pRenderer->getRenderPass("gui"), gEnv->pRenderer->getOffscreen("font")->getFramebuffer());
 				//drawInfo.bindPipeline(gEnv->);
 

@@ -20,4 +20,8 @@ public:
 	virtual VirtualBuffer* getVirtualBufferPtr(uint64_t id) = 0;
 	virtual VkBufferUsageFlags getFlags() = 0;
 
+	virtual uint64_t getUniformRealBufferId() = 0;
+	virtual uint64_t getUniformBufferId(uint64_t id) = 0;
+	//virtual uint64_t getUniformBufferVirtualId() = 0;
+
 };

@@ -21,6 +21,10 @@ public:
 	virtual VirtualBuffer* getVirtualBufferPtr(uint64_t id);
 	virtual VkBufferUsageFlags getFlags();
 
+	virtual uint64_t getUniformRealBufferId();//return the real id of the buffer
+	virtual uint64_t getUniformBufferId(uint64_t id); //retrun the virtual id of the ubo
+	virtual uint64_t getUniformBufferVirtualId();
+
 protected:
 	VkDeviceSize m_requestedMemorySize = 0;
 	std::vector<VkDeviceSize> m_memblock;
@@ -28,8 +32,13 @@ protected:
 	std::vector<VirtualBufferPool> m_virtualBuffers;
 	VkBufferUsageFlags m_flags;
 
+	std::vector<uint64_t> m_indices;
+
+	std::string m_sortString;
+
 	struct {
 		uint64_t bufferId;
+		uint64_t virtualBufferId;
 		VkDeviceSize bufferSize = 0;
 		std::vector<VkDeviceSize> offsets;
 		std::vector<VkDeviceSize> sizes;

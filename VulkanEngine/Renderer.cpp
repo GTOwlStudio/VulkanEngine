@@ -473,7 +473,9 @@ void CRenderer::bcb()
 	if (m_offscreen) {
 		buildOffscreenDrawCommands();
 	}
-	buildDrawCommands();
+	buildTargetedDrawCommands();
+	buildDrawCommands2();
+	
 }
 
 VkBool32 CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex)
@@ -949,9 +951,39 @@ void CRenderer::addGraphicsPipeline(VkPipelineLayout pipelineLayout ,VkRenderPas
 	VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
 }
 
-void CRenderer::addGraphicsPipeline(vkTools::CShader * shader, VkRenderPass renderPass, std::string name, VkPipelineCreateFlags flags, VkPrimitiveTopology topology, VkPolygonMode polyMode, uint32_t shaderStagesCount)
+void CRenderer::addGraphicsPipeline(vkTools::CShader * shader, VkRenderPass renderPass, std::string name,bool blend, VkPipelineCreateFlags flags, VkPrimitiveTopology topology, VkPolygonMode polyMode, uint32_t shaderStagesCount)
 {
-	addGraphicsPipeline(shader->getPipelineLayout(), renderPass, flags, topology, polyMode, shaderStagesCount, shader->getShaderStagesPtr(), shader->getInputState(), name);
+	if (blend==false) {
+		addGraphicsPipeline(shader->getPipelineLayout(), renderPass, flags, topology, polyMode, shaderStagesCount, shader->getShaderStagesPtr(), shader->getInputState(), name);
+
+	}
+	else {
+		VkPipelineColorBlendAttachmentState blendAttachmentState =
+			vkTools::initializers::pipelineColorBlendAttachmentState(0xf, VK_TRUE);
+
+		blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+		blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+		blendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
+		blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
+		blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+		VkPipelineColorBlendStateCreateInfo colorBlendState =
+			vkTools::initializers::pipelineColorBlendStateCreateInfo(1,&blendAttachmentState);
+
+		m_pipelines.pipelinesState.push_back({});
+		VkGraphicsPipelineCreateInfo pipelineCreateInfo =
+			vkTools::initializers::pipelineCreateInfo(&m_pipelines.pipelinesState.back(), shader->getPipelineLayout(), renderPass, flags, topology, polyMode, shaderStagesCount, shader->getShaderStagesPtr());
+		pipelineCreateInfo.pColorBlendState = &colorBlendState;
+
+		pipelineCreateInfo.pVertexInputState = &shader->getInputState();
+		m_pipelines.pipelineNames.push_back(name);
+		m_pipelines.pipelines.push_back(VK_NULL_HANDLE);
+
+		VK_CHECK_RESULT(vkCreateGraphicsPipelines(m_device, m_pipelines.pipelineCache, 1, &pipelineCreateInfo, nullptr, &m_pipelines.pipelines.back()));
+
+	}
 }
 
 void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp)
@@ -1016,6 +1048,90 @@ void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp loa
 	subpassDescription.pColorAttachments = &colorReference;
 	subpassDescription.pDepthStencilAttachment = &depthReference;
 	
+	/*subpassDescription.flags = 0;
+	subpassDescription.inputAttachmentCount = 0;
+	subpassDescription.pInputAttachments = NULL;
+	subpassDescription.pResolveAttachments = NULL;
+	subpassDescription.preserveAttachmentCount = 0;
+	subpassDescription.pPreserveAttachments = NULL;*/
+
+	VkRenderPassCreateInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.pNext = nullptr;
+	renderPassInfo.attachmentCount = 2;
+	renderPassInfo.pAttachments = attachments;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpassDescription;
+	renderPassInfo.dependencyCount = 2;
+	renderPassInfo.pDependencies = subpassDependencies;
+
+	m_renderPasses.renderPasses.push_back(VK_NULL_HANDLE);
+	m_renderPasses.names.push_back(renderPassName);
+
+	vkCreateRenderPass(m_vulkanDevice->logicalDevice, &renderPassInfo, nullptr, &m_renderPasses.renderPasses.back());
+}
+
+void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentDescription colorAttachmentDescription)
+{
+	VkAttachmentDescription attachments[2] = {};
+
+	// Color attachment
+	attachments[0].format = m_colorFormat;
+	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	// Don't clear the framebuffer (like the renderpass from the example does)
+	//attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	attachments[0].loadOp = colorAttachmentDescription.loadOp;
+	attachments[0].storeOp = colorAttachmentDescription.storeOp;
+	attachments[0].stencilLoadOp = colorAttachmentDescription.stencilLoadOp;
+	attachments[0].stencilStoreOp = colorAttachmentDescription.stencilStoreOp;
+	attachments[0].initialLayout = colorAttachmentDescription.initialLayout;
+	attachments[0].finalLayout = colorAttachmentDescription.finalLayout;
+
+	// Depth attachment
+	attachments[1].format = m_depthFormat;
+	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference colorReference = {};
+	colorReference.attachment = 0;
+	colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depthReference = {};
+	depthReference.attachment = 1;
+	depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	// Use subpass dependencies for image layout transitions
+	VkSubpassDependency subpassDependencies[2] = {};
+
+	// Transition from final to initial (VK_SUBPASS_EXTERNAL refers to all commmands executed outside of the actual renderpass)
+	subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependencies[0].dstSubpass = 0;
+	subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpassDependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	// Transition from initial to final
+	subpassDependencies[1].srcSubpass = 0;
+	subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	subpassDependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	VkSubpassDescription subpassDescription = {};
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpassDescription.colorAttachmentCount = 1;
+	subpassDescription.pColorAttachments = &colorReference;
+	subpassDescription.pDepthStencilAttachment = &depthReference;
+
 	/*subpassDescription.flags = 0;
 	subpassDescription.inputAttachmentCount = 0;
 	subpassDescription.pInputAttachments = NULL;
@@ -1183,6 +1299,19 @@ void CRenderer::addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass 
 
 }
 
+void CRenderer::addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::string targetName)
+{
+	if (!helper::nameUsed(targetName, m_offscreenInfos.names)) {
+		m_offscreenInfos.targets.push_back(COffscreenTarget());
+		m_offscreenInfos.targets.back().load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), renderPass);
+		m_offscreenInfos.names.push_back(targetName);
+	}
+
+	m_offscreenAttachments.draws.push_back(drawInfo);
+	m_offscreenAttachments.targetNames.push_back(targetName);
+	m_offscreenAttachments.cmdBuffers.push_back(createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, false));
+}
+
 void CRenderer::buildDrawCommands(VkRenderPass renderPass)
 {
 	if (!checkCommandBuffers()) {
@@ -1246,6 +1375,82 @@ void CRenderer::buildDrawCommands(VkRenderPass renderPass)
 
 }
 
+
+void CRenderer::buildDrawCommands2()
+{
+
+	if (!checkCommandBuffers()) {
+		destroyCommandBuffer();
+		createCommandBuffers();
+	}
+
+	//for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r+=m_renderAttachments.framebufferOffsets[r]) {
+	for (int32_t i = 0; i < m_drawCmdBuffers.size(); i++) {
+		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
+		VK_CHECK_RESULT(vkBeginCommandBuffer(m_drawCmdBuffers[i], &cmdBufInfo));
+		for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r++) {
+			if (m_renderAttachments.renderPasses[r] == VK_NULL_HANDLE) {
+				continue;
+			}
+			if (m_renderAttachments.isOffscreen[r] == true) { //If the draw is offscreen it's not proccesed here
+				continue;
+			}
+			
+
+			VkClearValue clearValue[2];
+			clearValue[0].color = { 1.0f, 0.25f, 0.25f, 1.0f };
+			clearValue[1].depthStencil = { 1.0f, 0 };
+
+			VkRenderPassBeginInfo renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
+			renderPassBeginInfo.renderPass = m_renderAttachments.renderPasses[r];
+			renderPassBeginInfo.renderArea.offset.x = 0;
+			renderPassBeginInfo.renderArea.offset.y = 0;
+			renderPassBeginInfo.renderArea.extent.width = gEnv->pSystem->getWidth();
+			renderPassBeginInfo.renderArea.extent.height = gEnv->pSystem->getHeight();
+			renderPassBeginInfo.clearValueCount = 2;
+			renderPassBeginInfo.pClearValues = clearValue;
+			std::cout << "Coucou" << std::endl;
+			
+		
+				renderPassBeginInfo.framebuffer = m_framebuffers[i];
+
+				vkCmdBeginRenderPass(m_drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+				VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+				vkCmdSetViewport(m_drawCmdBuffers[i], 0, 1, &viewport);
+
+				VkRect2D scissor = vkTools::initializers::rect(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
+				vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
+
+				vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipelineLayout,
+					0, 1, m_indexedDraws[r].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
+
+				vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipeline);
+
+				vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
+
+				vkCmdBindIndexBuffer(m_drawCmdBuffers[i],
+					m_indexedDraws[r].indexBuffer,
+					m_indexedDraws[r].indexOffset,
+					m_indexedDraws[r].indexType);
+
+				vkCmdDrawIndexed(m_drawCmdBuffers[i],
+					m_indexedDraws[r].indexCount,
+					m_indexedDraws[r].indexCount,
+					m_indexedDraws[r].firstIndex,
+					m_indexedDraws[r].vertexOffset,
+					m_indexedDraws[r].firstInstance);
+				//	}
+
+				vkCmdEndRenderPass(m_drawCmdBuffers[i]);
+			
+
+			}
+		VK_CHECK_RESULT(vkEndCommandBuffer(m_drawCmdBuffers[i]));
+	}
+
+}
+
 void CRenderer::buildDrawCommands()
 {
 
@@ -1256,10 +1461,10 @@ void CRenderer::buildDrawCommands()
 
 	//for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r+=m_renderAttachments.framebufferOffsets[r]) {
 	for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r++) {
-		if (m_renderAttachments.renderPasses[r]==VK_NULL_HANDLE) {
+		if (m_renderAttachments.renderPasses[r] == VK_NULL_HANDLE) {
 			continue;
 		}
-		if (m_renderAttachments.isOffscreen[r]==true) { //If the draw is offscreen it's not proccesed here
+		if (m_renderAttachments.isOffscreen[r] == true) { //If the draw is offscreen it's not proccesed here
 			continue;
 		}
 		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
@@ -1292,24 +1497,24 @@ void CRenderer::buildDrawCommands()
 			vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
 
 			vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipelineLayout,
-					0, 1, m_indexedDraws[r].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
+				0, 1, m_indexedDraws[r].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
 
 			vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipeline);
 
 			vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
 
 			vkCmdBindIndexBuffer(m_drawCmdBuffers[i],
-					m_indexedDraws[r].indexBuffer,
-					m_indexedDraws[r].indexOffset,
-					m_indexedDraws[r].indexType);
+				m_indexedDraws[r].indexBuffer,
+				m_indexedDraws[r].indexOffset,
+				m_indexedDraws[r].indexType);
 
 			vkCmdDrawIndexed(m_drawCmdBuffers[i],
-					m_indexedDraws[r].indexCount,
-					m_indexedDraws[r].indexCount,
-					m_indexedDraws[r].firstIndex,
-					m_indexedDraws[r].vertexOffset,
-					m_indexedDraws[r].firstInstance);
-		//	}
+				m_indexedDraws[r].indexCount,
+				m_indexedDraws[r].indexCount,
+				m_indexedDraws[r].firstIndex,
+				m_indexedDraws[r].vertexOffset,
+				m_indexedDraws[r].firstInstance);
+			//	}
 
 			vkCmdEndRenderPass(m_drawCmdBuffers[i]);
 
@@ -1417,6 +1622,61 @@ void CRenderer::buildOffscreenDrawCommands()
 	}
 }
 
+void CRenderer::buildTargetedDrawCommands()
+{
+	uint64_t id;
+	for (size_t i = 0; i < m_offscreenAttachments.targetNames.size();i++) {
+		id = getOffscreenTargetId(m_offscreenAttachments.targetNames[i]);
+
+		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
+		VkRenderPassBeginInfo renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
+		renderPassBeginInfo.renderPass = m_renderAttachments.renderPasses[i];
+		renderPassBeginInfo.renderArea.offset.x = 0;
+		renderPassBeginInfo.renderArea.offset.y = 0;
+		renderPassBeginInfo.renderArea.extent.width = m_offscreenInfos.targets[i].getWidth();
+		renderPassBeginInfo.renderArea.extent.height = m_offscreenInfos.targets[i].getHeight();
+		renderPassBeginInfo.clearValueCount = 0;
+		renderPassBeginInfo.pClearValues = nullptr;
+		renderPassBeginInfo.framebuffer = m_offscreenInfos.targets[i].getFrameBuffer();
+		VK_CHECK_RESULT(vkBeginCommandBuffer(m_offscreenAttachments.cmdBuffers[i], &cmdBufInfo));
+		
+		vkCmdBeginRenderPass(m_offscreenAttachments.cmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+
+		VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+		vkCmdSetViewport(m_offscreenAttachments.cmdBuffers[i], 0, 1, &viewport);
+
+		VkRect2D scissor = vkTools::initializers::rect(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
+		vkCmdSetScissor(m_offscreenAttachments.cmdBuffers[i], 0, 1, &scissor);
+
+		vkCmdBindDescriptorSets(m_offscreenAttachments.cmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_offscreenAttachments.draws[i].pipelineLayout,
+			0, 1, m_offscreenAttachments.draws[i].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
+
+		vkCmdBindPipeline(m_offscreenAttachments.cmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_offscreenAttachments.draws[i].pipeline);
+
+		vkCmdBindVertexBuffers(m_offscreenAttachments.cmdBuffers[i], 0, 1, &m_offscreenAttachments.draws[i].vertexBuffer, m_offscreenAttachments.draws[i].pVertexOffset);
+
+		vkCmdBindIndexBuffer(m_offscreenAttachments.cmdBuffers[i],
+			m_offscreenAttachments.draws[i].indexBuffer,
+			m_offscreenAttachments.draws[i].indexOffset,
+			m_offscreenAttachments.draws[i].indexType);
+
+		vkCmdDrawIndexed(m_offscreenAttachments.cmdBuffers[i],
+			m_offscreenAttachments.draws[i].indexCount,
+			m_offscreenAttachments.draws[i].indexCount,
+			m_offscreenAttachments.draws[i].firstIndex,
+			m_offscreenAttachments.draws[i].vertexOffset,
+			m_offscreenAttachments.draws[i].firstInstance);
+
+
+		vkCmdEndRenderPass(m_offscreenAttachments.cmdBuffers[i]);
+		VK_CHECK_RESULT(vkEndCommandBuffer(m_offscreenAttachments.cmdBuffers[i]));
+
+		
+
+	}
+}
+
 void CRenderer::initRessources()
 {
 	//vkDebug::
@@ -1492,6 +1752,7 @@ void CRenderer::initRessources()
 	//printf("%i\n", &m_shaders.descriptorSets[0]);
 	addRenderPass("main");
 	addRenderPass("offscreen");
+	//addRenderPass("gui");
 
 	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture"),
 	//	gEnv->pRenderer->getRenderPass("main"), "texture",
@@ -1504,28 +1765,13 @@ void CRenderer::initRessources()
 
 	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("texture"),
 		gEnv->pRenderer->getRenderPass("main"), "texture");
+
+	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass("gui"), "gui");
 	
 	//gEnv->pRenderer->addRenderPass("gui");
 	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass("gui"), "gui");
 
-	//createBuffer(&gEnv->bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize());
-
-	//gEnv->pMemoryManager->allocateMemory(m_buffers.back().buffer);
-
-	//std::vector<VkDeviceSize> tmppp = gEnv->pMemoryManager->requestedBuffers();
-
-	//createBuffer(&gEnv->bbid, gEnv->pMemoryManager->getFlags() | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize());
-
 	gEnv->pMemoryManager->allocateMemory();
-	//gEnv->pMemoryManager->allocateMemory(m_buffers.back().buffer);
-
-	//gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, m_descriptorSetId);
-
-	/*for (size_t i = 0; i < m_shaders.descriptorLayoutNames.size();i++) {
-		if (m_shaders.descriptorLayoutNames[i]!="null") {
-			createDescriptorSet(m_shaders.descriptorPool, getShader(m_shaders.descriptorLayoutNames[i])->getDescriptorSetLayoutPtr(), 1, i);
-		}
-	}*/
 
 	m_offscreenTargets[0]->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), getRenderPass("offscreen"));
 	
@@ -1881,6 +2127,29 @@ void CRenderer::dev_offscreenSemaphore()
 	VK_CHECK_RESULT(vkCreateSemaphore(m_device, &info, nullptr, &m_offscreenSemaphore));
 }
 
+COffscreenTarget CRenderer::getOffscreenTarget(std::string name)
+{
+	
+	for (size_t i = 0; i < m_offscreenInfos.names.size();i++) {
+		if (m_offscreenInfos.names[i]==name) {
+			return m_offscreenInfos.targets[i];
+		}
+	}
+
+	return COffscreenTarget();
+}
+
+uint64_t CRenderer::getOffscreenTargetId(std::string name)
+{
+	for (size_t i = 0; i < m_offscreenInfos.names.size(); i++) {
+		if (m_offscreenInfos.names[i] == name) {
+			return i;
+		}
+	}
+
+	return UINT64_MAX;
+}
+
 void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 {
 
@@ -1914,8 +2183,6 @@ void CRenderer::dev_test(float x, float y, float w, float h, float depth)
 	createSBuffer(vsize + isize + uboSize, dev_data.vertices.data()); //create sbuffer and copy vertex(pos and color) to it
 	writeInBuffer(&m_smem.buf, isize, dev_data.indices.data(), vsize); //Copy index data to sbuffer
 	//writeInBuffer(&m_smem.buf, sizeof(dev_data.uboVS), &dev_data.uboVS, vsize+isize);
-
-
 
 
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = {

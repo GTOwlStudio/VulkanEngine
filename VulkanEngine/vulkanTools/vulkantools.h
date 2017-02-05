@@ -160,6 +160,14 @@ namespace vkTools
 
 	namespace initializers {
 
+		VkAttachmentDescription attachmentDescription(VkFormat format, VkSampleCountFlagBits samples,
+			VkAttachmentLoadOp loadOp,
+			VkAttachmentStoreOp storeOp,
+			VkAttachmentLoadOp stencilLoadOp,
+			VkAttachmentStoreOp stencilStoreOp,
+			VkImageLayout initialLayout,
+			VkImageLayout finalLayout);
+
 		VkMemoryAllocateInfo memoryAllocateInfo();
 
 		VkCommandBufferAllocateInfo commandBufferAllocateInfo(VkCommandPool commandPool, VkCommandBufferLevel level, uint32_t bufferCount);

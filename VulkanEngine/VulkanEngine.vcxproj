@@ -29,6 +29,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryManager.cpp" />
     <ClCompile Include="MeshHelper.cpp" />
+    <ClCompile Include="OffscreenTarget.cpp" />
     <ClCompile Include="Panel.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RessourcesManager.cpp" />
@@ -57,6 +58,7 @@
     <ClInclude Include="guilabel.h" />
     <ClInclude Include="MemoryManager.h" />
     <ClInclude Include="MeshHelper.h" />
+    <ClInclude Include="OffscreenTarget.h" />
     <ClInclude Include="Panel.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RessourcesManager.h" />

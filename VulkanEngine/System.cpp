@@ -39,9 +39,9 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 
 	m_env.pRenderer->InitVulkan();
 	
-	
-	CFont font("./data/fonts/segoeui.ttf", 40);
 	GUI graphicsInterface("gui.xml");
+	CFont font("./data/fonts/segoeui.ttf", 40);
+	
 	m_env.pRenderer->Init();	
 	printf("%s\n",gEnv->pRenderer->getVulkanDevice()->properties.deviceName);
 	printf("Requested memory size : %i\n",(uint32_t)m_env.pMemoryManager->requestedMemorySize());

@@ -29,7 +29,7 @@ namespace meshhelper
 	{
 		VertexC tmp[4] = { VertexC(x,y+h,depth, color), VertexC(x+w,y+h,depth, color), VertexC(x+w,y,depth,color), VertexC(x,y,depth, color) };
 		for (uint32_t i = 0; i < 4;i++) {
-			dstArr[0] = tmp[4];
+			dstArr[i] = tmp[i];
 		}
 	}
 }

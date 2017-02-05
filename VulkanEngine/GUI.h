@@ -30,6 +30,7 @@ public:
 	~GUI();
 	void load(); //load vulkan object
 	void update();
+	void updateUniformBuffer();
 	void addWidget(Widget* widget);
 	void getSettings(std::string sName);
 
@@ -49,6 +50,7 @@ protected:
 	void creator_Panel(mxml_node_t *t);
 	//void checkNode();
 
+	std::string m_renderPassName = "gui";
 
 	std::vector<Widget*> m_widgets;
 
@@ -57,6 +59,7 @@ protected:
 			glm::mat4 projection;
 		} UBO; //Uniform Buffer Object
 		size_t UBO_bufferId;
+		VkDeviceSize gOffset[1];
 		std::vector<SIndexedDrawInfo> draws;
 		std::vector<uint32_t> descriptorSetId;
 		std::vector<VkDescriptorType> descriptorSetTypes;

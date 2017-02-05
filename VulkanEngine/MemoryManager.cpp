@@ -2,7 +2,7 @@
 
 
 
-CMemoryManager::CMemoryManager()
+CMemoryManager::CMemoryManager() : m_sortString("")
 {
 }
 
@@ -19,16 +19,19 @@ size_t CMemoryManager::requestMemory(VkDeviceSize requestSize, std::string descr
 		m_requestedMemorySize += requestSize;
 		m_memblock.push_back(requestSize);
 		m_descriptions.push_back(description);
+		return m_memblock.size() - 1;//m_requestedMemorySize - requestSize;
 	}
 	else {
 		m_uniformBufferInfo.offsets.push_back(m_uniformBufferInfo.bufferSize);
 		m_uniformBufferInfo.bufferSize += requestSize;
 		m_uniformBufferInfo.sizes.push_back(requestSize);	
+		return m_uniformBufferInfo.sizes.size() - 1;
 	}
 	
+	return 0;
 	
-	return m_memblock.size()-1;//m_requestedMemorySize - requestSize;
 }
+
 
 VkDeviceSize CMemoryManager::requestedMemorySize() const
 {
@@ -54,6 +57,7 @@ std::string CMemoryManager::getGlobalMemoryDescription(std::string separator)
 	}
 	return gd;
 }
+
 
 void CMemoryManager::allocateMemory()
 {
@@ -82,6 +86,7 @@ void CMemoryManager::allocateMemory()
 
 	gEnv->pRenderer->createBuffer(&m_uniformBufferInfo.bufferId, m_uniformBufferInfo.flags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_uniformBufferInfo.bufferSize);
 	m_virtualBuffers.back().setBuffer(gEnv->pRenderer->getBuffer(m_uniformBufferInfo.bufferId));
+	
 
 	//gEnv->pRenderer->createBuffer(, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gEnv->pMemoryManager->requestedMemorySize()
 	printf("\n[Allocatememory]\n");
@@ -133,6 +138,25 @@ VirtualBuffer * CMemoryManager::getVirtualBufferPtr(uint64_t id)
 VkBufferUsageFlags CMemoryManager::getFlags()
 {
 	return m_flags;
+}
+
+uint64_t CMemoryManager::getUniformRealBufferId()
+{
+	return m_uniformBufferInfo.bufferId;
+}
+
+uint64_t CMemoryManager::getUniformBufferId(uint64_t id)
+{
+	uint64_t bid = 0;
+	for (size_t i = 0; i < m_uniformBufferInfo.bufferId; i++) {
+		bid += m_virtualBuffers[i].poolLength();
+	}
+	return bid;
+}
+
+uint64_t CMemoryManager::getUniformBufferVirtualId()
+{
+	return m_uniformBufferInfo.virtualBufferId;
 }
 
 void CMemoryManager::addFlag(VkBufferUsageFlags flags)
