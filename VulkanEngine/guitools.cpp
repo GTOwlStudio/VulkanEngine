@@ -64,6 +64,22 @@ namespace guitools
 		return extent2D(width, height);
 	}
 
+	extent2D getTextSize(std::string text, std::string fontName, uint32_t fontSize)
+	{
+		nongraphicfont font(fontName, fontSize);
+		float height = 0.0f;
+		float width = 0.0f;
+		character_info cinfo[256];
+		font.getCharacterInfo(cinfo);
+		for (size_t i = 0; i < text.size(); i++) {
+			if (cinfo[(int)text[i]].h>height) {
+				height = cinfo[(int)text[i]].h;
+			}
+			width += cinfo[int(text[i])].w;
+		}
+		return extent2D(width, height);
+	}
+
 	bool entered(rect2D surface, offset2D xy)
 	{
 		if ((xy.x >= surface.offset.x) && (xy.x <= (surface.offset.x + surface.extent.width)) &&

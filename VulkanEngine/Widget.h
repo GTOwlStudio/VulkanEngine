@@ -9,7 +9,7 @@
 class Widget
 {
 public:
-	Widget(std::string name, rect2D boundary);
+	Widget(std::string name, rect2D boundary, std::string text="");
 	virtual ~Widget();
 	virtual void addWidget(Widget* widget);
 
@@ -30,6 +30,7 @@ public:
 	std::vector<VkDescriptorType> getDescriptorsType();
 
 	std::string getClassName() const;
+	std::string getText() const;
 	virtual std::string getName() const;
 	virtual rect2D getBoundary();
 	virtual std::vector<Widget*> getChilds();
@@ -40,6 +41,7 @@ protected:
 	void addDescriptors(VkDescriptorType type);
 	bool m_visible = false;
 	std::string m_name;
+	std::string m_text;
 	rect2D m_boundary;
 	float m_depth = 0.0f;
 	std::vector<Event> m_events;

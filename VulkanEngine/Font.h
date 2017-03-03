@@ -11,24 +11,26 @@
 #include "System.h"
 #include "vulkanTools\vulkandebug.h"
 
-struct character_info
-{
-	float ax; //x advance
-	float ay;
+#include "fonttype.h"
 
-	uint32_t bw; //bitmap width
-	uint32_t bh;
-
-	float w; //font width
-	float h; //font height
-	
-	float bx; //X bearing
-	float by; //Y bearing
-
-	float tx; //x offset of glyph in texture coordinates
-	float ty; //y offset of glyph in texture coordinates
-
-};
+//struct character_info
+//{
+//	float ax; //x advance
+//	float ay;
+//
+//	uint32_t bw; //bitmap width
+//	uint32_t bh;
+//
+//	float w; //font width
+//	float h; //font height
+//	
+//	float bx; //X bearing
+//	float by; //Y bearing
+//
+//	float tx; //x offset of glyph in texture coordinates
+//	float ty; //y offset of glyph in texture coordinates
+//
+//};
 
 class CFont
 {
@@ -43,7 +45,7 @@ public:
 	uint32_t getFontSize() const;
 	std::string getFontName() const;
 	std::string getStyleName() const;
-	
+	VkDescriptorImageInfo getDescriptorImageInfo() const;
 
 
 protected:

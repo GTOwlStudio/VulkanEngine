@@ -29,8 +29,14 @@ void RessourcesManager::addFont(std::string fontname, uint32_t size)
 	if (exist(fontname,size)) {
 		return;
 	}
-	m_fonts.push_back(new CFont(std::string(gEnv->getAssetpath() + "./data/fonts/" + fontname + ".ttf"), size));
-	m_fonts.back()->load();
+	m_fonts.push_back(new CFont(std::string(gEnv->getAssetpath() + "fonts/" + fontname + ".ttf"), size));
+	if (m_loaded) {
+		m_fonts.back()->load();
+	}
+	else {
+		m_fontsToLoad.push_back(fontname);
+		m_fontsToLoadSize.push_back(size);
+	}
 	std::string fname = m_fonts.back()->getFontName();
 	std::transform(fname.begin(), fname.end(), fname.begin(), ::tolower);
 	fname += m_fonts.back()->getFontSize();
@@ -50,6 +56,13 @@ bool RessourcesManager::exist(std::string fontname, uint32_t size)
 	return false;
 }
 
+void RessourcesManager::finishLoading()
+{
+	for (size_t i = 0; i < m_fontsToLoad.size();i++) {
+		getCFont(m_fontsToLoad[i],m_fontsToLoadSize[i])->load();
+	}
+}
+
 void RessourcesManager::prepareShaders()
 {
 
@@ -63,6 +76,17 @@ void RessourcesManager::prepareShaders()
 	};
 	gEnv->pRenderer->addShader(gEnv->getAssetpath() + "shaders/texture.vert.spv", gEnv->getAssetpath() + "shaders/texture.frag.spv", &s_texture_name, s_texture_dslb, s_texture_b, s_texture_a);
 	
+	std::string s_tex_name = "tex";
+	std::vector<VkVertexInputBindingDescription> s_tex_b = { vkTools::initializers::vertexInputBindingDescription(0, sizeof(VertexT), VK_VERTEX_INPUT_RATE_VERTEX) };
+	std::vector<VkVertexInputAttributeDescription> s_tex_a = { vkTools::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
+		vkTools::initializers::vertexInputAttributeDescription(0, 1, VK_FORMAT_R32G32_SFLOAT, 3 * sizeof(float))
+	};
+	std::vector<VkDescriptorSetLayoutBinding> s_tex_dslb = {
+		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, 0),
+		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1),
+	};
+	gEnv->pRenderer->addShader(gEnv->getAssetpath() + "shaders/tex.vert.spv", gEnv->getAssetpath() + "shaders/tex.frag.spv", &s_tex_name, s_tex_dslb, s_tex_b, s_tex_a);
+
 	uint32_t s_color_binding_id = 0; 
 
 	std::string s_color_name = "color";
@@ -76,4 +100,14 @@ void RessourcesManager::prepareShaders()
 	};
 	gEnv->pRenderer->addShader(gEnv->getAssetpath() + "shaders/color.vert.spv", 
 		gEnv->getAssetpath() + "shaders/color.frag.spv", &s_color_name, s_color_dslb, s_color_b, s_color_a);
+}
+
+void RessourcesManager::_set_to_loaded()
+{
+	m_loaded = true;
+}
+
+bool RessourcesManager::_is_loaded()
+{
+	return m_loaded;
 }

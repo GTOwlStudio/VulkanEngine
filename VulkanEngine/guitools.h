@@ -3,6 +3,7 @@
 //#include "Widget.h"
 #include "guitype.h"
 #include "Font.h"
+#include "nongraphicfont.h"
 //#include "Widget.h"
 
 #include <vulkan\vulkan.h>
@@ -25,6 +26,7 @@ namespace guitools
 
 	offset2D center(rect2D parent, extent2D child);
 	extent2D getTextSize(std::string text, CFont& font);
+	extent2D getTextSize(std::string text, std::string fontName, uint32_t fontSize);
 	bool entered(rect2D surface, offset2D xy);
 
 }

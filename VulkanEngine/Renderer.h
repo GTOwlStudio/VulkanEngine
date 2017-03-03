@@ -42,15 +42,18 @@ struct Vertex {
 
 struct VertexT {
 	
-	float pos[3];
-	float tc[2];
+	glm::vec3 pos;
+	glm::vec2 tc;
 	VertexT(float x, float y, float z, float tx, float ty) {
-		pos[0] = x;
+		pos = glm::vec3(x, y, z);
+		tc = glm::vec2(tx, ty);
+		/*pos[0] = x;
 		pos[1] = y;
 		pos[2] = z;
 		tc[0] = tx;
-		tc[1] = ty;
+		tc[1] = ty;*/
 	}
+	VertexT():VertexT(0.0f,0.0f,0.0f,0.0f,0.0f){}
 };
 
 
@@ -87,6 +90,7 @@ public:
 	virtual CFramebuffer* getOffscreen(std::string name);
 
 	virtual uint32_t requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount, std::string descriptorLayoutName);
+	virtual uint32_t requestDescriptorSet(std::vector<VkDescriptorType> types, uint32_t descriptorCount, std::string descriptorLayoutName);
 
 	virtual void getInfo();
 	virtual void getBufferInfo();
@@ -168,12 +172,14 @@ protected:
 
 	virtual void updateDescriptorSets();
 
-	void loadShader();
+	void loadShaders();
 
-	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass);
+	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::string tag="none");
 	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers);
 	virtual void addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, VkFramebuffer framebuffer);
 	virtual void addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass, std::string targetName);
+	virtual void addDrawToDrawList(uint64_t drawId, std::string tag);
+	virtual void swap(uint64_t ida, uint64_t idb);
 	virtual void buildDrawCommands(VkRenderPass renderPass);
 	virtual void buildDrawCommands(); 
 	virtual void buildDrawCommands2();
@@ -195,7 +201,7 @@ protected:
 	VkBool32 createBuffer(VkBufferUsageFlags usage, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory);
 	VkBool32 createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory, VkDescriptorBufferInfo * descriptor);
 
-	void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height);
+	void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, void* datas, uint32_t width, uint32_t height);
 
 	void createSBuffer(VkDeviceSize size, void* data);
 	void writeInBuffer(VkBuffer*buffer, VkDeviceSize size, void* data, VkDeviceSize dstOffset);
@@ -304,6 +310,10 @@ protected:
 	std::vector<vkTools::VulkanTexture> m_textures;
 
 	std::vector<SIndexedDrawInfo> m_indexedDraws;
+
+	std::vector<uint64_t> m_drawsList;
+	std::vector<std::string> m_drawsListTags;
+	
 	struct {
 		std::vector<VkRenderPass> renderPasses; //Render pass used for rendering
 		std::vector<VkFramebuffer> framebuffers; //Framebuffer Target, the render will go in this, you might have, multi

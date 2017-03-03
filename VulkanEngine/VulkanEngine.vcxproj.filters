@@ -114,6 +114,12 @@
     <ClCompile Include="OffscreenTarget.cpp">
       <Filter>Common\ThomasRenderer</Filter>
     </ClCompile>
+    <ClCompile Include="Log.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="nongraphicfont.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="I3DEngine.h">
@@ -214,6 +220,15 @@
     </ClInclude>
     <ClInclude Include="OffscreenTarget.h">
       <Filter>Common\ThomasRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="nongraphicfont.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="fonttype.h">
+      <Filter>Common\ThomasGui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

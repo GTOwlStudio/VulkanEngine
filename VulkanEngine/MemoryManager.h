@@ -13,6 +13,7 @@ public:
 	~CMemoryManager();
 	
 	virtual size_t requestMemory(VkDeviceSize requestSize, std::string description, VkBufferUsageFlags flags);
+	//virtual size_t requestMemory(VkDeviceSize requestSize, std::string description,  );
 	virtual VkDeviceSize requestedMemorySize() const;
 	virtual std::vector<VkDeviceSize> requestedBuffers();
 	virtual std::string getGlobalMemoryDescription(std::string separator = " | ");

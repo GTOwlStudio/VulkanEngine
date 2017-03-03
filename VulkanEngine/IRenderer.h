@@ -94,6 +94,8 @@ struct SIndexedDrawInfo
 	uint32_t firstIndex; //is the base index within the index buffer.
 	uint32_t vertexOffset; //is the value added to the vertex index before indexing into the vertex buffer.
 	uint32_t firstInstance; //It's the instance ID of the first instance to draw.
+	uint32_t firstBinding = 0;
+	uint32_t bindingCount = 1;
 
 	void bindDescriptorSets(VkPipelineLayout paramPipelineLayout, uint32_t paramDescriptorCount,VkDescriptorSet* pDescriptorSets) {
 		pipelineLayout = paramPipelineLayout;
@@ -105,10 +107,11 @@ struct SIndexedDrawInfo
 		pipeline = p_pipeline;
 	}
 
-	void bindVertexBuffers(VkBuffer p_pBuffers, uint32_t p_offsetCount, VkDeviceSize* p_pOffset) {
+	void bindVertexBuffers(VkBuffer p_pBuffers, uint32_t p_offsetCount, VkDeviceSize* p_pOffset, uint32_t p_bindingCount = 1) {
 		vertexBuffer = p_pBuffers;
 		offsetCount = p_offsetCount;
 		pVertexOffset = p_pOffset;
+		bindingCount = p_bindingCount;
 	}
 
 	void bindIndexBuffer(VkBuffer p_pBuffer, VkDeviceSize p_offset, VkIndexType p_type) {
@@ -127,6 +130,7 @@ struct SIndexedDrawInfo
 	}
 
 };
+
 
 class IRenderer
 {
@@ -165,14 +169,16 @@ public:
 
 	virtual void updateDescriptorSets() = 0;
 
-	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass) = 0;
+	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::string tag="none") = 0; //set tag to NO and the draw wont be add to a drawList
 	virtual void addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers) = 0;
 	virtual void addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, VkFramebuffer framebuffer = VK_NULL_HANDLE) = 0;
 	virtual void addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::string targetName) = 0;
+	virtual void addDrawToDrawList(uint64_t drawId,  std::string tag="none") = 0;
+	virtual void swap(uint64_t ida, uint64_t idb) = 0;
 	virtual void buildDrawCommands(VkRenderPass renderPass) = 0;
 	virtual void buildDrawCommands() = 0;
 
-	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, uint8_t* datas, uint32_t width, uint32_t height) = 0;
+	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, void* datas, uint32_t width, uint32_t height) = 0;
 	
 	virtual void createBuffer(uint64_t* id, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size) = 0;
 
@@ -202,6 +208,7 @@ public:
 	virtual CFramebuffer* getOffscreen(std::string name) = 0;
 
 	virtual uint32_t requestDescriptorSet(VkDescriptorType type, uint32_t descriptorCount, std::string descriptorLayoutName = "null") = 0;
+	virtual uint32_t requestDescriptorSet(std::vector<VkDescriptorType> types, uint32_t descriptorCount, std::string descriptorLayoutName = "null") = 0;
 
 	virtual void getInfo() = 0;
 	virtual void getBufferInfo() = 0;

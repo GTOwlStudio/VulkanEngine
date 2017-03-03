@@ -38,7 +38,6 @@ struct SSystemGlobalEnvironement
 	uint64_t bbid; //Big Buffer id
 	const std::string getAssetpath() { return "./data/"; };
 	VkDevice getDevice() { return pRenderer->getVulkanDevice()->logicalDevice; };
-
 };
 
 extern SSystemGlobalEnvironement* gEnv;

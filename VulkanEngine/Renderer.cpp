@@ -23,7 +23,7 @@ CRenderer::~CRenderer()
 	for (size_t i = 0; i < m_pipelines.pipelines.size();i++) {
 		vkDestroyPipeline(m_device, m_pipelines.pipelines[i],nullptr);
 		//vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_shaders.descriptorSets[i]); //#enhancement avoid the use of iteration
-		if (&m_shaders.descriptorSets[i]!=nullptr) {
+		if (m_shaders.descriptorSets[i]!=nullptr) {
 			vkFreeDescriptorSets(m_device, m_shaders.descriptorPool, 1, &m_shaders.descriptorSets[i]); //#enhancement avoid the use of iteration
 		}
 		
@@ -427,6 +427,18 @@ uint32_t CRenderer::requestDescriptorSet(VkDescriptorType type, uint32_t descrip
 	return static_cast<uint32_t>(m_shaders.descriptorSets.size()-1);
 }
 
+uint32_t CRenderer::requestDescriptorSet(std::vector<VkDescriptorType> types, uint32_t descriptorCount, std::string descriptorLayoutName)
+{
+	for (size_t i = 0; i < types.size();i++) {
+		m_shaders.poolSize.push_back(vkTools::initializers::descriptorPoolSize(types[i], 1));
+	}
+	m_shaders.descriptorSets.push_back({});
+	//m_shaders.descriptorTypes.push_back(type);
+	m_shaders.descriptorLayoutNames.push_back(descriptorLayoutName);
+	//return m_shaders.descriptorSets.back();
+	return static_cast<uint32_t>(m_shaders.descriptorSets.size() - 1);
+}
+
 void CRenderer::getInfo()
 {
 	printf("-------Renderer Info-------\n\nPIPELINES\n");
@@ -452,6 +464,12 @@ void CRenderer::getInfo()
 	for (std::string s : m_offscreenNames) {
 		printf("\t\"%s\"\n", s.c_str());
 	}
+	printf("\nDrawList");
+	printf("drawList.size() = %i\n", m_drawsList.size());
+	for (size_t i = 0; i < m_drawsList.size();i++) {
+		printf("\t(%i) %s\n", m_drawsList[i], m_drawsListTags[i].c_str());
+	}
+	
 	printf("\n");
 }
 
@@ -474,7 +492,7 @@ void CRenderer::bcb()
 		buildOffscreenDrawCommands();
 	}
 	buildTargetedDrawCommands();
-	buildDrawCommands2();
+	buildDrawCommands2 ();
 	
 }
 
@@ -1258,14 +1276,14 @@ void CRenderer::updateDescriptorSets()
 	}*/
 }
 
-void CRenderer::loadShader()
+void CRenderer::loadShaders()
 {
 	for (size_t i = 0; i < m_shaders.shaders.size();i++) {
 		m_shaders.shaders[i]->load(m_device);
 	}
 }
 
-void CRenderer::addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass)
+void CRenderer::addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::string tag)
 {
 	m_indexedDraws.push_back(drawInfo);
 	m_renderAttachments.renderPasses.push_back(renderPass);
@@ -1273,6 +1291,11 @@ void CRenderer::addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPas
 	m_renderAttachments.framebuffers.push_back(m_framebuffers[1]);
 	m_renderAttachments.framebufferOffsets.push_back(2);
 	m_renderAttachments.isOffscreen.push_back(false);
+
+	if (tag!="NO") {
+		addDrawToDrawList(m_indexedDraws.size()-1,tag);
+	}
+
 }
 
 void CRenderer::addIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass renderPass, std::vector<VkFramebuffer> framebuffers)
@@ -1310,6 +1333,34 @@ void CRenderer::addOffscreenIndexedDraw(SIndexedDrawInfo drawInfo, VkRenderPass 
 	m_offscreenAttachments.draws.push_back(drawInfo);
 	m_offscreenAttachments.targetNames.push_back(targetName);
 	m_offscreenAttachments.cmdBuffers.push_back(createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, false));
+}
+
+void CRenderer::addDrawToDrawList(uint64_t drawId, std::string tag)
+{
+	if (drawId>=m_indexedDraws.size()) {
+		return;
+	}
+	m_drawsList.push_back(drawId);
+	if (tag == "none") {
+		m_drawsListTags.push_back(std::to_string(drawId));
+	}
+	else {
+		m_drawsListTags.push_back(tag);
+	}
+}
+
+void CRenderer::swap(uint64_t ida, uint64_t idb)
+{
+	if ((ida >= m_drawsList.size()) || (idb >= m_drawsList.size())) {
+		printf("Oulal\n");
+		return;
+	}
+	uint64_t tmp = m_drawsList[ida];
+	m_drawsList[ida] = m_drawsList[idb];
+	m_drawsList[idb] = tmp;
+	std::string tmps = m_drawsListTags[ida];
+	m_drawsListTags[ida] = m_drawsListTags[idb];
+	m_drawsListTags[idb] = tmps;
 }
 
 void CRenderer::buildDrawCommands(VkRenderPass renderPass)
@@ -1352,7 +1403,7 @@ void CRenderer::buildDrawCommands(VkRenderPass renderPass)
 		
 			vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[j].pipeline);
 			
-			vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, &m_indexedDraws[j].vertexBuffer, m_indexedDraws[j].pVertexOffset);
+			vkCmdBindVertexBuffers(m_drawCmdBuffers[i], m_indexedDraws[j].firstBinding, m_indexedDraws[j].bindingCount, &m_indexedDraws[j].vertexBuffer, m_indexedDraws[j].pVertexOffset);
 			
 			vkCmdBindIndexBuffer(m_drawCmdBuffers[i], 
 				m_indexedDraws[j].indexBuffer, 
@@ -1374,7 +1425,6 @@ void CRenderer::buildDrawCommands(VkRenderPass renderPass)
 	}
 
 }
-
 
 void CRenderer::buildDrawCommands2()
 {
@@ -1427,16 +1477,23 @@ void CRenderer::buildDrawCommands2()
 
 				vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipeline);
 
-				vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
+				vkCmdBindVertexBuffers(m_drawCmdBuffers[i], m_indexedDraws[i].firstBinding, m_indexedDraws[i].bindingCount, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
 
 				vkCmdBindIndexBuffer(m_drawCmdBuffers[i],
 					m_indexedDraws[r].indexBuffer,
 					m_indexedDraws[r].indexOffset,
 					m_indexedDraws[r].indexType);
 
+				/*vkCmdDrawIndexed(m_drawCmdBuffers[i],
+					m_indexedDraws[r].indexCount,
+					m_indexedDraws[r].indexCount,
+					m_indexedDraws[r].firstIndex,
+					m_indexedDraws[r].vertexOffset,
+					m_indexedDraws[r].firstInstance);*/
+
 				vkCmdDrawIndexed(m_drawCmdBuffers[i],
 					m_indexedDraws[r].indexCount,
-					m_indexedDraws[r].indexCount,
+					1,
 					m_indexedDraws[r].firstIndex,
 					m_indexedDraws[r].vertexOffset,
 					m_indexedDraws[r].firstInstance);
@@ -1501,7 +1558,7 @@ void CRenderer::buildDrawCommands()
 
 			vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipeline);
 
-			vkCmdBindVertexBuffers(m_drawCmdBuffers[i], 0, 1, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
+			vkCmdBindVertexBuffers(m_drawCmdBuffers[i], m_indexedDraws[r].firstBinding, m_indexedDraws[r].bindingCount, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
 
 			vkCmdBindIndexBuffer(m_drawCmdBuffers[i],
 				m_indexedDraws[r].indexBuffer,
@@ -1599,7 +1656,7 @@ void CRenderer::buildOffscreenDrawCommands()
 
 				vkCmdBindPipeline(m_offscreenCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipeline);
 
-				vkCmdBindVertexBuffers(m_offscreenCmdBuffer, 0, 1, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
+				vkCmdBindVertexBuffers(m_offscreenCmdBuffer, m_indexedDraws[r].firstBinding, m_indexedDraws[r].bindingCount, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
 
 				vkCmdBindIndexBuffer(m_offscreenCmdBuffer,
 					m_indexedDraws[r].indexBuffer,
@@ -1654,7 +1711,7 @@ void CRenderer::buildTargetedDrawCommands()
 
 		vkCmdBindPipeline(m_offscreenAttachments.cmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_offscreenAttachments.draws[i].pipeline);
 
-		vkCmdBindVertexBuffers(m_offscreenAttachments.cmdBuffers[i], 0, 1, &m_offscreenAttachments.draws[i].vertexBuffer, m_offscreenAttachments.draws[i].pVertexOffset);
+		vkCmdBindVertexBuffers(m_offscreenAttachments.cmdBuffers[i], m_offscreenAttachments.draws[i].firstBinding, m_offscreenAttachments.draws[i].bindingCount, &m_offscreenAttachments.draws[i].vertexBuffer, m_offscreenAttachments.draws[i].pVertexOffset);
 
 		vkCmdBindIndexBuffer(m_offscreenAttachments.cmdBuffers[i],
 			m_offscreenAttachments.draws[i].indexBuffer,
@@ -1737,6 +1794,7 @@ void CRenderer::initRessources()
 	getShader("texture")->load(m_device);
 	printf("Shader color loaded\n");
 	getShader("color")->load(m_device);
+	getShader("tex")->load(m_device);
 	//createDescriptorSet(getDescriptorPool(0), getShader("color")->getDescriptorSetLayoutPtr(), 1, 1);
 	//std::vector<VkDescriptorSet>::iterator it = m_shaders.descriptorSets.begin();
 
@@ -1920,7 +1978,7 @@ void CRenderer::bufferSubData(uint64_t id, VkDeviceSize size, VkDeviceSize offse
 	writeInBuffer(&m_buffers[id].buffer, size, data, offset);
 }
 
-void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, uint8_t *datas, uint32_t width, uint32_t height)
+void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, void* datas, uint32_t width, uint32_t height)
 {
 	vkTools::VulkanTexture tex = {};
 	tex.width = width;
@@ -1932,7 +1990,7 @@ void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, 
 	if (m_vulkanDevice->enableDebugMarkers) {
 		vkDebug::setObjectName(m_vulkanDevice->logicalDevice, (uint64_t)tex.image, VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT, "texture" + (m_textures.size()-1));
 	}
-
+	
 	VK_CHECK_RESULT(vkCreateImage(m_vulkanDevice->logicalDevice, &imageCreateInfo, nullptr, &tex.image));
 
 	vkGetImageMemoryRequirements(m_vulkanDevice->logicalDevice, tex.image, &memReqs);

@@ -1,7 +1,7 @@
 #include "guitools.h"
 #include "Widget.h"
 
-Widget::Widget(std::string name, rect2D boundary) : m_name(name), m_boundary(boundary), m_bufferId(), m_className("Widget")
+Widget::Widget(std::string name, rect2D boundary, std::string text) : m_name(name), m_boundary(boundary), m_bufferId(), m_className("Widget"), m_text(text)
 {
 }
 
@@ -92,6 +92,11 @@ std::vector<VkDescriptorType> Widget::getDescriptorsType()
 std::string Widget::getClassName() const
 {
 	return m_className;
+}
+
+std::string Widget::getText() const
+{
+	return m_text;
 }
 
 std::string Widget::getName() const

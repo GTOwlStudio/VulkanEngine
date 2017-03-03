@@ -8,7 +8,7 @@ class Panel :
 	public Widget
 {
 public:
-	Panel(std::string name, rect2D boundary, glm::uvec4 color = glm::uvec4(255,255,255,255), glm::uint refValue = 255);
+	Panel(std::string name, rect2D boundary, glm::uvec4 color = glm::uvec4(255, 255, 255, 255), glm::uint refValue = 255, bool unpack = false);
 	virtual ~Panel();
 	
 	virtual VkDeviceSize gSize();
