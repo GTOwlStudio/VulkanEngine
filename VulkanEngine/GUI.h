@@ -78,9 +78,6 @@ protected:
 
 	std::string m_file;
 
-	uint32_t test_texId;
-	VkDescriptorImageInfo test_imgDescriptor;
-
 	struct {
 
 	} layoutInfo;

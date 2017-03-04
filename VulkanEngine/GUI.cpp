@@ -435,34 +435,6 @@ void GUI::loadWidgets()
 
 void GUI::loadDescriptorSets()
 {
-	/*gli::texture2D tex(gli::load(gEnv->getAssetpath()+"textures/Fanatic_TriWave_1024.ktx"));
-	assert(!tex.empty());
-
-	VkImageCreateInfo imageCreateInfo = vkTools::initializers::imageCreateInfo();
-	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-	imageCreateInfo.format = VK_FORMAT_BC2_UNORM_BLOCK;
-	imageCreateInfo.mipLevels = tex.levels();
-	imageCreateInfo.arrayLayers = 1;
-	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-	imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
-	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	
-	imageCreateInfo.extent = { (uint32_t)tex.dimensions().x, (uint32_t)tex.dimensions().y, 1};
-	imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-	//*uint8_t* data;
-	//memcpy(data, tex.data(), tex.size());
-
-	gEnv->pRenderer->createTexture(&test_texId, imageCreateInfo, (uint8_t*)tex.data(),1024,1024);*/
-	//gEnv->pRenderer->loadTextureFromFile(&test_texId, gEnv->getAssetpath() + "textures/Fanatic_TriWave_1024.ktx", VK_FORMAT_BC2_UNORM_BLOCK);
-	gEnv->pRenderer->loadTextureFromFile(&test_texId, gEnv->getAssetpath() + "textures/segoeui40.ktx", VK_FORMAT_BC2_UNORM_BLOCK);
-	test_imgDescriptor = 
-		vkTools::initializers::descriptorImageInfo(gEnv->pRenderer->getTexture(test_texId)->sampler, 
-			gEnv->pRenderer->getTexture(test_texId)->view,
-			gEnv->pRenderer->getTexture(test_texId)->imageLayout);
-	
-
 	printf("GUI descriptorSetCreation");
 
 	std::vector<VkWriteDescriptorSet> writeDescriptor;
@@ -485,8 +457,7 @@ void GUI::loadDescriptorSets()
 	writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[1]),
 		m_draw.descriptorSetTypes[1],
 		1,
-		&test_imgDescriptor));
-		//&gEnv->pRessourcesManager->getCFont("segoeui",12)->getDescriptorImageInfo()));
+		&gEnv->pRessourcesManager->getCFont("segoeui",40)->getDescriptorImageInfo()));
 		
 	gEnv->pRenderer->addWriteDescriptorSet(writeDescriptor);
 	gEnv->pRenderer->updateDescriptorSets();

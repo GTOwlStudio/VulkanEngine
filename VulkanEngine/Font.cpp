@@ -303,7 +303,7 @@ std::string CFont::getStyleName() const
 	return m_stylename;
 }
 
-VkDescriptorImageInfo CFont::getDescriptorImageInfo() const
+VkDescriptorImageInfo CFont::getDescriptorImageInfo()
 {
 	return m_imageDescriptor;
 }

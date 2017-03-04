@@ -37,17 +37,18 @@ void RessourcesManager::addFont(std::string fontname, uint32_t size)
 		m_fontsToLoad.push_back(fontname);
 		m_fontsToLoadSize.push_back(size);
 	}
-	std::string fname = m_fonts.back()->getFontName();
-	std::transform(fname.begin(), fname.end(), fname.begin(), ::tolower);
-	fname += m_fonts.back()->getFontSize();
+	/*std::string fname = m_fonts.back()->getFontName();
+	std::transform(fname.begin(), fname.end(), fname.begin(), ::tolower);*/
+	std::string fname = fontname;
+	fname += std::to_string(m_fonts.back()->getFontSize());
 	m_fontid.push_back(fname);
 }
 
 bool RessourcesManager::exist(std::string fontname, uint32_t size)
 {
 	std::string fname = fontname;
-	std::transform(fname.begin(), fname.end(), fname.begin(), ::tolower);
-	fontname += size;
+	//std::transform(fname.begin(), fname.end(), fname.begin(), ::tolower);
+	fname += std::to_string(size);
 	for (std::string n : m_fontid) {
 		if (n==fname) {
 			return true;
