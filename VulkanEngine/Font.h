@@ -46,6 +46,8 @@ public:
 	std::string getFontName() const;
 	std::string getStyleName() const;
 	VkDescriptorImageInfo getDescriptorImageInfo() const;
+	uint32_t getAtlasWidth() const;
+	uint32_t getAtlasHeight() const;
 
 
 protected:

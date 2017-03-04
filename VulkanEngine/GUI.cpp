@@ -69,6 +69,7 @@ void GUI::updateUniformBuffer()
 {
 	//m_draw.UBO.projection = glm::ortho(0.0f, static_cast<float>(gEnv->pSystem->getWidth()), static_cast<float>(gEnv->pSystem->getHeight()), 0.0f);
 	m_draw.UBO.projection = glm::ortho(0.0f,static_cast<float>(gEnv->pSystem->getWidth()), 0.0f, static_cast<float>(gEnv->pSystem->getHeight()));
+	//m_draw.UBO.projection = glm::ortho(0.0f, static_cast<float>(gEnv->pSystem->getWidth()), static_cast<float>(gEnv->pSystem->getHeight()), 0.0f);
 	//m_draw.UBO.projection = glm::mat4(1.0f);
 
 	gEnv->pRenderer->bufferSubData(gEnv->pMemoryManager->getUniformRealBufferId(), sizeof(m_draw.UBO), 0, &m_draw.UBO);
@@ -441,6 +442,7 @@ void GUI::loadDescriptorSets()
 	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
 	imageCreateInfo.format = VK_FORMAT_BC2_UNORM_BLOCK;
 	imageCreateInfo.mipLevels = tex.levels();
+	imageCreateInfo.arrayLayers = 1;
 	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
 	imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -452,13 +454,14 @@ void GUI::loadDescriptorSets()
 	//*uint8_t* data;
 	//memcpy(data, tex.data(), tex.size());
 
-	gEnv->pRenderer->createTexture(&test_texId, imageCreateInfo, (uint8_t*)tex.data(),1024,1024);
-
+	gEnv->pRenderer->createTexture(&test_texId, imageCreateInfo, (uint8_t*)tex.data(),1024,1024);*/
+	//gEnv->pRenderer->loadTextureFromFile(&test_texId, gEnv->getAssetpath() + "textures/Fanatic_TriWave_1024.ktx", VK_FORMAT_BC2_UNORM_BLOCK);
+	gEnv->pRenderer->loadTextureFromFile(&test_texId, gEnv->getAssetpath() + "textures/segoeui40.ktx", VK_FORMAT_BC2_UNORM_BLOCK);
 	test_imgDescriptor = 
 		vkTools::initializers::descriptorImageInfo(gEnv->pRenderer->getTexture(test_texId)->sampler, 
 			gEnv->pRenderer->getTexture(test_texId)->view,
 			gEnv->pRenderer->getTexture(test_texId)->imageLayout);
-	*/
+	
 
 	printf("GUI descriptorSetCreation");
 
@@ -478,10 +481,11 @@ void GUI::loadDescriptorSets()
 		0,
 		&gEnv->pMemoryManager->getVirtualBufferPtr(gEnv->pMemoryManager->getUniformBufferId(m_draw.UBO_bufferId))->bufferInfo));
 		
-	/*writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[1]),
+
+	writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[1]),
 		m_draw.descriptorSetTypes[1],
 		1,
-		&test_imgDescriptor));*/
+		&test_imgDescriptor));
 		//&gEnv->pRessourcesManager->getCFont("segoeui",12)->getDescriptorImageInfo()));
 		
 	gEnv->pRenderer->addWriteDescriptorSet(writeDescriptor);
@@ -531,8 +535,18 @@ void GUI::creator_Panel(mxml_node_t * t)
 
 void GUI::creator_guilabel(mxml_node_t * t)
 {
+	XMLParser parser(m_file);
 	printf("guilabel creator\n");
-	addWidget(new guilabel("Label", getNextPosition(), "segoeui", 12, true));
+	size_t attribNameId = 0;
+	for (size_t i = 0; i < parser.getXData(t).attributeName.size();i++) {
+		if (parser.getXData(t).attributeName[i]=="name") {
+			attribNameId = i;
+			break;
+		}
+	}
+	printf("%s\n", parser.getXData(t).attributeValue[attribNameId].c_str());
+	addWidget(new guilabel(parser.getXData(t).attributeValue[attribNameId], getNextPosition(), "segoeui", 40, true));
+	m_widgets.back()->setDepth(0.24);
 	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
 
 }

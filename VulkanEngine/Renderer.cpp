@@ -1234,6 +1234,13 @@ void CRenderer::addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDes
 	}
 }
 
+void CRenderer::addCopyDescriptorSet(std::vector<VkCopyDescriptorSet> copyDescriptorSets)
+{
+	for (size_t i = 0; i < copyDescriptorSets.size(); i++) {
+		m_copyDescriptorSets.push_back(copyDescriptorSets[i]);
+	}
+}
+
 VkFramebuffer CRenderer::addFramebuffer(uint32_t width, uint32_t height, VkRenderPass renderPass, uint32_t attachmentCount, VkImageView *pAttachments)
 {
 	VkFramebufferCreateInfo fbufCreateInfo = {};
@@ -1266,7 +1273,7 @@ CFramebuffer* CRenderer::addOffscreen(std::string name)
 
 void CRenderer::updateDescriptorSets()
 {
-	vkUpdateDescriptorSets(m_device, (uint32_t)m_writeDescriptorSets.size(), m_writeDescriptorSets.data(), 0, VK_NULL_HANDLE);
+	vkUpdateDescriptorSets(m_device, (uint32_t)m_writeDescriptorSets.size(), m_writeDescriptorSets.data(), (uint32_t)m_copyDescriptorSets.size(), m_copyDescriptorSets.data());
 
 	//vkUpdateDescriptorSets(m_device, (uint32_t)m_writeDescriptorSets.size(), m_writeDescriptorSets[0], 0, nullptr);
 	
@@ -2074,6 +2081,30 @@ void CRenderer::createTexture(uint32_t * id, VkImageCreateInfo imageCreateInfo, 
 
 	m_textures.push_back(tex);
 	*id = static_cast<uint32_t>(m_textures.size());
+}
+
+void CRenderer::loadTextureFromFile(uint32_t * dstTexId, std::string filepath, VkFormat format)
+{
+	gli::texture2D tex(gli::load(filepath));
+	assert(!tex.empty());
+
+ 	VkImageCreateInfo imageCreateInfo = vkTools::initializers::imageCreateInfo();
+	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateInfo.format = VK_FORMAT_BC2_UNORM_BLOCK;
+	imageCreateInfo.mipLevels = tex.levels();
+	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+	imageCreateInfo.extent = { (uint32_t)tex.dimensions().x, (uint32_t)tex.dimensions().y, 1 };
+	imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	//*uint8_t* data;
+	//memcpy(data, tex.data(), tex.size());
+
+	gEnv->pRenderer->createTexture(dstTexId, imageCreateInfo, (uint8_t*)tex.data(), (uint32_t)tex.dimensions().x, (uint32_t)tex.dimensions().y);
 }
 
 void CRenderer::createSBuffer(VkDeviceSize size, void* data)

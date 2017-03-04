@@ -167,6 +167,7 @@ protected:
 	virtual void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount, VkDescriptorSet* dstDescriptor);
 	virtual void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount, uint32_t descriptorId); //descriptorId is the id of the descriptor in the m_shaders.descriptorSet[id]
 	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets);
+	virtual void addCopyDescriptorSet(std::vector<VkCopyDescriptorSet> copyDescriptorSets);
 	virtual VkFramebuffer addFramebuffer(uint32_t width, uint32_t height, VkRenderPass renderPass, uint32_t attachmentCount, VkImageView *pAttachments);
 	virtual CFramebuffer* addOffscreen(std::string name);
 
@@ -201,7 +202,8 @@ protected:
 	VkBool32 createBuffer(VkBufferUsageFlags usage, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory);
 	VkBool32 createBuffer(VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryPropertyFlags, VkDeviceSize size, void * data, VkBuffer * buffer, VkDeviceMemory * memory, VkDescriptorBufferInfo * descriptor);
 
-	void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, void* datas, uint32_t width, uint32_t height);
+	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, void* datas, uint32_t width, uint32_t height);
+	virtual void loadTextureFromFile(uint32_t* dstTexId, std::string filepath, VkFormat format);
 
 	void createSBuffer(VkDeviceSize size, void* data);
 	void writeInBuffer(VkBuffer*buffer, VkDeviceSize size, void* data, VkDeviceSize dstOffset);
@@ -272,7 +274,7 @@ protected:
 	
 //	VkDescriptorPool m_descriptorPool;
 	std::vector<VkWriteDescriptorSet> m_writeDescriptorSets; //writeDescriptorSets to write, via the method updateDescriptorSets
-
+	std::vector<VkCopyDescriptorSet> m_copyDescriptorSets;
 
 
 	struct {

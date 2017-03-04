@@ -241,6 +241,8 @@ namespace vkTools
 			VkDescriptorImageInfo* imageInfo
 		);
 
+		VkCopyDescriptorSet copyDescriptorSet(VkDescriptorSet src, uint32_t srcBinding, VkDescriptorSet dst, uint32_t dstBinding, uint32_t descriptorCount);
+
 		VkVertexInputBindingDescription vertexInputBindingDescription(
 				uint32_t binding,
 				uint32_t stride,

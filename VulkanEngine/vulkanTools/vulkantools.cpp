@@ -536,6 +536,23 @@ VkWriteDescriptorSet vkTools::initializers::writeDescriptorSet(
 	return writeDescriptor;
 }
 
+VkCopyDescriptorSet vkTools::initializers::copyDescriptorSet(VkDescriptorSet src, uint32_t srcBinding, VkDescriptorSet dst, uint32_t dstBinding, uint32_t descriptorCount)
+{
+	VkCopyDescriptorSet copyDescriptorSet;
+	copyDescriptorSet.sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
+	copyDescriptorSet.pNext = NULL;
+	copyDescriptorSet.srcSet = src;
+	copyDescriptorSet.srcBinding = srcBinding;
+	copyDescriptorSet.srcArrayElement = 0;
+	copyDescriptorSet.dstSet = dst;
+	copyDescriptorSet.dstBinding = dstBinding;
+	copyDescriptorSet.dstArrayElement = 0;
+	copyDescriptorSet.descriptorCount = descriptorCount;
+	return copyDescriptorSet;
+}
+
+
+
 VkVertexInputBindingDescription vkTools::initializers::vertexInputBindingDescription(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate)
 {
 	VkVertexInputBindingDescription vInputBindDescription = {};

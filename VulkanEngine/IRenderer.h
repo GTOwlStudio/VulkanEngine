@@ -162,6 +162,7 @@ public:
 	virtual void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount, VkDescriptorSet* dstDescriptor) = 0;
 	virtual void createDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount, uint32_t id) = 0;
 	virtual void addWriteDescriptorSet(std::vector<VkWriteDescriptorSet> writeDescriptorSets) = 0;
+	virtual void addCopyDescriptorSet(std::vector<VkCopyDescriptorSet> copyDescriptorSets) = 0;
 	virtual VkFramebuffer addFramebuffer(uint32_t width, uint32_t height, VkRenderPass renderPass, uint32_t attachmentCount, VkImageView *pAttachments) = 0;
 	virtual CFramebuffer* addOffscreen(std::string name) = 0;
 
@@ -179,7 +180,8 @@ public:
 	virtual void buildDrawCommands() = 0;
 
 	virtual void createTexture(uint32_t* id, VkImageCreateInfo imageCreateInfo, void* datas, uint32_t width, uint32_t height) = 0;
-	
+	virtual void loadTextureFromFile(uint32_t* dstTexId, std::string filepath, VkFormat format) = 0;
+
 	virtual void createBuffer(uint64_t* id, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryFlags, VkDeviceSize size) = 0;
 
 	virtual void bufferSubData(uint64_t bufferID, VkDeviceSize size, VkDeviceSize offset, void*  data) = 0;

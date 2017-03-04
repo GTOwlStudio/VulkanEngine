@@ -2,5 +2,5 @@
 <gui>
   <Panel name="cool"/>
   <Panel name="Tres cool"/>
-  <Label name="Label"/>
+  <Label name="The Fox Jump Over The Lazy Dog"/>
 </gui>

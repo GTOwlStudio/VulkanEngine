@@ -16,6 +16,7 @@ public:
 	virtual void move(offset2D pos);
 	virtual void resize(extent2D newSize);
 	virtual void setVisibility(bool visibility);
+	virtual void setDepth(float depth);
 
 	virtual void addEvent(EventType type);
 

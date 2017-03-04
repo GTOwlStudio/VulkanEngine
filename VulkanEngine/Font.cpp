@@ -46,7 +46,7 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 
 		tmpWidth += slot->bitmap.width;
 		tmpMaxHeight = std::max(tmpMaxHeight, slot->bitmap.rows);
-
+		printf("%i %c\n",i, i);
 		if (tmpWidth>=512)
 		{
 			tmpWidth -= 512;
@@ -306,4 +306,14 @@ std::string CFont::getStyleName() const
 VkDescriptorImageInfo CFont::getDescriptorImageInfo() const
 {
 	return m_imageDescriptor;
+}
+
+uint32_t CFont::getAtlasWidth() const
+{
+	return m_atlas_width;
+}
+
+uint32_t CFont::getAtlasHeight() const
+{
+	return m_atlas_height;
 }

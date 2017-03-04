@@ -13,6 +13,7 @@ void main(void)
 {
 	vec4 color = texture(samplerColor, inUV);
 	outFragColor = vec4(color.rgb, 1.0);
+	//outFragColor = vec4(1.0,0.0,1.0,1.0);
 	//outFragColor = vec4(1.0, 1.0, 1.0, color) * vec4(1.0,0.0,1.0,1.0);
 	//outFragColor = vec4(1.0f, 1.0f, 1.0f, 1.0);
 }

@@ -41,6 +41,11 @@ void Widget::setVisibility(bool visibility)
 	}
 }
 
+void Widget::setDepth(float depth)
+{
+	m_depth = depth;
+}
+
 void Widget::addEvent(EventType type)
 {
 	m_events.push_back(Event(type));
