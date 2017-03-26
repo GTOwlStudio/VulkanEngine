@@ -120,6 +120,9 @@
     <ClCompile Include="nongraphicfont.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="Tester.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="I3DEngine.h">
@@ -229,6 +232,9 @@
     </ClInclude>
     <ClInclude Include="fonttype.h">
       <Filter>Common\ThomasGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Tester.h">
+      <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

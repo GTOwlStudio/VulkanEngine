@@ -36,6 +36,7 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RessourcesManager.cpp" />
     <ClCompile Include="System.cpp" />
+    <ClCompile Include="Tester.cpp" />
     <ClCompile Include="VirtualBufferPool.cpp" />
     <ClCompile Include="vulkandevice.cpp" />
     <ClCompile Include="vulkanTools\Helper.cpp" />
@@ -69,6 +70,7 @@
     <ClInclude Include="RessourcesManager.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="System.h" />
+    <ClInclude Include="Tester.h" />
     <ClInclude Include="VirtualBufferPool.h" />
     <ClInclude Include="vulkanbuffer.hpp" />
     <ClInclude Include="vulkandevice.h" />

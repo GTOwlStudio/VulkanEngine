@@ -13,6 +13,7 @@
 #include "RessourcesManager.h"
 #include "Framebuffer.h"
 #include "GUI.h"
+#include "Tester.h"
 
 class CSystem;
 class CRenderer;

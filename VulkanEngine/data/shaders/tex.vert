@@ -22,5 +22,6 @@ void main(void)
 {
 	
 	gl_Position = ubo.mat * vec4(inPos.xyz, 1.0);
+	gl_Position.z = 0.45;
 	outUV = inUV;
 }

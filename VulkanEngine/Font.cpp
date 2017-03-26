@@ -223,7 +223,9 @@ void CFont::load()
 	float y = -1.0f;
 	float w = 2.0f;
 	float h = 2.0f;
-	std::array<VertexT, 4> coords = { VertexT(x, y+h, 0.1f, 0.0f,1.0f), VertexT(x+w,y+h,0.1f,1.0f,1.0f), VertexT(x+w,y,0.1f,1.0f,0.0f), VertexT(x,y,0.1f,0.0f,0.0f) };
+	//std::array<VertexT, 4> coords = { VertexT(x, y, 0.1f, 0.0f,1.0f), VertexT(x+w,y,0.1f,1.0f,1.0f), VertexT(x+w,y+h,0.1f,1.0f,0.0f), VertexT(x,y+h,0.1f,0.0f,0.0f) };
+	std::array<VertexT, 4> coords = { VertexT(-1.0, -1.0, 0.1f, 0.0f,1.0f), VertexT(1.0,-1.0,0.1f,1.0f,1.0f), VertexT(1.0,1.0,0.1f,1.0f,0.0f), VertexT(-1.0,1.0,0.1f,0.0f,0.0f) };
+
 	uint32_t gIndices[6] = {0,1,2, 0,2,3};
 
 	VirtualBuffer tmpVB = gEnv->pMemoryManager->getVirtualBuffer(m_vBufferId);
@@ -277,7 +279,7 @@ void CFont::load()
 	m_draw.drawIndexed(6,1,0,0,0);
 	//m_fb.push_back(gEnv->pRenderer->dev_fb());
 	//gEnv->pRenderer->addOffscreenIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("offscreen"), gEnv->pRenderer->getOffscreen("font")->getFramebuffer());
-	gEnv->pRenderer->addIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("main"));
+	//gEnv->pRenderer->addIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("main"));
 	//gEnv->pRenderer->addIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass(""));
 	//m_draw.bindDescriptorSets();
 

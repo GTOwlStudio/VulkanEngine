@@ -492,7 +492,7 @@ void CRenderer::bcb()
 		buildOffscreenDrawCommands();
 	}
 	buildTargetedDrawCommands();
-	buildDrawCommands2 ();
+	buildDrawCommands3 ();
 	
 }
 
@@ -618,6 +618,8 @@ void CRenderer::setupDepthStencil()
 		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);*/
 
 	depthStencilView.image = m_depthStencil.image;
+
+
 	VK_CHECK_RESULT(vkCreateImageView(m_device, &depthStencilView, nullptr, &m_depthStencil.view));
 }
 void CRenderer::setupRenderPass()
@@ -1004,6 +1006,11 @@ void CRenderer::addGraphicsPipeline(vkTools::CShader * shader, VkRenderPass rend
 	}
 }
 
+void CRenderer::addGraphicsPipeline(vkTools::CShader * shader, VkRenderPass renderPass, std::string name, std::string param)
+{
+
+}
+
 void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp)
 {
 
@@ -1019,16 +1026,28 @@ void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp loa
 	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	if (m_renderPasses.renderPasses.size() > 1) {
+		attachments[0].initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	}
+	else {
+		attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;//#warning
+	}
 	attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 	// Depth attachment
 	attachments[1].format = m_depthFormat;
 	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].loadOp = loadOp;//VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	if (m_renderPasses.renderPasses.size() > 1) {
+		attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	}
+	else {
+		attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;//#warning
+	}
+
 	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentReference colorReference = {};
@@ -1066,12 +1085,12 @@ void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp loa
 	subpassDescription.pColorAttachments = &colorReference;
 	subpassDescription.pDepthStencilAttachment = &depthReference;
 	
-	/*subpassDescription.flags = 0;
+	subpassDescription.flags = 0;
 	subpassDescription.inputAttachmentCount = 0;
 	subpassDescription.pInputAttachments = NULL;
 	subpassDescription.pResolveAttachments = NULL;
 	subpassDescription.preserveAttachmentCount = 0;
-	subpassDescription.pPreserveAttachments = NULL;*/
+	subpassDescription.pPreserveAttachments = NULL;
 
 	VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -1433,6 +1452,100 @@ void CRenderer::buildDrawCommands(VkRenderPass renderPass)
 
 }
 
+void CRenderer::buildDrawCommands3()
+{
+
+	if (!checkCommandBuffers()) {
+		destroyCommandBuffer();
+		createCommandBuffers();
+	}
+
+	VkRenderPass lastRP = VK_NULL_HANDLE;
+	VkRenderPassBeginInfo renderPassBeginInfo;
+
+	//for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r+=m_renderAttachments.framebufferOffsets[r]) {
+	for (int32_t i = 0; i < m_drawCmdBuffers.size(); i++) {
+		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
+		VK_CHECK_RESULT(vkBeginCommandBuffer(m_drawCmdBuffers[i], &cmdBufInfo));
+		for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r++) {
+			
+			if (m_renderAttachments.renderPasses[r] == VK_NULL_HANDLE) {
+				continue;
+			}
+			if (m_renderAttachments.isOffscreen[r] == true) { //If the draw is offscreen it's not proccesed here
+				continue;
+			}
+			
+
+			VkClearValue clearValue[2];
+			clearValue[0].color = { 0.25f, 0.25f, 0.25f, 1.0f };
+			clearValue[1].depthStencil = { 1.0f, 0 };
+
+			if (m_renderAttachments.renderPasses[r]!=lastRP) {
+				if (lastRP!=VK_NULL_HANDLE) {
+					vkCmdEndRenderPass(m_drawCmdBuffers[i]);
+				}
+			}
+
+			if (m_renderAttachments.renderPasses[r]!=lastRP) {
+				renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
+				renderPassBeginInfo.renderPass = m_renderAttachments.renderPasses[r];
+				renderPassBeginInfo.renderArea.offset.x = 0;
+				renderPassBeginInfo.renderArea.offset.y = 0;
+				renderPassBeginInfo.renderArea.extent.width = gEnv->pSystem->getWidth();
+				renderPassBeginInfo.renderArea.extent.height = gEnv->pSystem->getHeight();
+				renderPassBeginInfo.clearValueCount = 2;
+				renderPassBeginInfo.pClearValues = clearValue; 
+				renderPassBeginInfo.framebuffer = m_framebuffers[i];
+				vkCmdBeginRenderPass(m_drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+			}
+			
+			std::cout << "Coucou" << std::endl;
+			
+				VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+				vkCmdSetViewport(m_drawCmdBuffers[i], 0, 1, &viewport);
+
+				VkRect2D scissor = vkTools::initializers::rect(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
+				vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
+
+				vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipelineLayout,
+					0, 1, m_indexedDraws[r].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
+
+				vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipeline);
+
+				vkCmdBindVertexBuffers(m_drawCmdBuffers[i], m_indexedDraws[r].firstBinding, m_indexedDraws[r].bindingCount, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
+
+				vkCmdBindIndexBuffer(m_drawCmdBuffers[i],
+					m_indexedDraws[r].indexBuffer,
+					m_indexedDraws[r].indexOffset,
+					m_indexedDraws[r].indexType);
+
+				/*vkCmdDrawIndexed(m_drawCmdBuffers[i],
+					m_indexedDraws[r].indexCount,
+					m_indexedDraws[r].indexCount,
+					m_indexedDraws[r].firstIndex,
+					m_indexedDraws[r].vertexOffset,
+					m_indexedDraws[r].firstInstance);*/
+
+				vkCmdDrawIndexed(m_drawCmdBuffers[i],
+					m_indexedDraws[r].indexCount,
+					1,
+					m_indexedDraws[r].firstIndex,
+					m_indexedDraws[r].vertexOffset,
+					m_indexedDraws[r].firstInstance);
+				//	}
+				
+				
+
+				lastRP = m_renderAttachments.renderPasses[r];
+
+			}
+		vkCmdEndRenderPass(m_drawCmdBuffers[i]);
+		VK_CHECK_RESULT(vkEndCommandBuffer(m_drawCmdBuffers[i]));
+	}
+
+}
+
 void CRenderer::buildDrawCommands2()
 {
 
@@ -1455,7 +1568,7 @@ void CRenderer::buildDrawCommands2()
 			
 
 			VkClearValue clearValue[2];
-			clearValue[0].color = { 1.0f, 0.25f, 0.25f, 1.0f };
+			clearValue[0].color = { 0.25f, 0.25f, 0.25f, 1.0f };
 			clearValue[1].depthStencil = { 1.0f, 0 };
 
 			VkRenderPassBeginInfo renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
@@ -1483,9 +1596,9 @@ void CRenderer::buildDrawCommands2()
 					0, 1, m_indexedDraws[r].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
 
 				vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipeline);
-
-				vkCmdBindVertexBuffers(m_drawCmdBuffers[i], m_indexedDraws[i].firstBinding, m_indexedDraws[i].bindingCount, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
-
+				//printf("Vertex Buffers");
+				vkCmdBindVertexBuffers(m_drawCmdBuffers[i], m_indexedDraws[r].firstBinding, m_indexedDraws[r].bindingCount, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
+				//printf("Index Buffer");
 				vkCmdBindIndexBuffer(m_drawCmdBuffers[i],
 					m_indexedDraws[r].indexBuffer,
 					m_indexedDraws[r].indexOffset,

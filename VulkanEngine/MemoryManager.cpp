@@ -63,6 +63,7 @@ void CMemoryManager::allocateMemory()
 {
 	//std::vector<VkDeviceSize> uniformBufferAllocation;
 	//#DIRTY
+	m_flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 	m_virtualBuffers.push_back(VirtualBufferPool(m_requestedMemorySize, m_flags));
 	uint64_t offset = 0;
 	uint64_t testptr;

@@ -47,7 +47,8 @@ GUI::~GUI()
 void GUI::load()
 {
 	if (m_renderPassName == "gui") {
-		gEnv->pRenderer->addRenderPass("gui", VK_ATTACHMENT_LOAD_OP_LOAD);
+		//gEnv->pRenderer->addRenderPass("gui", VK_ATTACHMENT_LOAD_OP_LOAD);
+		gEnv->pRenderer->addRenderPass("gui", VK_ATTACHMENT_LOAD_OP_DONT_CARE);
 	}
 	
 	////m_draw.offscreen = gEnv->pRenderer->addOffscreen("gui");
@@ -155,7 +156,7 @@ void GUI::loadWidgets()
 	std::vector<uint32_t> indices;
 	std::vector<uint32_t> indicesSizes;
 	std::vector<uint32_t> indicesOffsets; //The offset of the highset value use by the "pack" of indices, [0,1,2,0,2,3] 3 is indexOffset of this list
-	
+	std::vector<uint32_t> bindingCounts;
 	uint32_t tmpIndicesOffset = 0;
 	bool descriptorColorSetCreated = false;
 	bool descriptorTexSetCreated = false;
@@ -233,7 +234,7 @@ void GUI::loadWidgets()
 
 			
 			vertexc_widgetCount += 1;
-			
+			bindingCounts.push_back(1);
 			descriptorSets.push_back(m_draw.descriptorSetId[0]);
 			shaderNames.push_back("color");
 			pipelineNames.push_back("gui_col");
@@ -292,6 +293,7 @@ void GUI::loadWidgets()
 				printf("%i %i\n",z+tmpIndicesOffset-(4*tw->getText().size()), indices[z+tmpIndicesOffset-(4*tw->getText().size())]/*+tmpIndicesOffset);
 			}*/
 			vertexc_widgetCount += 1;
+			bindingCounts.push_back(2);
 
 			descriptorSets.push_back(m_draw.descriptorSetId[1]);
 			shaderNames.push_back("tex");
@@ -321,6 +323,7 @@ void GUI::loadWidgets()
 		std::string pipeline;
 		uint32_t descriptorSetId;
 		std::vector<uint32_t> ids;
+		uint32_t bindingCount;
 		uint32_t indicesCount = 0; //Number of indices 
 		uint32_t firstIndexPos = 0; //The position of the first index in the indices list (the one send to the GPU)
 		uint32_t lastIndexOffset = 0; //The offset you need to add to the "raw" indices
@@ -354,6 +357,7 @@ void GUI::loadWidgets()
 		tmpGroup.shader = shaderNames[i];
 		tmpGroup.pipeline = pipelineNames[i];
 		tmpGroup.descriptorSetId = { descriptorSets[i] };
+		tmpGroup.bindingCount = bindingCounts[i];
 		if (groups.size() == 0) {
 			groups.push_back(tmpGroup);
 
@@ -404,12 +408,14 @@ void GUI::loadWidgets()
 		}
 		m_draw.gOffsets.push_back(tmpGOffset);
 	}
-
+	printf("Buffer Sub Data ");
 	gEnv->pRenderer->bufferSubData(gEnv->bbid, m_draw.indicesSize, gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.offset, indices.data());
+	printf(" done.\n");
 	std::vector<SIndexedDrawInfo> drawInfo;
 	drawInfo.resize(groups.size());
 
 	uint32_t tmpI;
+	printf("Groups Loading\n");
 	for (size_t j = 0; j < groups.size();j++) {
 		//for (size_t i = 0; i < groups[j].ids.size();i++) {
 			//drawInfo[j].bindDescriptorSets(gEnv->pRenderer->getShader(shaderNames[i])->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(descriptorSets[i]));
@@ -420,22 +426,23 @@ void GUI::loadWidgets()
 			drawInfo[j].bindDescriptorSets(gEnv->pRenderer->getShader(groups[j].shader)->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(descriptorSets[groups[j].ids[0]]));
 			drawInfo[j].bindPipeline(gEnv->pRenderer->getPipeline(pipelineNames[groups[j].ids[0]]));
 			//drawInfo[j].bindVertexBuffers(buffers[groups[j].ids[0]], m_draw.gOffset.size(), m_draw.gOffset.data());
-			drawInfo[j].bindVertexBuffers(buffers[groups[j].ids[0]], m_draw.gOffsets[j].size(), m_draw.gOffsets[j].data());
+			drawInfo[j].bindVertexBuffers(buffers[groups[j].ids[0]], m_draw.gOffsets[j].size(), m_draw.gOffsets[j].data(), 1);// groups[j].bindingCount);
 			drawInfo[j].bindIndexBuffer(gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.buffer, gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.offset, VK_INDEX_TYPE_UINT32);
 			//drawInfo[j].drawIndexed(indices.size(), 1, 0, 0, 0);//#enchancement for better flexibility
 			//drawInfo[j].drawIndexed(groups[j].indicesCount, 1, 0, 0, 0);//#enchancement for better flexibility #done
 			drawInfo[j].drawIndexed(groups[j].indicesCount, 1, groups[j].firstIndexPos, 0, 0);//#enchancement for better flexibility #done
 			//drawInfo[groups[j].ids[0]];
 			//gEnv->pRenderer->addIndexedDraw(drawInfo[groups[j].ids[0]], gEnv->pRenderer->getRenderPass(m_renderPassName),"gui"); //#warninig unflexibility with m_renderPassName
+			
 			gEnv->pRenderer->addIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName), "gui"); //#warninig unflexibility with m_renderPassName
 		//}
 	}
-
+	printf("");
 }
 
 void GUI::loadDescriptorSets()
 {
-	printf("GUI descriptorSetCreation");
+	printf("GUI descriptorSetCreation\n");
 
 	std::vector<VkWriteDescriptorSet> writeDescriptor;
 
@@ -452,16 +459,17 @@ void GUI::loadDescriptorSets()
 		m_draw.descriptorSetTypes[0],
 		0,
 		&gEnv->pMemoryManager->getVirtualBufferPtr(gEnv->pMemoryManager->getUniformBufferId(m_draw.UBO_bufferId))->bufferInfo));
-		
-
+	
+	
 	writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[1]),
 		m_draw.descriptorSetTypes[1],
 		1,
 		&gEnv->pRessourcesManager->getCFont("segoeui",40)->getDescriptorImageInfo()));
 		
 	gEnv->pRenderer->addWriteDescriptorSet(writeDescriptor);
+	printf("OK\n");
 	gEnv->pRenderer->updateDescriptorSets();
-	
+	printf("OK\n");
 
 }
 

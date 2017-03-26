@@ -141,7 +141,7 @@ void CFramebuffer::prepareOffscreen()
 	depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
 	depthStencilView.format = fbDepthFormat;
 	depthStencilView.subresourceRange = {};
-	depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT|VK_IMAGE_ASPECT_STENCIL_BIT;;
 	depthStencilView.subresourceRange.baseMipLevel = 0;
 	depthStencilView.subresourceRange.levelCount = 1;
 	depthStencilView.subresourceRange.baseArrayLayer = 0;
@@ -163,7 +163,7 @@ void CFramebuffer::prepareDescriptorSet()
 
 	//std::array<VertexT,4> vertData = { VertexT(-0.5f, -0.5f, 0.1f, 0.0f,0.0f), VertexT(-0.5f, 0.5f, 0.1f, 0.0f,1.0f), VertexT(0.5f, 0.5f, 0.1f, 1.0f,1.0f), VertexT(0.5f, -0.5f,0.1f, 1.0f,0.0f) };
 
-	std::array<VertexT, 4> vertData = { VertexT(-1.0f, -1.0f, 0.1f, 0.0f,0.0f), VertexT(-1.0f, 1.0f, 0.1f, 0.0f,1.0f), VertexT(1.0f, -1.0f, 0.1f, 1.0f,1.0f), VertexT(1.0f, 1.0f,0.1f, 1.0f,0.0f) };
+	std::array<VertexT, 4> vertData = { VertexT(-1.0f, -1.0f, 0.1f, 0.0f,0.0f), VertexT(1.0f, -1.0f, 0.1f, 0.0f,1.0f), VertexT(1.0f, 1.0f, 0.1f, 1.0f,1.0f), VertexT(-1.0f, 1.0f,0.1f, 1.0f,0.0f) };
 	uint32_t indices[6] = {0,1,2,0,2,3};
 	size_t tmpOffset = gEnv->pMemoryManager->getVirtualBuffer(draw_data.bufferId).bufferInfo.offset;
 	gEnv->pRenderer->bufferSubData(gEnv->bbid, 4*sizeof(VertexT),tmpOffset, vertData.data() );
@@ -190,7 +190,7 @@ void CFramebuffer::prepareDescriptorSet()
 	draw_data.quad.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), sizeof(VertexT)*4+tmpOffset, VK_INDEX_TYPE_UINT32);
 	draw_data.quad.drawIndexed(6, 1, 0, 0, 0);
 
-	gEnv->pRenderer->addIndexedDraw(draw_data.quad, gEnv->pRenderer->getRenderPass("main"));
+	//gEnv->pRenderer->addIndexedDraw(draw_data.quad, gEnv->pRenderer->getRenderPass("main"));
 
 	//gEnv->pRenderer->addDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1);
 

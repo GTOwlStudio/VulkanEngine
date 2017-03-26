@@ -41,7 +41,7 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 	
 	GUI graphicsInterface("gui.xml");
 	//CFont font("./data/fonts/segoeui.ttf", 40);
-	
+	//CTester tester;
 	m_env.pRessourcesManager->addFont("segoeui", 40);
 
 	m_env.pRenderer->Init();	
@@ -57,6 +57,7 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 	//graphicsInterface.load();
 	//font.load();
 	graphicsInterface.load();
+	//tester.load();
 
 	//DO NOT WRITE UNDER THIS LINE
 	m_env.pRenderer->bcb(); //build command buffers
