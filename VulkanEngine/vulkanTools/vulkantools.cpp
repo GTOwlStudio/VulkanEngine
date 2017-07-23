@@ -780,6 +780,7 @@ VkPipelineDepthStencilStateCreateInfo vkTools::initializers::pipelineDepthStenci
 	depthStencilState.depthTestEnable = depthTestEnable;
 	depthStencilState.depthWriteEnable = depthWriteEnable;
 	depthStencilState.depthCompareOp = depthCompareOp;
+	//depthStencilState.depthBoundsTestEnable = VK_TRUE;
 	depthStencilState.front = depthStencilState.back;
 	depthStencilState.back.compareOp = VK_COMPARE_OP_ALWAYS;
 	return depthStencilState;
@@ -843,7 +844,7 @@ namespace vkTools {
 		m_attributeDescription = attributeDescription;
 		m_descriptorLayoutCreateInfo = vkTools::initializers::descriptorSetLayoutCreateInfo(m_layoutBindings.data(), static_cast<uint32_t>(m_layoutBindings.size()));
 		m_pipelineLayoutCreateInfo = vkTools::initializers::pipelineLayoutCreateInfo(&m_descriptorSetLayout, 1);
-		
+		printf("DELETE ME : bl %i bd %i ad %i\n", m_layoutBindings.size(), m_bindingDescription.size(), m_attributeDescription.size());
 		setInputState(static_cast<uint32_t>(m_bindingDescription.size()), m_bindingDescription.data(), static_cast<uint32_t>(m_attributeDescription.size()), (m_attributeDescription.data()));
 	}
 
@@ -947,5 +948,23 @@ namespace vkTools {
 
 }
 
+bool vkTools::equal::vertexAttributeInputDescriptor(const VkVertexInputAttributeDescription & v1, const VkVertexInputAttributeDescription& v2)
+{
+	if (v1.binding!=v2.binding) {
+		return false;
+	}
 
+	if (v1.format!=v2.format) {
+		return false;
+	}
 
+	if (v1.location != v2.location) {
+		return false;
+	}
+
+	if (v1.offset!=v2.offset) {
+		return false;
+	}
+
+	return true;
+}

@@ -6,6 +6,11 @@
 
 class CSystem;
 
+struct temporay_mem_block{
+	std::vector<char*> data_adress;
+	std::vector<uint64_t> data_sizes;
+};
+
 class CMemoryManager : public IMemoryManager
 {
 public:
@@ -14,6 +19,11 @@ public:
 	
 	virtual size_t requestMemory(VkDeviceSize requestSize, std::string description, VkBufferUsageFlags flags);
 	//virtual size_t requestMemory(VkDeviceSize requestSize, std::string description,  );
+	virtual void init_data(VkVertexInputAttributeDescription id, void* data, uint64_t data_size);
+
+	virtual size_t add_temporary_mem_block();
+	virtual void delete_temporary_mem_block(size_t blockId);
+
 	virtual VkDeviceSize requestedMemorySize() const;
 	virtual std::vector<VkDeviceSize> requestedBuffers();
 	virtual std::string getGlobalMemoryDescription(std::string separator = " | ");
@@ -36,6 +46,17 @@ protected:
 	std::vector<uint64_t> m_indices;
 
 	std::string m_sortString;
+
+	std::vector<VkVertexInputAttributeDescription> m_viadIds;//VertexInputAttributeDescription Ids
+	bool viadIdExist(VkVertexInputAttributeDescription id);//DescriptorSetLayoutBindings Id exist ?
+	size_t viadIndice(VkVertexInputAttributeDescription id); //Return the indice of the id in the m_viadIds array, return -1 if not inside
+	size_t addViadId(VkVertexInputAttributeDescription id); //Add DescriptorSetLayoutBindings Id 
+	
+	
+	std::vector<char*> m_init_data_adresses;
+	std::vector<uint64_t> m_init_data_sizes;
+	
+	void deleteInitData();
 
 	struct {
 		uint64_t bufferId;

@@ -46,6 +46,16 @@ void Widget::setDepth(float depth)
 	m_depth = depth;
 }
 
+void Widget::setName(std::string name)
+{
+	m_name = name;
+}
+
+void Widget::setBufferId(size_t id)
+{
+	m_bufferId = id;
+}
+
 void Widget::addEvent(EventType type)
 {
 	m_events.push_back(Event(type));

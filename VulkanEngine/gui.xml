@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <gui>
+  
+  <Label name ="Trop trop bien"/>
   <Panel name="cool"/>
-  <Panel name="Tres cool"/>
-  <Label name="The Fox Jump Over The Lazy Dog"/>
+  <Label name =" Oui en effet !!!"/>
+  <Panel name ="Hey You"/>
+  <Label name = "What Went Down"/>
+  <Panel name = "WIIIIIIIIIIIIIIIIII"/>
+  <Label name ="HDKDHDJGHFGUDFDHFG"/>
+  <!--<Label name="A"/>
+  <Label name="The Fox Jump Over The Lazy Dog"/>-->
+ 
+  <!--<Label name="Hello"/>-->
 </gui>

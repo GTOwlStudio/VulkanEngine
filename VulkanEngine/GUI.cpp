@@ -15,8 +15,29 @@ GUI::GUI(std::string file) : m_file(file)
 	loadCreator();
 	loadGuiSettings("GuiSettings.xml");
 	loadFromXml(m_file);
+	reorderWidgets();
 
-	m_draw.indicesOffsetId = gEnv->pMemoryManager->requestMemory(m_draw.indicesSize, "INDICES");
+	uint32_t buffer_clr_id = -1;
+	uint32_t buffer_tex_id = -1;
+
+	uint32_t clrbuf_size = 0;
+	uint32_t texbuf_size = 0;
+
+	
+	std::vector<std::string> clrShaderedWidgets = { "Panel" }; //TexturedWidgets = !clrShaderedWidgets
+	
+
+	//Allocate widgets memory space
+	for (size_t i = 0; i < m_widgets.size(); i++) {
+		m_widgets[i]->setBufferId(gEnv->pMemoryManager->requestMemory(m_widgets[i]->gDataSize(), m_widgets[i]->getName()));
+	}
+
+	printf("clr %i tex %i idx %i\n", m_draw.vertTexSize, m_draw.vertClrSize);
+
+	//m_draw.vertClrId = gEnv->pMemoryManager->requestMemory(m_draw.vertClrSize, "gui_color");
+	//m_draw.vertTexId = gEnv->pMemoryManager->requestMemory(m_draw.vertTexSize, "gui_tex");
+
+	m_draw.indicesOffsetId = gEnv->pMemoryManager->requestMemory(m_draw.indicesSize, "gui_idx");
 
 	//addWidget(new Label("Sample", offset2D(50,50)));
 
@@ -47,8 +68,7 @@ GUI::~GUI()
 void GUI::load()
 {
 	if (m_renderPassName == "gui") {
-		//gEnv->pRenderer->addRenderPass("gui", VK_ATTACHMENT_LOAD_OP_LOAD);
-		gEnv->pRenderer->addRenderPass("gui", VK_ATTACHMENT_LOAD_OP_DONT_CARE);
+		gEnv->pRenderer->addRenderPass("gui", VK_ATTACHMENT_LOAD_OP_LOAD);
 	}
 	
 	////m_draw.offscreen = gEnv->pRenderer->addOffscreen("gui");
@@ -58,7 +78,7 @@ void GUI::load()
 	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("tex"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_tex", true);
 	printf("GUI renderPass and Graphics Pipeline Created");
 	printf("%i object to be load\n", static_cast<int>(m_widgets.size()));
-	loadWidgets();
+	loadWidgets_dev();
 	updateUniformBuffer();	
 }
 
@@ -139,6 +159,209 @@ void GUI::loadGuiSettings(std::string file)
 	}
 }
 
+void GUI::loadWidgets_dev() {
+	VirtualBuffer *tmpBuffer = nullptr;
+
+	size_t tmpOffset;
+	std::vector<std::string> shaderNames;
+	std::vector<uint32_t> descriptorSets;
+	std::vector<std::string> pipelineNames;
+	std::vector<VkBuffer> buffers;
+	uint32_t vertexc_widgetCount = 0;
+	uint32_t vertexc_start;
+	uint32_t vertexc_end;
+	uint32_t vertext_widgetCount = 0;
+	uint32_t vertext_start;
+	uint32_t vertext_end;
+	std::vector<uint32_t> tmpIndices;
+	std::vector<uint32_t> indices;
+	std::vector<uint32_t> indicesSizes;
+	std::vector<uint32_t> indicesOffsets; //The offset of the highset value use by the "pack" of indices, [0,1,2,0,2,3] 3 is indexOffset of this list
+	std::vector<uint32_t> indicesPos;
+
+	std::vector<uint32_t> rawIndices;
+
+	uint32_t tmpIndicesOffset = 0;
+	uint32_t tmpIndicesPos = 0;
+	bool descriptorColorSetCreated = false;
+	bool descriptorTexSetCreated = false;
+
+	size_t tmp2ndPartPos = -1;
+
+	for (size_t i = 0; i < m_widgets.size(); i++) {
+		if (m_widgets[i]->getClassName()=="Panel") {
+			printf("Panel");
+			Widget* tw = m_widgets[i]; //tmp widget
+
+			VertexC* tmpV = new VertexC[meshhelper::QUAD_VERTICES_COUNT];
+			uint32_t* tmpI = new uint32_t[meshhelper::QUAD_INDICES_COUNT];
+
+			tmpBuffer = gEnv->pMemoryManager->getVirtualBufferPtr(tw->getBufferId());
+			
+			tw->gData(tmpV);
+			tw->gIndices(tmpI);
+
+			tmpOffset = gEnv->pMemoryManager->getVirtualBuffer(tw->getBufferId()).bufferInfo.offset;
+
+			gEnv->pRenderer->bufferSubData(gEnv->bbid, tw->gDataSize(), tmpOffset, tmpV);
+
+
+			for (size_t k = 0; k < meshhelper::QUAD_INDICES_COUNT; k++) {
+				tmpIndices.push_back(tmpI[k]/*+tmpIndicesOffset*/);
+			}
+
+			indicesPos.push_back(tmpIndicesPos);
+			tmpIndicesPos += 6;
+			indicesSizes.push_back(6);
+			indicesOffsets.push_back(4);
+			tmpIndicesOffset += 4;
+
+			std::vector<VkWriteDescriptorSet> writeDescriptor;
+
+			//gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("color")->getDescriptorSetLayoutPtr(), 1, 1);
+			VirtualBuffer* tmp_vb = gEnv->pMemoryManager->getVirtualBufferPtr(tw->getBufferId());
+			VkDescriptorBufferInfo* tmp_descri = &gEnv->pMemoryManager->getVirtualBufferPtr(tw->getBufferId())->bufferInfo;
+
+			vertexc_widgetCount += 1;
+
+			descriptorSets.push_back(m_draw.descriptorSetId[0]);
+			shaderNames.push_back("color");
+			pipelineNames.push_back("gui_col");
+			buffers.push_back(tmpBuffer->bufferInfo.buffer);
+	
+			delete[] tmpV;
+			delete[] tmpI;
+
+		}
+
+		if (m_widgets[i]->getClassName() == "guilabel") {
+			printf("GuiLabel\n");
+			if (tmp2ndPartPos == -1) { tmp2ndPartPos = tmpIndices.size(); }
+			Widget* tw = m_widgets[i];
+
+			size_t woTextSize = tw->getText().size() - helper::countCharacter(tw->getText(), ' ');//text size without blank
+			VertexT* tmpV = new VertexT[meshhelper::QUAD_VERTICES_COUNT*woTextSize];
+			uint32_t* tmpI = new uint32_t[meshhelper::QUAD_INDICES_COUNT*woTextSize];
+
+			tmpBuffer = gEnv->pMemoryManager->getVirtualBufferPtr(tw->getBufferId());
+
+			tw->gData(tmpV);
+			tw->gIndices(tmpI);
+
+			tmpOffset = gEnv->pMemoryManager->getVirtualBuffer(tw->getBufferId()).bufferInfo.offset;
+
+			gEnv->pRenderer->bufferSubData(gEnv->bbid, tw->gDataSize(), tmpOffset, tmpV);
+
+			for (size_t k = 0; k < meshhelper::QUAD_INDICES_COUNT*woTextSize; k++) {
+				tmpIndices.push_back(tmpI[k] /*+ tmpIndicesOffset*/);
+			}
+			indicesPos.push_back(tmpIndicesPos);
+			tmpIndicesPos += 6 * woTextSize;
+			indicesSizes.push_back(6 * woTextSize);
+			indicesOffsets.push_back(4 * woTextSize);
+			tmpIndicesOffset += 4 * woTextSize;
+			vertexc_widgetCount += 1;
+
+			descriptorSets.push_back(m_draw.descriptorSetId[1]);
+			shaderNames.push_back("tex");
+			pipelineNames.push_back("gui_tex");
+			buffers.push_back(tmpBuffer->bufferInfo.buffer);
+
+			delete[] tmpV;
+			delete[] tmpI;
+		}
+	}
+
+	loadDescriptorSets();
+
+	std::vector<uint32_t> groupMask;
+	struct groupId {
+		std::string shader;
+		std::string pipeline;
+		uint32_t descriptorSetId;
+		std::vector<uint32_t> ids;
+		uint32_t indicesCount = 0; //Number of indices 
+		uint32_t firstIndexPos = 0; //The position of the first index in the indices list (the one send to the GPU)
+		uint32_t lastIndexOffset = 0; //The offset you need to add to the "raw" indices
+									  //VkBuffer buffer;
+		bool equal(groupId g) {
+			if (g.shader != shader) {
+				return false;
+			}
+			if (g.pipeline != pipeline) {
+				return false;
+			}
+			if (g.descriptorSetId != descriptorSetId) {
+				return false;
+			}
+			return true;
+		}
+	};
+
+	std::vector<groupId> groups;
+	groupId tmpGroup;
+	bool tmpDone;
+	uint32_t tj;
+	size_t pos = 0;
+	size_t off = 0;
+	size_t mode = 0;
+	indices.resize(tmpIndices.size());
+	printf("\n");
+	for (size_t i = 0; i < indicesSizes.size(); i++) {
+		
+		//off = indicesPos[i];
+		if (indicesPos[i]/* + indicesSizes[i]*/ == tmp2ndPartPos && mode == 0) {
+			mode = indicesPos[i];
+			off = 0;
+		}
+		for (size_t j = 0; j < indicesSizes[i]; j++) {
+			pos = indicesPos[i] + j;
+			indices[pos] = tmpIndices[pos] + off/*-mode*/;
+			printf("%i %i\n",tmpIndices[pos], indices[pos]);
+		}
+		off += 4 * (indicesSizes[i] / 6);
+		
+	}
+
+	
+	gEnv->pRenderer->bufferSubData(gEnv->bbid, m_draw.indicesSize, gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.offset, indices.data());
+	std::vector<SIndexedDrawInfo> drawInfo;
+	//tmpBuffer = gEnv->pMemoryManager->getVirtualBufferPtr(tw->getBufferId())
+	std::vector<uint32_t> usefulId = {0, static_cast<uint32_t>(tmp2ndPartPos/6)};
+	std::vector<uint32_t> idx_size = {static_cast<uint32_t>(tmp2ndPartPos), static_cast<uint32_t>(indices.size() - tmp2ndPartPos)};
+	std::vector<uint32_t> idx_off = { 0, static_cast<uint32_t>(indices.size() - tmp2ndPartPos) };
+	std::vector<VirtualBuffer*> bufs = { gEnv->pMemoryManager->getVirtualBufferPtr(m_widgets[0]->getBufferId()), gEnv->pMemoryManager->getVirtualBufferPtr(m_widgets[(tmp2ndPartPos / 6)]->getBufferId()) };
+
+	drawInfo.resize(2);
+	
+	for (size_t j = 0; j < 2; j++) {
+		//VirtualBuffer* buf = gEnv->pMemoryManager->getVirtualBufferPtr(m_widgets[j*(tmp2ndPartPos / 6)]->getBufferId());
+		VirtualBuffer* buf = bufs[j];
+		drawInfo[j].bindDescriptorSets(gEnv->pRenderer->getShader(shaderNames[usefulId[j]])->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(descriptorSets[usefulId[j]]));
+		drawInfo[j].bindPipeline(gEnv->pRenderer->getPipeline(pipelineNames[usefulId[j]]));
+		drawInfo[j].bindVertexBuffers(buf->bufferInfo.buffer, 1, &buf->bufferInfo.offset);
+		drawInfo[j].bindIndexBuffer(gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.buffer, gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.offset, VK_INDEX_TYPE_UINT32);
+		drawInfo[j].drawIndexed(idx_size[j], 1, j*tmp2ndPartPos, 0, 0);
+		//drawInfo[j].drawIndexed(idx_size[j], 1, groups[j].firstIndexPos, 0, 0);//#enchancement for better flexibility #done
+																						  //drawInfo[groups[j].ids[0]];
+																						  //gEnv->pRenderer->addIndexedDraw(drawInfo[groups[j].ids[0]], gEnv->pRenderer->getRenderPass(m_renderPassName),"gui"); //#warninig unflexibility with m_renderPassName
+		gEnv->pRenderer->addIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName), "gui"); //#warninig unflexibility with m_renderPassName
+																											   //}
+	}
+	/*uint32_t tmpI;
+	for (size_t j = 0; j < groups.size(); j++) {
+		drawInfo[j].bindDescriptorSets(gEnv->pRenderer->getShader(groups[j].shader)->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(descriptorSets[groups[j].ids[0]]));
+		drawInfo[j].bindPipeline(gEnv->pRenderer->getPipeline(pipelineNames[groups[j].ids[0]]));
+		drawInfo[j].bindVertexBuffers(buffers[groups[j].ids[0]], 1, m_draw.gOffsets[j].data());
+		drawInfo[j].bindIndexBuffer(gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.buffer, gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.offset, VK_INDEX_TYPE_UINT32);
+		drawInfo[j].drawIndexed(groups[j].indicesCount, 1, groups[j].firstIndexPos, 0, 0);//#enchancement for better flexibility #done
+																						  //drawInfo[groups[j].ids[0]];
+																						  //gEnv->pRenderer->addIndexedDraw(drawInfo[groups[j].ids[0]], gEnv->pRenderer->getRenderPass(m_renderPassName),"gui"); //#warninig unflexibility with m_renderPassName
+		gEnv->pRenderer->addIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName), "gui"); //#warninig unflexibility with m_renderPassName
+																										   //}
+	}*/
+}
+
 void GUI::loadWidgets()
 {
 	size_t tmpOffset;
@@ -153,14 +376,20 @@ void GUI::loadWidgets()
 	uint32_t vertext_widgetCount = 0;
 	uint32_t vertext_start;
 	uint32_t vertext_end;
+	std::vector<uint32_t> tmpIndices;
 	std::vector<uint32_t> indices;
 	std::vector<uint32_t> indicesSizes;
 	std::vector<uint32_t> indicesOffsets; //The offset of the highset value use by the "pack" of indices, [0,1,2,0,2,3] 3 is indexOffset of this list
-	std::vector<uint32_t> bindingCounts;
+	std::vector<uint32_t> indicesPos;
+
+	std::vector<uint32_t> rawIndices;
+
 	uint32_t tmpIndicesOffset = 0;
+	uint32_t tmpIndicesPos = 0;
 	bool descriptorColorSetCreated = false;
 	bool descriptorTexSetCreated = false;
 
+	
 
 	for (size_t i = 0; i < m_widgets.size();i++) {
 		if (m_widgets[i]->getClassName()=="Panel") {
@@ -195,8 +424,11 @@ void GUI::loadWidgets()
 			//addIndices(tmpI);
 			
 			for (size_t k = 0; k < meshhelper::QUAD_INDICES_COUNT;k++) {
-				indices.push_back(tmpI[k]/*+tmpIndicesOffset*/);
+				tmpIndices.push_back(tmpI[k]/*+tmpIndicesOffset*/);
 			}
+			
+			indicesPos.push_back(tmpIndicesPos);
+			tmpIndicesPos += 6;
 			indicesSizes.push_back(6);
 			indicesOffsets.push_back(4);
 			tmpIndicesOffset += 4;
@@ -234,7 +466,7 @@ void GUI::loadWidgets()
 
 			
 			vertexc_widgetCount += 1;
-			bindingCounts.push_back(1);
+			
 			descriptorSets.push_back(m_draw.descriptorSetId[0]);
 			shaderNames.push_back("color");
 			pipelineNames.push_back("gui_col");
@@ -265,23 +497,31 @@ void GUI::loadWidgets()
 		if (m_widgets[i]->getClassName()=="guilabel") {
 			printf("GuiLabel\n");
 			Widget* tw = m_widgets[i];
-			VertexT* tmpV = new VertexT[meshhelper::QUAD_VERTICES_COUNT*tw->getText().size()];
-			uint32_t* tmpI = new uint32_t[meshhelper::QUAD_INDICES_COUNT*tw->getText().size()];
+			size_t woTextSize = tw->getText().size() - helper::countCharacter(tw->getText(), ' ');//text size without blank
+			VertexT* tmpV = new VertexT[meshhelper::QUAD_VERTICES_COUNT*woTextSize];
+			uint32_t* tmpI = new uint32_t[meshhelper::QUAD_INDICES_COUNT*woTextSize];
 			tmpBuffer = gEnv->pMemoryManager->getVirtualBufferPtr(tw->getBufferId());
 			tw->gData(tmpV);
 			tw->gIndices(tmpI);
 			tmpOffset = gEnv->pMemoryManager->getVirtualBuffer(tw->getBufferId()).bufferInfo.offset;
 			m_draw.gOffset.push_back(tmpOffset);
 
-			gEnv->pRenderer->bufferSubData(gEnv->bbid, tw->gDataSize(), tmpOffset, tmpV);
-			for (size_t k = 0; k < meshhelper::QUAD_INDICES_COUNT*tw->getText().size(); k++) {
-				indices.push_back(tmpI[k] /*+ tmpIndicesOffset*/);
-				//indices.push_back(22);
-				printf("%i %i\n",indices.size()-1,indices.back());
+			for (size_t w = 0; w < meshhelper::QUAD_VERTICES_COUNT; w++) {
+				printf("%f %f %f %f %f\n", tmpV[w].pos.x, tmpV[w].pos.y, tmpV[w].pos.z, tmpV[w].tc.x, tmpV[w].tc.y);
 			}
-			indicesSizes.push_back(6 * tw->getText().size());
-			indicesOffsets.push_back(4 * tw->getText().size());
-			tmpIndicesOffset += 4*tw->getText().size();
+
+			gEnv->pRenderer->bufferSubData(gEnv->bbid, tw->gDataSize(), tmpOffset, tmpV);
+			
+			for (size_t k = 0; k < meshhelper::QUAD_INDICES_COUNT*woTextSize; k++) {
+				tmpIndices.push_back(tmpI[k] /*+ tmpIndicesOffset*/);
+				//indices.push_back(22);
+				printf("%i %i\n",tmpIndices.size()-1,tmpIndices.back());
+			}
+			indicesPos.push_back(tmpIndicesPos);
+			tmpIndicesPos += 6 * woTextSize;
+			indicesSizes.push_back(6 * woTextSize);
+			indicesOffsets.push_back(4 * woTextSize);
+			tmpIndicesOffset += 4*woTextSize;
 			
 			//std::vector<VkWriteDescriptorSet> writeDescriptor;
 			/*for (size_t z = 0; z < tw->getText().size()*meshhelper::QUAD_VERTICES_COUNT;z++) {
@@ -293,7 +533,6 @@ void GUI::loadWidgets()
 				printf("%i %i\n",z+tmpIndicesOffset-(4*tw->getText().size()), indices[z+tmpIndicesOffset-(4*tw->getText().size())]/*+tmpIndicesOffset);
 			}*/
 			vertexc_widgetCount += 1;
-			bindingCounts.push_back(2);
 
 			descriptorSets.push_back(m_draw.descriptorSetId[1]);
 			shaderNames.push_back("tex");
@@ -323,7 +562,6 @@ void GUI::loadWidgets()
 		std::string pipeline;
 		uint32_t descriptorSetId;
 		std::vector<uint32_t> ids;
-		uint32_t bindingCount;
 		uint32_t indicesCount = 0; //Number of indices 
 		uint32_t firstIndexPos = 0; //The position of the first index in the indices list (the one send to the GPU)
 		uint32_t lastIndexOffset = 0; //The offset you need to add to the "raw" indices
@@ -357,7 +595,6 @@ void GUI::loadWidgets()
 		tmpGroup.shader = shaderNames[i];
 		tmpGroup.pipeline = pipelineNames[i];
 		tmpGroup.descriptorSetId = { descriptorSets[i] };
-		tmpGroup.bindingCount = bindingCounts[i];
 		if (groups.size() == 0) {
 			groups.push_back(tmpGroup);
 
@@ -387,8 +624,10 @@ void GUI::loadWidgets()
 		
 	}
 	std::vector<VkDeviceSize> tmpGOffset;
+	
 	uint32_t tmpIndexLastPos = 0;
 	int tmpa = 0;
+	int tmpb = 0;
 	for (size_t j = 0; j < groups.size();j++) {
 		groups[j].firstIndexPos = tmpIndexLastPos;
 		tmpIndexLastPos = 0;
@@ -397,7 +636,9 @@ void GUI::loadWidgets()
 			
 			for (size_t l = 0; l < indicesSizes[groups[j].ids[k]];l++) {
 				tmpa = l + tmpIndexLastPos + groups[j].firstIndexPos;
-				indices[l + tmpIndexLastPos+groups[j].firstIndexPos] += groups[j].lastIndexOffset;
+				tmpb = l + indicesPos[groups[j].ids[k]];
+				//indices[l + tmpIndexLastPos+groups[j].firstIndexPos] += groups[j].lastIndexOffset;
+				tmpIndices[tmpb] += groups[j].lastIndexOffset;
 			}
 			tmpIndexLastPos += indicesSizes[groups[j].ids[k]];
 			groups[j].lastIndexOffset += indicesOffsets[groups[j].ids[k]];
@@ -408,14 +649,25 @@ void GUI::loadWidgets()
 		}
 		m_draw.gOffsets.push_back(tmpGOffset);
 	}
-	printf("Buffer Sub Data ");
+	printf("\n\n\n\nIndices-----\n\n\n\n");
+	indices.resize(tmpIndices.size());
+	uint32_t tmplastIId = 0;
+	for (size_t j = 0; j < groups.size();j++) {
+		
+		for (size_t k = 0; k < groups[j].ids.size();k++) {
+			for (size_t l = 0; l < indicesSizes[groups[j].ids[k]];l++) {
+				indices[l + tmplastIId] = tmpIndices[l+indicesPos[groups[j].ids[k]]];
+			}
+			tmplastIId += indicesSizes[groups[j].ids[k]];
+		}
+		printf("%i %i\n", j, groups[j].indicesCount);
+	}
+
 	gEnv->pRenderer->bufferSubData(gEnv->bbid, m_draw.indicesSize, gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.offset, indices.data());
-	printf(" done.\n");
 	std::vector<SIndexedDrawInfo> drawInfo;
 	drawInfo.resize(groups.size());
 
 	uint32_t tmpI;
-	printf("Groups Loading\n");
 	for (size_t j = 0; j < groups.size();j++) {
 		//for (size_t i = 0; i < groups[j].ids.size();i++) {
 			//drawInfo[j].bindDescriptorSets(gEnv->pRenderer->getShader(shaderNames[i])->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(descriptorSets[i]));
@@ -426,23 +678,74 @@ void GUI::loadWidgets()
 			drawInfo[j].bindDescriptorSets(gEnv->pRenderer->getShader(groups[j].shader)->getPipelineLayout(), 1, gEnv->pRenderer->getDescriptorSet(descriptorSets[groups[j].ids[0]]));
 			drawInfo[j].bindPipeline(gEnv->pRenderer->getPipeline(pipelineNames[groups[j].ids[0]]));
 			//drawInfo[j].bindVertexBuffers(buffers[groups[j].ids[0]], m_draw.gOffset.size(), m_draw.gOffset.data());
-			drawInfo[j].bindVertexBuffers(buffers[groups[j].ids[0]], m_draw.gOffsets[j].size(), m_draw.gOffsets[j].data(), 1);// groups[j].bindingCount);
+			drawInfo[j].bindVertexBuffers(buffers[groups[j].ids[0]], m_draw.gOffsets[j].size(), m_draw.gOffsets[j].data());
 			drawInfo[j].bindIndexBuffer(gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.buffer, gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.offset, VK_INDEX_TYPE_UINT32);
 			//drawInfo[j].drawIndexed(indices.size(), 1, 0, 0, 0);//#enchancement for better flexibility
 			//drawInfo[j].drawIndexed(groups[j].indicesCount, 1, 0, 0, 0);//#enchancement for better flexibility #done
 			drawInfo[j].drawIndexed(groups[j].indicesCount, 1, groups[j].firstIndexPos, 0, 0);//#enchancement for better flexibility #done
 			//drawInfo[groups[j].ids[0]];
 			//gEnv->pRenderer->addIndexedDraw(drawInfo[groups[j].ids[0]], gEnv->pRenderer->getRenderPass(m_renderPassName),"gui"); //#warninig unflexibility with m_renderPassName
-			
 			gEnv->pRenderer->addIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName), "gui"); //#warninig unflexibility with m_renderPassName
 		//}
 	}
-	printf("");
+
+}
+
+void GUI::reorderWidgets()
+{
+	std::vector<Widget*> copy = m_widgets;
+	m_widgets.resize(0);
+
+	//Criteria
+	std::vector<std::string> clrShaderedWidgets = { "Panel" }; //TexturedWidgets = !clrShaderedWidgets
+
+	//Process clrShaderedWidgets
+	for (size_t i = 0; i < copy.size(); i++) {
+		if (helper::contains(copy[i]->getClassName(), clrShaderedWidgets)) {
+			m_widgets.push_back(copy[i]);
+		}
+	}
+	//Process texShaderedWidgets
+	for (size_t i = 0; i < copy.size(); i++) {
+		if (!helper::contains(copy[i]->getClassName(), clrShaderedWidgets)) {
+			m_widgets.push_back(copy[i]);
+		}
+	}
+
+
 }
 
 void GUI::loadDescriptorSets()
 {
-	printf("GUI descriptorSetCreation\n");
+	/*gli::texture2D tex(gli::load(gEnv->getAssetpath()+"textures/Fanatic_TriWave_1024.ktx"));
+	assert(!tex.empty());
+
+	VkImageCreateInfo imageCreateInfo = vkTools::initializers::imageCreateInfo();
+	imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageCreateInfo.format = VK_FORMAT_BC2_UNORM_BLOCK;
+	imageCreateInfo.mipLevels = tex.levels();
+	imageCreateInfo.arrayLayers = 1;
+	imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+	imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	
+	imageCreateInfo.extent = { (uint32_t)tex.dimensions().x, (uint32_t)tex.dimensions().y, 1};
+	imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	//*uint8_t* data;
+	//memcpy(data, tex.data(), tex.size());
+
+	gEnv->pRenderer->createTexture(&test_texId, imageCreateInfo, (uint8_t*)tex.data(),1024,1024);*/
+	//gEnv->pRenderer->loadTextureFromFile(&test_texId, gEnv->getAssetpath() + "textures/Fanatic_TriWave_1024.ktx", VK_FORMAT_BC2_UNORM_BLOCK);
+	gEnv->pRenderer->loadTextureFromFile(&test_texId, gEnv->getAssetpath() + "textures/segoeui40.ktx", VK_FORMAT_BC2_UNORM_BLOCK);
+	test_imgDescriptor = 
+		vkTools::initializers::descriptorImageInfo(gEnv->pRenderer->getTexture(test_texId)->sampler, 
+			gEnv->pRenderer->getTexture(test_texId)->view,
+			gEnv->pRenderer->getTexture(test_texId)->imageLayout);
+	
+
+	printf("GUI descriptorSetCreation");
 
 	std::vector<VkWriteDescriptorSet> writeDescriptor;
 
@@ -459,17 +762,17 @@ void GUI::loadDescriptorSets()
 		m_draw.descriptorSetTypes[0],
 		0,
 		&gEnv->pMemoryManager->getVirtualBufferPtr(gEnv->pMemoryManager->getUniformBufferId(m_draw.UBO_bufferId))->bufferInfo));
-	
-	
+		
+
 	writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[1]),
 		m_draw.descriptorSetTypes[1],
 		1,
-		&gEnv->pRessourcesManager->getCFont("segoeui",40)->getDescriptorImageInfo()));
+		&test_imgDescriptor));
+		//&gEnv->pRessourcesManager->getCFont("segoeui",12)->getDescriptorImageInfo()));
 		
 	gEnv->pRenderer->addWriteDescriptorSet(writeDescriptor);
-	printf("OK\n");
 	gEnv->pRenderer->updateDescriptorSets();
-	printf("OK\n");
+	
 
 }
 
@@ -487,17 +790,18 @@ void GUI::addCreator(std::string name, std::function<void(mxml_node_t* t)> creat
 
 void GUI::addCreator(std::string name, void(GUI::*&& _Func)(mxml_node_t *t))// , void (GUI::*&&loader)(mxml_node_t *t))
 {
-	m_creators.elementNames.push_back(name);
-	m_creators.creators.push_back(std::bind(_Func, this, std::placeholders::_1));
+	m_elementNames.push_back(name);
+	m_elementsCount.push_back(0);
+	m_creators.push_back(std::bind(_Func, this, std::placeholders::_1));
 }
 
 
 void GUI::searchAndExecute(mxml_node_t * node)
 {
 	XMLParser parser(m_file);
-	for (size_t i = 0; i < m_creators.creators.size();i++) {
-		if (parser.getXData(node).elementName==m_creators.elementNames[i]) {
-			m_creators.creators[i](node);
+	for (size_t i = 0; i < m_creators.size();i++) {
+		if (parser.getXData(node).elementName==m_elementNames[i]) {
+			m_creators[i](node);
 		}
 	}
 }
@@ -506,14 +810,24 @@ void GUI::creator_Panel(mxml_node_t * t)
 {
 	printf("Panel creator : %s\n", m_file.c_str());
 	printf("%f %f\n",getNextPosition().x, getNextPosition().y);
-	addWidget(new Panel("panel", rect2D(getNextPosition(), extent2D(100, 20)), glm::uvec4(255,255,255,255), glm::uint(255), true));
+
+	size_t classId = helper::find("Panel", m_elementNames);
+
+	addWidget(new Panel("panel", rect2D(getNextPosition(), extent2D(100, 20)), glm::uvec4(255,255,255,255), glm::uint(255), false, false));
+	m_elementsCount[classId] += 1;
+
+	m_draw.vertClrSize += m_widgets.back()->gDataSize();
 	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
+
+	m_widgets.back()->setName("Panel"+ std::to_string(m_elementsCount[classId]));
 
 	printf("%f %f\n", getNextPosition().x, getNextPosition().y);
 }
 
 void GUI::creator_guilabel(mxml_node_t * t)
 {
+	size_t classId = helper::find("Label", m_elementNames);
+
 	XMLParser parser(m_file);
 	printf("guilabel creator\n");
 	size_t attribNameId = 0;
@@ -524,8 +838,15 @@ void GUI::creator_guilabel(mxml_node_t * t)
 		}
 	}
 	printf("%s\n", parser.getXData(t).attributeValue[attribNameId].c_str());
-	addWidget(new guilabel(parser.getXData(t).attributeValue[attribNameId], getNextPosition(), "segoeui", 40, true));
-	m_widgets.back()->setDepth(0.24);
+	addWidget(new guilabel(parser.getXData(t).attributeValue[attribNameId], getNextPosition(), "segoeui", 40, false, false));
+	m_elementsCount[classId] += 1;
+
+	m_draw.vertTexSize += m_widgets.back()->gDataSize();
 	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
+
+	m_widgets.back()->setName("guilabel" + std::to_string(m_elementsCount[classId]));
+	m_widgets.back()->setDepth(0.24);
+
+	
 
 }

@@ -159,7 +159,9 @@ namespace vkTools
 
 	void destroyUniformData(VkDevice device, vkTools::UniformData *uniformData);
 
-
+	namespace equal {
+		bool vertexAttributeInputDescriptor(const VkVertexInputAttributeDescription& viad1, const VkVertexInputAttributeDescription& viad2);
+	}
 	namespace initializers {
 
 		VkAttachmentDescription attachmentDescription(VkFormat format, VkSampleCountFlagBits samples,

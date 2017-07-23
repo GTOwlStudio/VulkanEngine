@@ -46,7 +46,7 @@ CFont::CFont(std::string path, uint32_t size) : m_fontSize(size)
 
 		tmpWidth += slot->bitmap.width;
 		tmpMaxHeight = std::max(tmpMaxHeight, slot->bitmap.rows);
-		printf("%i %c\n",i, i);
+		//printf("%i %c\n",i, i);
 		if (tmpWidth>=512)
 		{
 			tmpWidth -= 512;
@@ -223,9 +223,7 @@ void CFont::load()
 	float y = -1.0f;
 	float w = 2.0f;
 	float h = 2.0f;
-	//std::array<VertexT, 4> coords = { VertexT(x, y, 0.1f, 0.0f,1.0f), VertexT(x+w,y,0.1f,1.0f,1.0f), VertexT(x+w,y+h,0.1f,1.0f,0.0f), VertexT(x,y+h,0.1f,0.0f,0.0f) };
-	std::array<VertexT, 4> coords = { VertexT(-1.0, -1.0, 0.1f, 0.0f,1.0f), VertexT(1.0,-1.0,0.1f,1.0f,1.0f), VertexT(1.0,1.0,0.1f,1.0f,0.0f), VertexT(-1.0,1.0,0.1f,0.0f,0.0f) };
-
+	std::array<VertexT, 4> coords = { VertexT(x, y+h, 0.1f, 0.0f,1.0f), VertexT(x+w,y+h,0.1f,1.0f,1.0f), VertexT(x+w,y,0.1f,1.0f,0.0f), VertexT(x,y,0.1f,0.0f,0.0f) };
 	uint32_t gIndices[6] = {0,1,2, 0,2,3};
 
 	VirtualBuffer tmpVB = gEnv->pMemoryManager->getVirtualBuffer(m_vBufferId);
@@ -305,7 +303,7 @@ std::string CFont::getStyleName() const
 	return m_stylename;
 }
 
-VkDescriptorImageInfo CFont::getDescriptorImageInfo()
+VkDescriptorImageInfo CFont::getDescriptorImageInfo() const
 {
 	return m_imageDescriptor;
 }

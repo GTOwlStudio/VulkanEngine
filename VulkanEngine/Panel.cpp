@@ -2,13 +2,13 @@
 
 
 
-Panel::Panel(std::string wName, rect2D boundary, glm::uvec4 color, glm::uint colorRef, bool unpack) : Widget(wName, boundary), m_color(color), m_colorRef(colorRef)
+Panel::Panel(std::string wName, rect2D boundary, glm::uvec4 color, glm::uint colorRef, bool genIdx, bool genVtx) : Widget(wName, boundary), m_color(color), m_colorRef(colorRef)
 {
 	m_className = "Panel";
-	if (unpack) {
+	if (genVtx && !genIdx) {
 		m_bufferId = gEnv->pMemoryManager->requestMemory((meshhelper::QUAD_VERTICES_COUNT * sizeof(VertexC)), "Panel");
 	}
-	else {
+	else if (genVtx && genIdx) {
 		m_bufferId = gEnv->pMemoryManager->requestMemory((meshhelper::QUAD_VERTICES_COUNT * sizeof(VertexC)) + (meshhelper::QUAD_INDICES_COUNT * sizeof(uint32_t)), "Panel");
 	}//	addDescriptors(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 }

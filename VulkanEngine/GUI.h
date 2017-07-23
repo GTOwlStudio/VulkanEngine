@@ -42,6 +42,8 @@ protected:
 	void loadFromXml(std::string file);
 	void loadGuiSettings(std::string file);
 	void loadWidgets();
+	void loadWidgets_dev();
+	void reorderWidgets();
 	void loadDescriptorSets();
 
 	void addDoubleSetting(std::string name, double value);
@@ -69,7 +71,13 @@ protected:
 		std::vector<SIndexedDrawInfo> draws;
 		std::vector<uint32_t> descriptorSetId;
 		std::vector<VkDescriptorType> descriptorSetTypes;
+		
 		CFramebuffer* offscreen;
+		
+		size_t vertClrId;		//Virtual Colored Vertex Buffer Id
+		size_t vertClrSize = 0; //Virtual Colored Vertex Buffer Size
+		size_t vertTexId;		//Virtual Textured Vertex Buffer Id
+		size_t vertTexSize = 0; //Virtual Textured Vertex Buffer Size
 		size_t indicesOffsetId;
 		size_t indicesSize = 0;
 	} m_draw;
@@ -77,6 +85,9 @@ protected:
 	
 
 	std::string m_file;
+
+	uint32_t test_texId;
+	VkDescriptorImageInfo test_imgDescriptor;
 
 	struct {
 
@@ -88,12 +99,11 @@ protected:
 	} m_settings;
 
 
-	struct {
-		std::vector<std::string> elementNames;
-		std::vector<std::function<void(mxml_node_t *t)>> creators;
-		std::vector<std::function<void(mxml_node_t* t)>> loaders;
-		//std::vector<void(GUI::*)(mxml_node_t* t)> creators;
-	} m_creators;
+	std::vector<std::string> m_elementNames;
+	std::vector<uint32_t> m_elementsCount;
+	std::vector<std::function<void(mxml_node_t *t)>> m_creators;
+	std::vector<std::function<void(mxml_node_t* t)>> m_loaders;
+	//std::vector<void(GUI::*)(mxml_node_t* t)> creators;
 
 public:
 	static uint32_t instance;

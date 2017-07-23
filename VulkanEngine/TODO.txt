@@ -1,0 +1,2 @@
+State	Date and Time			Location						TODO						
+0		[23/07/2017 16:27]		Helper.h						Fonctions find() and stringToId Do the same thing

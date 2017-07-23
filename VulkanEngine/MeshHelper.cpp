@@ -27,7 +27,7 @@ namespace meshhelper
 	}
 	void quadVertices(float x, float y, float w, float h, float depth, glm::vec3 color, VertexC * dstArr)
 	{
-		VertexC tmp[4] = { VertexC(x,y,depth, color), VertexC(x + w,y,depth,color), VertexC(x+w,y+h,depth, color), VertexC(x,y + h,depth, color) };
+		VertexC tmp[4] = { VertexC(x,y+h,depth, color), VertexC(x+w,y+h,depth, color), VertexC(x+w,y,depth,color), VertexC(x,y,depth, color) };
 		for (uint32_t i = 0; i < 4;i++) {
 			dstArr[i] = tmp[i];
 		}

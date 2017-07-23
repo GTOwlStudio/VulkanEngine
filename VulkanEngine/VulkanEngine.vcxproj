@@ -36,7 +36,6 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RessourcesManager.cpp" />
     <ClCompile Include="System.cpp" />
-    <ClCompile Include="Tester.cpp" />
     <ClCompile Include="VirtualBufferPool.cpp" />
     <ClCompile Include="vulkandevice.cpp" />
     <ClCompile Include="vulkanTools\Helper.cpp" />
@@ -70,7 +69,6 @@
     <ClInclude Include="RessourcesManager.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="System.h" />
-    <ClInclude Include="Tester.h" />
     <ClInclude Include="VirtualBufferPool.h" />
     <ClInclude Include="vulkanbuffer.hpp" />
     <ClInclude Include="vulkandevice.h" />
@@ -91,6 +89,12 @@
     <Xml Include="GuiSettings.xml">
       <SubType>Designer</SubType>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="TODO.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{FE394A84-26BA-4955-A3E9-01AA40BC041D}</ProjectGuid>

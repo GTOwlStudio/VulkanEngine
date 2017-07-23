@@ -17,6 +17,8 @@ public:
 	virtual void resize(extent2D newSize);
 	virtual void setVisibility(bool visibility);
 	virtual void setDepth(float depth);
+	virtual void setName(std::string name);
+	virtual void setBufferId(size_t id);
 
 	virtual void addEvent(EventType type);
 

@@ -9,6 +9,7 @@ CMemoryManager::CMemoryManager() : m_sortString("")
 
 CMemoryManager::~CMemoryManager()
 {
+	deleteInitData();
 }
 
 size_t CMemoryManager::requestMemory(VkDeviceSize requestSize, std::string description, VkBufferUsageFlags flags)
@@ -32,6 +33,23 @@ size_t CMemoryManager::requestMemory(VkDeviceSize requestSize, std::string descr
 	
 }
 
+
+
+void CMemoryManager::init_data(VkVertexInputAttributeDescription id, void * data, uint64_t data_size)
+{
+	size_t i = addViadId(id);
+	m_init_data_adresses.push_back(new char[data_size]);
+	m_init_data_sizes.push_back(data_size);
+}
+
+size_t CMemoryManager::add_temporary_mem_block()
+{
+	return size_t();
+}
+
+void CMemoryManager::delete_temporary_mem_block(size_t blockId)
+{
+}
 
 VkDeviceSize CMemoryManager::requestedMemorySize() const
 {
@@ -158,6 +176,46 @@ uint64_t CMemoryManager::getUniformBufferId(uint64_t id)
 uint64_t CMemoryManager::getUniformBufferVirtualId()
 {
 	return m_uniformBufferInfo.virtualBufferId;
+}
+
+bool CMemoryManager::viadIdExist(VkVertexInputAttributeDescription id)
+{
+	for (VkVertexInputAttributeDescription attrb : m_viadIds) {
+		if (vkTools::equal::vertexAttributeInputDescriptor(attrb, id)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+size_t CMemoryManager::viadIndice(VkVertexInputAttributeDescription id)
+{
+	for (size_t i = 0; i < m_viadIds.size(); i++) {
+		if (vkTools::equal::vertexAttributeInputDescriptor(m_viadIds[i], id)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+size_t CMemoryManager::addViadId(VkVertexInputAttributeDescription id)
+{
+	size_t indice = viadIndice(id);
+	if (indice != size_t(-1)) {
+		return indice;
+	}
+	m_viadIds.push_back(id);
+	return m_viadIds.size() - 1;
+}
+
+void CMemoryManager::deleteInitData()
+{
+	for (size_t i = 0; i < m_init_data_adresses.size(); i++){
+		if (m_init_data_adresses[i]!=nullptr) {
+			delete[] m_init_data_adresses[i];
+		}
+		m_init_data_adresses[i] = nullptr;
+	}
 }
 
 void CMemoryManager::addFlag(VkBufferUsageFlags flags)

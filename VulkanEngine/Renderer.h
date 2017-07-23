@@ -157,9 +157,6 @@ protected:
 		VkPolygonMode polyMode,
 		uint32_t shaderStagesCount);
 
-	virtual void addGraphicsPipeline(vkTools::CShader* shader, VkRenderPass renderPass, std::string name,
-		std::string param);
-
 	virtual void addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR);
 	virtual void addRenderPass(std::string renderPassName, VkAttachmentDescription colorAttachmentDescription);
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName,
@@ -187,7 +184,6 @@ protected:
 	virtual void buildDrawCommands(VkRenderPass renderPass);
 	virtual void buildDrawCommands(); 
 	virtual void buildDrawCommands2();
-	virtual void buildDrawCommands3();
 	virtual void buildOffscreenDrawCommands();
 	virtual void buildTargetedDrawCommands();
 

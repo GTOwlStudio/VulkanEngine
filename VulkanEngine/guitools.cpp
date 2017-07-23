@@ -75,7 +75,10 @@ namespace guitools
 			if (cinfo[(int)text[i]].h>height) {
 				height = cinfo[(int)text[i]].h;
 			}
-			width += cinfo[int(text[i])].w;
+			if ((int)text[i]==32) {
+				width += (float)fontSize / 4.0f;
+			}
+			width += cinfo[int(text[i])].w + cinfo[int(text[i])].bx;
 		}
 		return extent2D(width, height);
 	}

@@ -40,24 +40,21 @@ bool CSystem::Init(HINSTANCE hInstance, WNDPROC wndProc)
 	m_env.pRenderer->InitVulkan();
 	
 	GUI graphicsInterface("gui.xml");
-	//CFont font("./data/fonts/segoeui.ttf", 40);
-	//CTester tester;
-	m_env.pRessourcesManager->addFont("segoeui", 40);
-
+	CFont font("./data/fonts/segoeui.ttf", 40);
+	
 	m_env.pRenderer->Init();	
 	printf("%s\n",gEnv->pRenderer->getVulkanDevice()->properties.deviceName);
 	printf("Requested memory size : %i\n",(uint32_t)m_env.pMemoryManager->requestedMemorySize());
 	printf("Mem's Description : %s\n", m_env.pMemoryManager->getGlobalMemoryDescription().c_str());
 
 	gEnv->pRessourcesManager->_set_to_loaded();
-	gEnv->pRessourcesManager->finishLoading();
+	//gEnv->pRessourcesManager->finishLoading();
 	//Create the big buffer #edit : the big buffer is now created in the pRenderer->Init() function, much better solution
 	//m_env.pRenderer->createBuffer(&m_env.bbid, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |VK_BUFFER_USAGE_INDEX_BUFFER_BIT|VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_env.pMemoryManager->requestedMemorySize());
 	printf("bbid=%i\n", gEnv->bbid);
 	//graphicsInterface.load();
-	//font.load();
+	font.load();
 	graphicsInterface.load();
-	//tester.load();
 
 	//DO NOT WRITE UNDER THIS LINE
 	m_env.pRenderer->bcb(); //build command buffers

@@ -67,4 +67,28 @@ namespace helper {
 		return v;
 	}
 
+	uint32_t countCharacter(std::string lookInto,char characterToCount)
+	{
+		std::string tmp = lookInto;
+		size_t offset = 0;
+		size_t count = 0;
+		while ((tmp.find(characterToCount,offset)!=tmp.npos)){//&&(offset<tmp.size())) {
+			offset = tmp.find(characterToCount);
+			tmp = tmp.substr(offset+1);
+			count += 1;
+		}
+		return count;
+
+	}
+
+	size_t find(std::string str, std::vector<std::string> strArr)
+	{
+		for (size_t i = 0; i < strArr.size(); i++) {
+			if (strArr[i] == str) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
 }
