@@ -852,6 +852,7 @@ void GUI::creator_Panel(mxml_node_t * t)
 	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
 
 	m_widgets.back()->setName("Panel"+ std::to_string(m_elementsCount[classId]));
+	m_widgets.back()->setDepth(0.24);
 
 	printf("%f %f\n", getNextPosition().x, getNextPosition().y);
 }

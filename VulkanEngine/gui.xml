@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <gui>
-  
   <Label name ="Trop trop bien"/>
   <Panel name="cool"/>
   <Label name =" Oui en effet !!!"/>
