@@ -6,6 +6,21 @@
 
 #include "vulkan_header.h"
 
+#include <limits>
+
+struct XMLWidget { //XML Widget description
+	std::string name = "";
+	float x;
+	float y;
+	float width;
+	float height;
+	XMLWidget() : name(""), x(-1), y(-1), width(-1), height(-1) {
+
+	}
+	XMLWidget(std::string param_name, float w, float h, float posx, float posy) : name(param_name),x(posx),y(posy),width(w),height(h){
+	}
+};
+
 class Widget
 {
 public:

@@ -776,6 +776,38 @@ void GUI::loadDescriptorSets()
 
 }
 
+XMLWidget GUI::getWidgetXMLInfo(mxml_node_t * node)
+{
+	XMLWidget xw = {};
+	XMLParser parser(m_file);
+	size_t attribNameId = -1, attribWidthId = -1, attribHeightId = -1, attribPosXId = -1, attribPosYId = -1;
+
+	for (size_t i = 0; i < parser.getXData(node).attributeName.size(); i++) {
+		if (parser.getXData(node).attributeName[i] == "name" && attribNameId==-1) {
+			attribNameId = i;
+			xw.name = parser.getXData(node).attributeValue[attribNameId];
+		}
+		else if (parser.getXData(node).attributeName[i] == "width" && attribWidthId == -1) {
+			attribWidthId = i;
+			xw.width = std::stof(parser.getXData(node).attributeValue[attribWidthId]);
+		}
+		else if (parser.getXData(node).attributeName[i] == "height" && attribHeightId == -1) {
+			attribHeightId = i;
+			xw.height = std::stof(parser.getXData(node).attributeValue[attribHeightId]);
+		}
+		else if (parser.getXData(node).attributeName[i] == "posx" && attribPosXId == -1) {
+			attribPosXId = i;
+			xw.x = std::stof(parser.getXData(node).attributeValue[attribPosXId]);
+		}
+		else if (parser.getXData(node).attributeName[i] == "posy" && attribPosYId == -1) {
+			attribPosYId = i;
+			xw.y = std::stof(parser.getXData(node).attributeValue[attribPosYId]);
+		}
+	}
+
+	return xw;
+}
+
 void GUI::addDoubleSetting(std::string name, double value)
 {
 	m_settings.doubleSettingsName.push_back(name);
@@ -812,8 +844,8 @@ void GUI::creator_Panel(mxml_node_t * t)
 	printf("%f %f\n",getNextPosition().x, getNextPosition().y);
 
 	size_t classId = helper::find("Panel", m_elementNames);
-
-	addWidget(new Panel("panel", rect2D(getNextPosition(), extent2D(100, 20)), glm::uvec4(255,255,255,255), glm::uint(255), false, false));
+	XMLWidget xw = getWidgetXMLInfo(t);
+	addWidget(new Panel("panel", rect2D(getNextPosition(), extent2D(guitools::getTextSize(xw.name, "./data/fonts/segoeui.ttf", 40).width, 20)), glm::uvec4(255,255,255,255), glm::uint(255), false, false));
 	m_elementsCount[classId] += 1;
 
 	m_draw.vertClrSize += m_widgets.back()->gDataSize();
@@ -827,18 +859,10 @@ void GUI::creator_Panel(mxml_node_t * t)
 void GUI::creator_guilabel(mxml_node_t * t)
 {
 	size_t classId = helper::find("Label", m_elementNames);
+	XMLWidget xw = getWidgetXMLInfo(t);
 
-	XMLParser parser(m_file);
-	printf("guilabel creator\n");
-	size_t attribNameId = 0;
-	for (size_t i = 0; i < parser.getXData(t).attributeName.size();i++) {
-		if (parser.getXData(t).attributeName[i]=="name") {
-			attribNameId = i;
-			break;
-		}
-	}
-	printf("%s\n", parser.getXData(t).attributeValue[attribNameId].c_str());
-	addWidget(new guilabel(parser.getXData(t).attributeValue[attribNameId], getNextPosition(), "segoeui", 40, false, false));
+	addWidget(new guilabel(xw.name, getNextPosition(), "segoeui", 40, false, false));
+
 	m_elementsCount[classId] += 1;
 
 	m_draw.vertTexSize += m_widgets.back()->gDataSize();

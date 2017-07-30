@@ -46,6 +46,8 @@ protected:
 	void reorderWidgets();
 	void loadDescriptorSets();
 
+	XMLWidget getWidgetXMLInfo(mxml_node_t * node);
+
 	void addDoubleSetting(std::string name, double value);
 	//void addCreator(std::string name, std::function<void(mxml_node_t* t)> creator);//void(GUI::*function)(mxml_node_t* t));// std::function<void(mxml_node_t* t)> creator);
 	void addCreator(std::string name, void (GUI::*&&creator)(mxml_node_t*t));// , void (GUI::*&&loader)(mxml_node_t *t));
