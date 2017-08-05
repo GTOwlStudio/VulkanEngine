@@ -272,12 +272,10 @@ vk::VulkanDevice * CRenderer::getVulkanDevice()
 {
 	return m_vulkanDevice;
 }
-
 vkTools::VulkanTextureLoader * CRenderer::getTextureLoader()
 {
 	return m_textureLoader;
 }
-
 VkRenderPass CRenderer::getRenderPass(std::string renderPassName)
 {
 	for (size_t i = 0; i < m_renderPasses.renderPasses.size();i++) {
@@ -287,7 +285,6 @@ VkRenderPass CRenderer::getRenderPass(std::string renderPassName)
 	}
 	return VK_NULL_HANDLE;
 }
-
 vkTools::CShader * CRenderer::getShader(std::string shaderName)
 {
 	for (size_t i = 0; i < m_shaders.shaders.size();i++) {
@@ -300,13 +297,11 @@ vkTools::CShader * CRenderer::getShader(std::string shaderName)
 
 	return nullptr;
 }
-
 vkTools::CShader * CRenderer::getShader(uint32_t id)
 {
 	printf("ERROR : YOU SHOULDN'T HAVE THIS MESSAGE DISPLAYING, it means that you use getShader(uint32_t id), the function isn't yet implemented");
 	return nullptr;
 }
-
 uint32_t CRenderer::getShaderId(std::string shaderName)
 {
 	for (size_t i = 0; i < m_shaders.shaders.size();i++) {
@@ -316,7 +311,6 @@ uint32_t CRenderer::getShaderId(std::string shaderName)
 	}
 	return UINT32_MAX;
 }
-
 size_t CRenderer::getShaderLastBinding()
 {
 	return m_shaders.shaders.size();
@@ -487,13 +481,58 @@ void CRenderer::bcb()
 	//buildDrawCommands(getRenderPass("offscreen"));
 	//buildDrawCommands(getRenderPass("main"));
 //	m_offscreen = false; //BIG WARNING
-
+	graphicsInit();
 	if (m_offscreen) {
 		buildOffscreenDrawCommands();
 	}
 	buildTargetedDrawCommands();
-	buildDrawCommands2 ();
+	buildDrawCommands ();
 	
+}
+
+void CRenderer::graphicsInit()
+{
+	VkRenderPass renderPass[2];
+	createRenderPass(&renderPass[0], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_CLEAR, true, true);
+	createRenderPass(&renderPass[1], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_LOAD, true, false);
+	//VK_CHECK_RESULT(vkCreateRenderPass(m_device, &renderPassCreateInfo, nullptr, &renderPass));
+
+	VkCommandBuffer cmdBuffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+	VkClearValue clearValue[2];
+	clearValue[0].color = { 0.25f, 0.25f, 0.25f, 1.0f };
+	clearValue[1].depthStencil = { 1.0f, 0 };
+
+	VkRenderPassBeginInfo renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
+	
+	renderPassBeginInfo.renderArea.offset.x = 0;
+	renderPassBeginInfo.renderArea.offset.y = 0;
+	renderPassBeginInfo.renderArea.extent.width = gEnv->pSystem->getWidth();
+	renderPassBeginInfo.renderArea.extent.height = gEnv->pSystem->getHeight();
+	renderPassBeginInfo.clearValueCount = 2;
+	renderPassBeginInfo.pClearValues = clearValue;
+
+	for (uint32_t i = 0; i < m_swapChain.imageCount; i++) {
+		renderPassBeginInfo.renderPass = renderPass[i];
+		renderPassBeginInfo.framebuffer = m_framebuffers[i];
+		//clearValue[1].depthStencil = { 0.9f, 0 };
+
+		vkCmdBeginRenderPass(cmdBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		/*VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
+		vkCmdSetViewport(m_drawCmdBuffers[i], 0, 1, &viewport);
+
+		VkRect2D scissor = vkTools::initializers::rect(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
+		vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);*/
+		vkCmdEndRenderPass(cmdBuffer);
+	}
+	//Swapchain images clearing
+
+	/*for (size_t i = 0; i < m_swapChain.imageCount;i++) {
+		vkCmdClearColorImage(cmdBuffer, m_swapChain.imageCount[i], VK_IMAGE_LAYOUT_UNDEFINED, );
+	}*/
+
+	flushCommandBuffer(cmdBuffer, m_queue, true);
+	vkDestroyRenderPass(m_device, renderPass[0], nullptr);
+	vkDestroyRenderPass(m_device, renderPass[1], nullptr);
 }
 
 VkBool32 CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex)
@@ -508,7 +547,6 @@ VkBool32 CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties, uint32_
 	}
 	return false;
 }
-
 uint32_t CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties)
 {
 	for (uint32_t i = 0; i < 32; i++) {
@@ -610,12 +648,12 @@ void CRenderer::setupDepthStencil()
 
 	VK_CHECK_RESULT(vkBindImageMemory(m_device, m_depthStencil.image, m_depthStencil.mem, 0));
 	
-/*	vkTools::setImageLayout(
+	vkTools::setImageLayout(
 		m_setupCmdBuffer,
 		m_depthStencil.image,
 		VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
 		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);*/
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
 	depthStencilView.image = m_depthStencil.image;
 	VK_CHECK_RESULT(vkCreateImageView(m_device, &depthStencilView, nullptr, &m_depthStencil.view));
@@ -1445,7 +1483,7 @@ void CRenderer::buildDrawCommands(VkRenderPass renderPass)
 
 }
 
-void CRenderer::buildDrawCommands2()
+void CRenderer::buildDrawCommands()
 {
 
 	if (!checkCommandBuffers()) {
@@ -1467,7 +1505,7 @@ void CRenderer::buildDrawCommands2()
 			
 
 			VkClearValue clearValue[2];
-			clearValue[0].color = { 1.0f, 0.25f, 0.25f, 1.0f };
+			clearValue[0].color = { 0.25f, 0.25f, 0.25f, 1.0f };
 			clearValue[1].depthStencil = { 1.0f, 0 };
 
 			VkRenderPassBeginInfo renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
@@ -1527,7 +1565,7 @@ void CRenderer::buildDrawCommands2()
 
 }
 
-void CRenderer::buildDrawCommands()
+void CRenderer::buildDrawCommands_old()
 {
 
 	if (!checkCommandBuffers()) {
@@ -1546,7 +1584,7 @@ void CRenderer::buildDrawCommands()
 		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
 
 		VkClearValue clearValue[2];
-		clearValue[0].color = { 1.0f, 0.25f, 0.25f, 1.0f };
+		clearValue[0].color = { 0.25f, 0.25f, 0.25f, 1.0f };
 		clearValue[1].depthStencil = { 1.0f, 0 };
 
 		VkRenderPassBeginInfo renderPassBeginInfo = vkTools::initializers::renderPassBeginInfo();
@@ -2209,6 +2247,100 @@ uint32_t CRenderer::getRenderAttachementFramebufferOffset(uint32_t id)
 		off += m_renderAttachments.framebufferOffsets[i];
 	}
 	return off;
+}
+
+void CRenderer::createRenderPass(VkRenderPass* renderPass,
+	VkAttachmentLoadOp colorLoadOp,
+	VkAttachmentLoadOp depthLoadOp,
+	bool colorUndefined,
+	bool depthUndefined)
+{
+	VkAttachmentDescription attachments[2] = {};
+
+	// Color attachment
+	attachments[0].format = m_colorFormat;
+	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+	// Don't clear the framebuffer (like the renderpass from the example does)
+	//attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+	attachments[0].loadOp = colorLoadOp;
+	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	if (colorUndefined) {
+		attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	}
+	if (!colorUndefined) {
+		attachments[0].initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	}
+	attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+	// Depth attachment
+	attachments[1].format = m_depthFormat;
+	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments[1].loadOp = depthLoadOp;
+	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	if (depthUndefined) {
+		attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	}
+	if (!depthUndefined) {
+		attachments[1].initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	}
+	attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	VkAttachmentReference colorReference = {};
+	colorReference.attachment = 0;
+	colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference depthReference = {};
+	depthReference.attachment = 1;
+	depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	// Use subpass dependencies for image layout transitions
+	VkSubpassDependency subpassDependencies[2] = {};
+
+	// Transition from final to initial (VK_SUBPASS_EXTERNAL refers to all commmands executed outside of the actual renderpass)
+	subpassDependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependencies[0].dstSubpass = 0;
+	subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpassDependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	// Transition from initial to final
+	subpassDependencies[1].srcSubpass = 0;
+	subpassDependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+	subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+	subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	subpassDependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	subpassDependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+	VkSubpassDescription subpassDescription = {};
+	subpassDescription.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpassDescription.colorAttachmentCount = 1;
+	subpassDescription.pColorAttachments = &colorReference;
+	subpassDescription.pDepthStencilAttachment = &depthReference;
+
+	/*subpassDescription.flags = 0;
+	subpassDescription.inputAttachmentCount = 0;
+	subpassDescription.pInputAttachments = NULL;
+	subpassDescription.pResolveAttachments = NULL;
+	subpassDescription.preserveAttachmentCount = 0;
+	subpassDescription.pPreserveAttachments = NULL;*/
+
+	VkRenderPassCreateInfo renderPassInfo = {};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.pNext = nullptr;
+	renderPassInfo.attachmentCount = 2;
+	renderPassInfo.pAttachments = attachments;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpassDescription;
+	renderPassInfo.dependencyCount = 2;
+	renderPassInfo.pDependencies = subpassDependencies;
+	
+	VK_CHECK_RESULT(vkCreateRenderPass(m_device, &renderPassInfo, nullptr, renderPass));
 }
 
 void CRenderer::prepared()

@@ -94,7 +94,9 @@ public:
 
 	virtual void getInfo();
 	virtual void getBufferInfo();
+
 	virtual void bcb();
+	virtual void graphicsInit(); //Initializeand prepare graphics object for the drawing, such as clearing view image, etc
 	virtual void prepared(); //Set m_prepared to true
 
 	virtual VkFramebuffer dev_fb();
@@ -183,7 +185,7 @@ protected:
 	virtual void swap(uint64_t ida, uint64_t idb);
 	virtual void buildDrawCommands(VkRenderPass renderPass);
 	virtual void buildDrawCommands(); 
-	virtual void buildDrawCommands2();
+	virtual void buildDrawCommands_old();
 	virtual void buildOffscreenDrawCommands();
 	virtual void buildTargetedDrawCommands();
 
@@ -209,6 +211,12 @@ protected:
 	void writeInBuffer(VkBuffer*buffer, VkDeviceSize size, void* data, VkDeviceSize dstOffset);
 
 	uint32_t getRenderAttachementFramebufferOffset(uint32_t id);
+
+	void createRenderPass(VkRenderPass* renderPass, 
+		VkAttachmentLoadOp colorLoadOp, 
+		VkAttachmentLoadOp depthLoadOp, 
+		bool colorUndefined = false, 
+		bool depthUndefined = false); //DepthToo set depth to loadOp value
 
 protected:
 

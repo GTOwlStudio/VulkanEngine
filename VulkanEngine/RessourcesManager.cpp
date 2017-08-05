@@ -78,6 +78,8 @@ void RessourcesManager::prepareShaders()
 	};
 	gEnv->pRenderer->addShader(gEnv->getAssetpath() + "shaders/texture.vert.spv", gEnv->getAssetpath() + "shaders/texture.frag.spv", &s_texture_name, s_texture_dslb, s_texture_b, s_texture_a);
 	
+
+
 	std::string s_tex_name = "tex";
 	std::vector<VkVertexInputBindingDescription> s_tex_b = { vkTools::initializers::vertexInputBindingDescription(0, sizeof(VertexT), VK_VERTEX_INPUT_RATE_VERTEX) };
 	std::vector<VkVertexInputAttributeDescription> s_tex_a = { vkTools::initializers::vertexInputAttributeDescription(0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0),
@@ -88,6 +90,8 @@ void RessourcesManager::prepareShaders()
 		vkTools::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1),
 	};
 	gEnv->pRenderer->addShader(gEnv->getAssetpath() + "shaders/tex.vert.spv", gEnv->getAssetpath() + "shaders/tex.frag.spv", &s_tex_name, s_tex_dslb, s_tex_b, s_tex_a);
+
+
 
 	uint32_t s_color_binding_id = 0; 
 
@@ -102,6 +106,11 @@ void RessourcesManager::prepareShaders()
 	};
 	gEnv->pRenderer->addShader(gEnv->getAssetpath() + "shaders/color.vert.spv", 
 		gEnv->getAssetpath() + "shaders/color.frag.spv", &s_color_name, s_color_dslb, s_color_b, s_color_a);
+
+
+	std::string s_font_name = "font";
+	gEnv->pRenderer->addShader(gEnv->getAssetpath() + "shaders/font.vert.spv", gEnv->getAssetpath() + "shaders/font.frag.spv", &s_font_name, s_tex_dslb, s_tex_b, s_tex_a);
+
 }
 
 void RessourcesManager::_set_to_loaded()

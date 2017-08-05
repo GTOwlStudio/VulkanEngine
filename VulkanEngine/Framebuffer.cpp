@@ -68,6 +68,16 @@ VkCommandBuffer* CFramebuffer::getCmdBufferPtr()
 	return &m_cmdBufferOffscreen;
 }
 
+VkImage CFramebuffer::getColorImageAttachmentImage()
+{
+	return m_color.image;
+}
+
+VkImage CFramebuffer::getDepthImageAttachmentImage()
+{
+	return m_depth.image;
+}
+
 void CFramebuffer::prepareOffscreen()
 {
 	VkFormat fbDepthFormat;

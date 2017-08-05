@@ -71,11 +71,12 @@ void GUI::load()
 		gEnv->pRenderer->addRenderPass("gui", VK_ATTACHMENT_LOAD_OP_LOAD);
 	}
 	
-	////m_draw.offscreen = gEnv->pRenderer->addOffscreen("gui");
-	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass("gui"), "gui");
-	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("tex"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_tex", true);
-	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_col", true);
+	/*m_draw.offscreen = gEnv->pRenderer->addOffscreen("gui");
+	m_draw.offscreen->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), gEnv->pRenderer->getRenderPass(m_renderPassName));
+	*///gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass("gui"), "gui");
 	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("tex"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_tex", true);
+	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_col", true);
+	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("font"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_te", true);
 	printf("GUI renderPass and Graphics Pipeline Created");
 	printf("%i object to be load\n", static_cast<int>(m_widgets.size()));
 	loadWidgets_dev();
@@ -317,7 +318,7 @@ void GUI::loadWidgets_dev() {
 		for (size_t j = 0; j < indicesSizes[i]; j++) {
 			pos = indicesPos[i] + j;
 			indices[pos] = tmpIndices[pos] + off/*-mode*/;
-			printf("%i %i\n",tmpIndices[pos], indices[pos]);
+			//printf("%i %i\n",tmpIndices[pos], indices[pos]);
 		}
 		off += 4 * (indicesSizes[i] / 6);
 		
@@ -345,8 +346,10 @@ void GUI::loadWidgets_dev() {
 		//drawInfo[j].drawIndexed(idx_size[j], 1, groups[j].firstIndexPos, 0, 0);//#enchancement for better flexibility #done
 																						  //drawInfo[groups[j].ids[0]];
 																						  //gEnv->pRenderer->addIndexedDraw(drawInfo[groups[j].ids[0]], gEnv->pRenderer->getRenderPass(m_renderPassName),"gui"); //#warninig unflexibility with m_renderPassName
+		
 		gEnv->pRenderer->addIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName), "gui"); //#warninig unflexibility with m_renderPassName
 																											   //}
+		//gEnv->pRenderer->addOffscreenIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName), m_draw.offscreen->getFramebuffer());
 	}
 	/*uint32_t tmpI;
 	for (size_t j = 0; j < groups.size(); j++) {

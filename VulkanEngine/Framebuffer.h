@@ -18,6 +18,8 @@ public:
 	VkSemaphore* getSemaphorePtr();
 	VkCommandBuffer getCmdBuffer() const;
 	VkCommandBuffer* getCmdBufferPtr();
+	VkImage getColorImageAttachmentImage();
+	VkImage getDepthImageAttachmentImage();
 	
 protected:
 
