@@ -400,6 +400,8 @@ protected:
 
 	bool m_prepared = false;
 
+	VkRenderPass m_initRenderPass[2];
+
 private:
 	VkResult createInstance();
 

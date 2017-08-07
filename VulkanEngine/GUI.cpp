@@ -49,7 +49,8 @@ GUI::GUI(std::string file) : m_file(file)
 	m_draw.UBO_bufferId = gEnv->pMemoryManager->requestMemory(sizeof(m_draw.UBO), "gUBO", VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	printf("GUI requestedDescriptorSet\n");
 	m_draw.descriptorSetId.push_back(gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, "color"));
-	m_draw.descriptorSetId.push_back(gEnv->pRenderer->requestDescriptorSet(std::vector<VkDescriptorType>{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER}, 1, "tex"));
+	//m_draw.descriptorSetId.push_back(gEnv->pRenderer->requestDescriptorSet(std::vector<VkDescriptorType>{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER}, 1, "tex"));
+	m_draw.descriptorSetId.push_back(gEnv->pRenderer->requestDescriptorSet(std::vector<VkDescriptorType>{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER}, 1, "font"));
 	//m_draw.descriptorSetId.push_back(gEnv->pRenderer->requestDescriptorSet(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, "texture"));
 	m_draw.descriptorSetTypes.push_back(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 	m_draw.descriptorSetTypes.push_back(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
@@ -74,7 +75,8 @@ void GUI::load()
 	/*m_draw.offscreen = gEnv->pRenderer->addOffscreen("gui");
 	m_draw.offscreen->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), gEnv->pRenderer->getRenderPass(m_renderPassName));
 	*///gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass("gui"), "gui");
-	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("tex"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_tex", true);
+	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("tex"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_tex", true);
+	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("font"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_font", true);
 	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_col", true);
 	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("font"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_te", true);
 	printf("GUI renderPass and Graphics Pipeline Created");
@@ -264,8 +266,8 @@ void GUI::loadWidgets_dev() {
 			vertexc_widgetCount += 1;
 
 			descriptorSets.push_back(m_draw.descriptorSetId[1]);
-			shaderNames.push_back("tex");
-			pipelineNames.push_back("gui_tex");
+			shaderNames.push_back("font");
+			pipelineNames.push_back("gui_font");
 			buffers.push_back(tmpBuffer->bufferInfo.buffer);
 
 			delete[] tmpV;
@@ -538,8 +540,8 @@ void GUI::loadWidgets()
 			vertexc_widgetCount += 1;
 
 			descriptorSets.push_back(m_draw.descriptorSetId[1]);
-			shaderNames.push_back("tex");
-			pipelineNames.push_back("gui_tex");
+			shaderNames.push_back("font");
+			pipelineNames.push_back("gui_font");
 			buffers.push_back(tmpBuffer->bufferInfo.buffer);
 		
 			delete[] tmpV;
@@ -741,12 +743,16 @@ void GUI::loadDescriptorSets()
 
 	gEnv->pRenderer->createTexture(&test_texId, imageCreateInfo, (uint8_t*)tex.data(),1024,1024);*/
 	//gEnv->pRenderer->loadTextureFromFile(&test_texId, gEnv->getAssetpath() + "textures/Fanatic_TriWave_1024.ktx", VK_FORMAT_BC2_UNORM_BLOCK);
+	
+	
+	
 	gEnv->pRenderer->loadTextureFromFile(&test_texId, gEnv->getAssetpath() + "textures/segoeui40.ktx", VK_FORMAT_BC2_UNORM_BLOCK);
 	test_imgDescriptor = 
 		vkTools::initializers::descriptorImageInfo(gEnv->pRenderer->getTexture(test_texId)->sampler, 
 			gEnv->pRenderer->getTexture(test_texId)->view,
 			gEnv->pRenderer->getTexture(test_texId)->imageLayout);
 	
+	CFont* ft = gEnv->pRessourcesManager->getCFont(m_fontName, m_fontSize);
 
 	printf("GUI descriptorSetCreation");
 
@@ -760,7 +766,7 @@ void GUI::loadDescriptorSets()
 		&gEnv->pMemoryManager->getVirtualBufferPtr(gEnv->pMemoryManager->getUniformBufferId(m_draw.UBO_bufferId))->bufferInfo));
 
 	
-	gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("tex")->getDescriptorSetLayoutPtr(), 1, m_draw.descriptorSetId[1]);
+	gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("font")->getDescriptorSetLayoutPtr(), 1, m_draw.descriptorSetId[1]);
 	writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[1]),
 		m_draw.descriptorSetTypes[0],
 		0,
@@ -771,6 +777,16 @@ void GUI::loadDescriptorSets()
 		m_draw.descriptorSetTypes[1],
 		1,
 		&test_imgDescriptor));
+
+	/*writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(gEnv->pRessourcesManager->getCFont(m_fontName, m_fontSize)->getDescriptorSetId()),
+		m_draw.descriptorSetTypes[1],
+		1,
+		gEnv->pRessourcesManager->getCFont(m_fontName, m_fontSize)->getDescriptorImageInfo()));*/
+
+	/*writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(ft->getDescriptorSetId()),
+		m_draw.descriptorSetTypes[1],
+		1,
+		ft->getDescriptorImageInfo()));*/
 		//&gEnv->pRessourcesManager->getCFont("segoeui",12)->getDescriptorImageInfo()));
 		
 	gEnv->pRenderer->addWriteDescriptorSet(writeDescriptor);

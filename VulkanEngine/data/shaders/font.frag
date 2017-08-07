@@ -12,8 +12,17 @@ layout (location = 0) out vec4 outFragColor;
 void main(void)
 {
 	vec4 color = texture(samplerColor, inUV);
-	outFragColor = vec4(color.rgb, 1.0);
-	//outFragColor = vec4(1.0,0.0,1.0,1.0);
+	//outFragColor = vec4(color.rgb, 1.0);
+	outFragColor = vec4(color.r, 0.0, 0.0, color.r);
+	//float alpha = color.r;
+	//outFragColor = 0.8*vec4(color.r);
+	/*if (color.r==0.0f){
+		//alpha = 1.0;
+		outFragColor = vec4(0.8*vec3(color.r), 1.0f);
+	}*/
+	
+	//outFragColor = vec4(0.8, vec3(color.r), alpha);
+	//outFragColor = vec4(vec3(0.1), 1.0);
 	//outFragColor = vec4(1.0, 1.0, 1.0, color) * vec4(1.0,0.0,1.0,1.0);
 	//outFragColor = vec4(1.0f, 1.0f, 1.0f, 1.0);
 }

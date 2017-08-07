@@ -19,7 +19,7 @@ CRenderer::~CRenderer()
 	m_prepared = false;
 	clean_dev();
 	clearRessources();
-
+	
 	for (size_t i = 0; i < m_pipelines.pipelines.size();i++) {
 		vkDestroyPipeline(m_device, m_pipelines.pipelines[i],nullptr);
 		//vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_shaders.descriptorSets[i]); //#enhancement avoid the use of iteration
@@ -56,6 +56,8 @@ CRenderer::~CRenderer()
 		vkFreeCommandBuffers(m_device, m_cmdPool, 1, &m_offscreenCmdBuffer);
 	}
 	destroyCommandBuffer();
+	vkDestroyRenderPass(m_device, m_initRenderPass[0], nullptr);
+	vkDestroyRenderPass(m_device, m_initRenderPass[1], nullptr);
 	vkDestroyRenderPass(m_device, m_renderPass, nullptr);
 
 	for (uint32_t i = 0; i < m_framebuffers.size();i++) {
@@ -492,13 +494,14 @@ void CRenderer::bcb()
 
 void CRenderer::graphicsInit()
 {
-	VkRenderPass renderPass[2];
-	createRenderPass(&renderPass[0], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_CLEAR, true, true);
-	createRenderPass(&renderPass[1], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_LOAD, true, false);
+	//VkRenderPass renderPass[2];
+	createRenderPass(&m_initRenderPass[0], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_CLEAR, true, true);
+	createRenderPass(&m_initRenderPass[1], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_LOAD, true);
 	//VK_CHECK_RESULT(vkCreateRenderPass(m_device, &renderPassCreateInfo, nullptr, &renderPass));
 
 	VkCommandBuffer cmdBuffer = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 	VkClearValue clearValue[2];
+	//clearValue[0].color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	clearValue[0].color = { 0.25f, 0.25f, 0.25f, 1.0f };
 	clearValue[1].depthStencil = { 1.0f, 0 };
 
@@ -512,7 +515,7 @@ void CRenderer::graphicsInit()
 	renderPassBeginInfo.pClearValues = clearValue;
 
 	for (uint32_t i = 0; i < m_swapChain.imageCount; i++) {
-		renderPassBeginInfo.renderPass = renderPass[i];
+		renderPassBeginInfo.renderPass = m_initRenderPass[i];
 		renderPassBeginInfo.framebuffer = m_framebuffers[i];
 		//clearValue[1].depthStencil = { 0.9f, 0 };
 
@@ -531,8 +534,8 @@ void CRenderer::graphicsInit()
 	}*/
 
 	flushCommandBuffer(cmdBuffer, m_queue, true);
-	vkDestroyRenderPass(m_device, renderPass[0], nullptr);
-	vkDestroyRenderPass(m_device, renderPass[1], nullptr);
+	/*vkDestroyRenderPass(m_device, renderPass[0], nullptr);
+	vkDestroyRenderPass(m_device, renderPass[1], nullptr);*/
 }
 
 VkBool32 CRenderer::getMemoryType(uint32_t typeBits, VkFlags properties, uint32_t * typeIndex)
@@ -956,7 +959,7 @@ void CRenderer::draw()
 	}
 	/*VK_CHECK_RESULT(vkWaitForFences(m_device, 1, &m_waitFences[m_currentBuffer], VK_TRUE, UINT64_MAX));
 	VK_CHECK_RESULT(vkResetFences(m_device, 1, &m_waitFences[m_currentBuffer]));*/
-
+	//printf("YES");
 	submitFrame();
 
 
@@ -1017,14 +1020,22 @@ void CRenderer::addGraphicsPipeline(vkTools::CShader * shader, VkRenderPass rend
 		VkPipelineColorBlendAttachmentState blendAttachmentState =
 			vkTools::initializers::pipelineColorBlendAttachmentState(0xf, VK_TRUE);
 
-		blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+		/*blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
 		blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
 		blendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
 		blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 		blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 		blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
 		blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-
+		*/
+		blendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+		blendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		blendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
+		blendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+		blendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		blendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
+		blendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		
 		VkPipelineColorBlendStateCreateInfo colorBlendState =
 			vkTools::initializers::pipelineColorBlendStateCreateInfo(1,&blendAttachmentState);
 
@@ -1492,6 +1503,7 @@ void CRenderer::buildDrawCommands()
 	}
 
 	//for (uint32_t r = 0; r < m_renderAttachments.renderPasses.size(); r+=m_renderAttachments.framebufferOffsets[r]) {
+
 	for (int32_t i = 0; i < m_drawCmdBuffers.size(); i++) {
 		VkCommandBufferBeginInfo cmdBufInfo = vkTools::initializers::commandBufferBeginInfo();
 		VK_CHECK_RESULT(vkBeginCommandBuffer(m_drawCmdBuffers[i], &cmdBufInfo));
@@ -1522,20 +1534,18 @@ void CRenderer::buildDrawCommands()
 				renderPassBeginInfo.framebuffer = m_framebuffers[i];
 
 				vkCmdBeginRenderPass(m_drawCmdBuffers[i], &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
+				
 				VkViewport viewport = vkTools::initializers::viewport((float)gEnv->pSystem->getWidth(), (float)gEnv->pSystem->getHeight(), 0.0f, 1.0f);
 				vkCmdSetViewport(m_drawCmdBuffers[i], 0, 1, &viewport);
 
 				VkRect2D scissor = vkTools::initializers::rect(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), 0, 0);
 				vkCmdSetScissor(m_drawCmdBuffers[i], 0, 1, &scissor);
-
+				
 				vkCmdBindDescriptorSets(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipelineLayout,
 					0, 1, m_indexedDraws[r].descriptorSets, 0, nullptr); //#enhancement allowed multiple descriptor sets
 
 				vkCmdBindPipeline(m_drawCmdBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_indexedDraws[r].pipeline);
-
 				vkCmdBindVertexBuffers(m_drawCmdBuffers[i], m_indexedDraws[r].firstBinding, m_indexedDraws[r].bindingCount, &m_indexedDraws[r].vertexBuffer, m_indexedDraws[r].pVertexOffset);
-
 				vkCmdBindIndexBuffer(m_drawCmdBuffers[i],
 					m_indexedDraws[r].indexBuffer,
 					m_indexedDraws[r].indexOffset,
@@ -1852,6 +1862,7 @@ void CRenderer::initRessources()
 	printf("Shader color loaded\n");
 	getShader("color")->load(m_device);
 	getShader("tex")->load(m_device);
+	getShader("font")->load(m_device);
 	//createDescriptorSet(getDescriptorPool(0), getShader("color")->getDescriptorSetLayoutPtr(), 1, 1);
 	//std::vector<VkDescriptorSet>::iterator it = m_shaders.descriptorSets.begin();
 

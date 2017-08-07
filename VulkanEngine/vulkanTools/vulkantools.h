@@ -316,6 +316,11 @@ namespace vkTools
 				VkRenderPass renderPass,
 				VkPipelineCreateFlags flags);
 
+		VkClearAttachment clearAttachment(
+				VkImageAspectFlags aspectMask,
+				uint32_t colorAttachment,
+				VkClearValue clearValue);
+
 	}
 
 }

@@ -91,6 +91,9 @@ protected:
 	uint32_t test_texId;
 	VkDescriptorImageInfo test_imgDescriptor;
 
+	uint32_t m_fontSize = 20;
+	std::string m_fontName = "segoeui";
+
 	struct {
 
 	} layoutInfo;

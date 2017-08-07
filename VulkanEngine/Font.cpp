@@ -303,9 +303,14 @@ std::string CFont::getStyleName() const
 	return m_stylename;
 }
 
-VkDescriptorImageInfo CFont::getDescriptorImageInfo() const
+VkDescriptorImageInfo* CFont::getDescriptorImageInfo()
 {
-	return m_imageDescriptor;
+	return &m_imageDescriptor;
+}
+
+uint32_t CFont::getDescriptorSetId() const
+{
+	return m_descriptorSetId;
 }
 
 uint32_t CFont::getAtlasWidth() const

@@ -835,6 +835,15 @@ VkGraphicsPipelineCreateInfo vkTools::initializers::pipelineCreateInfo(VkPipelin
 	return pipelineCreateInfo;
 }
 
+VkClearAttachment vkTools::initializers::clearAttachment(VkImageAspectFlags aspectMask, uint32_t colorAttachment, VkClearValue clearValue)
+{
+	VkClearAttachment attachment = {};
+	attachment.aspectMask = aspectMask;
+	attachment.colorAttachment = colorAttachment;
+	attachment.clearValue = clearValue;
+	return attachment;
+}
+
 namespace vkTools {
 	CShader::CShader(std::string vsPath, std::string fsPath, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings,std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription) {
 		addShader(vsPath, VK_SHADER_STAGE_VERTEX_BIT);
