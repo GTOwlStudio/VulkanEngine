@@ -1,8 +1,12 @@
 #include "guitools.h"
 #include "Widget.h"
 
-Widget::Widget(std::string name, rect2D boundary, std::string text) : m_name(name), m_boundary(boundary), m_bufferId(), m_className("Widget"), m_text(text)
+Widget::Widget(std::string name, rect2D boundary, std::string text, bool visible) : m_name(name), m_boundary(boundary), m_bufferId(), m_className("Widget"), m_text(text)
 {
+	m_widgetState = WSTATE_VISIBLE;
+	if (!visible) {
+		m_widgetState = WSTATE_UNACTIVE;
+	}
 }
 
 Widget::~Widget()

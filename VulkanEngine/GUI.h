@@ -56,6 +56,7 @@ protected:
 	
 	void creator_Panel(mxml_node_t *t);
 	void creator_guilabel(mxml_node_t *t);
+	void creator_menu(mxml_node_t *t);
 	//void checkNode();
 
 	std::string m_renderPassName = "gui";
@@ -91,7 +92,7 @@ protected:
 	uint32_t test_texId;
 	VkDescriptorImageInfo test_imgDescriptor;
 
-	uint32_t m_fontSize = 20;
+	uint32_t m_fontSize = 15;
 	std::string m_fontName = "segoeui";
 
 	struct {

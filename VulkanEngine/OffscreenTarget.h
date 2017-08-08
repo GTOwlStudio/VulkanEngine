@@ -29,10 +29,7 @@ protected:
 	VkFormat m_colorFormat;
 
 	uint32_t m_texId;
-
 	VkRenderPass m_renderPass;
-
-	
 
 };
 

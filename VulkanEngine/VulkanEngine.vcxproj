@@ -30,11 +30,13 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryManager.cpp" />
     <ClCompile Include="MeshHelper.cpp" />
+    <ClCompile Include="MiniGUI.cpp" />
     <ClCompile Include="nongraphicfont.cpp" />
     <ClCompile Include="OffscreenTarget.cpp" />
     <ClCompile Include="Panel.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RessourcesManager.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="System.cpp" />
     <ClCompile Include="VirtualBufferPool.cpp" />
     <ClCompile Include="vulkandevice.cpp" />
@@ -62,11 +64,13 @@
     <ClInclude Include="Log.h" />
     <ClInclude Include="MemoryManager.h" />
     <ClInclude Include="MeshHelper.h" />
+    <ClInclude Include="MiniGUI.h" />
     <ClInclude Include="nongraphicfont.h" />
     <ClInclude Include="OffscreenTarget.h" />
     <ClInclude Include="Panel.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="RessourcesManager.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="System.h" />
     <ClInclude Include="VirtualBufferPool.h" />

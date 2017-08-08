@@ -4,6 +4,7 @@
 
 #include "Event.h"
 
+
 #include "vulkan_header.h"
 
 #include <limits>
@@ -21,10 +22,18 @@ struct XMLWidget { //XML Widget description
 	}
 };
 
+enum WidgetState {
+	WSTATE_UNACTIVE,
+	WSTATE_VISIBLE,
+	WSTATE_OVERED,
+	WSTATE_PRESSED,
+	WSTATE_RELEASED
+};
+
 class Widget
 {
 public:
-	Widget(std::string name, rect2D boundary, std::string text="");
+	Widget(std::string name, rect2D boundary, std::string text="", bool visible = true);
 	virtual ~Widget();
 	virtual void addWidget(Widget* widget);
 
@@ -64,6 +73,7 @@ protected:
 	float m_depth = 0.0f;
 	std::vector<Event> m_events;
 	std::vector<Widget*> m_childs;
+	WidgetState m_widgetState;
 	
 	size_t m_bufferId;
 	struct {

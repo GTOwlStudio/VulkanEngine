@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <gui>
-  <Label name ="Trop trop bien"/>
+  <Menu name="File"/>
+  <Menu name="Edit"/>
+  <Menu name="Output"/>
+  <!--<Label name ="Trop trop bien"/>
   <Panel name="cool"/>
   <Label name =" Oui en effet !!!"/>
   <Panel name ="Hey You"/>
   <Label name = "What Went Down"/>
   <Panel name = "WII" width="10"/>
-  <Label name ="HDKDHDJGHFGUDFDHFG"/>
+  <Label name ="HDKDHDJGHFGUDFDHFG"/>-->
+ 
   <!--<Label name="A"/>
   <Label name="The Fox Jump Over The Lazy Dog"/>-->
  

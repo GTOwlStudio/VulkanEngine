@@ -245,14 +245,15 @@ void CFont::load()
 										"texture");*/
 	printf("tex id : %i\n", m_texId);
 
-	m_imageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	//m_imageDescriptor.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	m_imageDescriptor.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	m_imageDescriptor.sampler = gEnv->pRenderer->getTexture(m_texId)->sampler;
 	m_imageDescriptor.imageView = gEnv->pRenderer->getTexture(m_texId)->view;
 	//gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, gEnv->pRenderer->getDescriptorSet(m_descriptorSetId));
 
 	printf("CFont descriptorSetCreated\n");
 
-	gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, m_descriptorSetId);
+	/*gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("texture")->getDescriptorSetLayoutPtr(), 1, m_descriptorSetId);
 
 	std::vector<VkWriteDescriptorSet> wd = {
 		//vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(gEnv->pRenderer->getShader("texture")->getDescriptorSetId()), ),
@@ -274,7 +275,7 @@ void CFont::load()
 	m_gOffsets[0] =  tmpVB.bufferInfo.offset ;
 	m_draw.bindVertexBuffers(gEnv->pRenderer->getBuffer(gEnv->bbid), 1, m_gOffsets);
 	m_draw.bindIndexBuffer(gEnv->pRenderer->getBuffer(gEnv->bbid), tmpVB.bufferInfo.offset+(sizeof(VertexT) * 4), VK_INDEX_TYPE_UINT32);
-	m_draw.drawIndexed(6,1,0,0,0);
+	m_draw.drawIndexed(6,1,0,0,0);*/
 	//m_fb.push_back(gEnv->pRenderer->dev_fb());
 	//gEnv->pRenderer->addOffscreenIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("offscreen"), gEnv->pRenderer->getOffscreen("font")->getFramebuffer());
 	//gEnv->pRenderer->addIndexedDraw(m_draw, gEnv->pRenderer->getRenderPass("main"));

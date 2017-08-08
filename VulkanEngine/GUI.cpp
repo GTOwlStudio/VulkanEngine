@@ -132,6 +132,7 @@ void GUI::loadCreator()
 	//addCreator("Panel", &GUI::creator_Panel);
 	addCreator("Panel", &GUI::creator_Panel);
 	addCreator("Label", &GUI::creator_guilabel);
+	addCreator("Menu", &GUI::creator_menu);
 	//addCreator("Panel", std::bind(&GUI::creator_Panel, this, std::placeholders::_1));
 	//addCreator("Panel", [](mxml_node_t *t) {printf("PanelConstructor %s\n"); });
 }
@@ -198,7 +199,7 @@ void GUI::loadWidgets_dev() {
 
 			VertexC* tmpV = new VertexC[meshhelper::QUAD_VERTICES_COUNT];
 			uint32_t* tmpI = new uint32_t[meshhelper::QUAD_INDICES_COUNT];
-
+			//printf("HERE BITCH %i\n", tw->gDataSize());
 			tmpBuffer = gEnv->pMemoryManager->getVirtualBufferPtr(tw->getBufferId());
 			
 			tw->gData(tmpV);
@@ -746,20 +747,20 @@ void GUI::loadDescriptorSets()
 	
 	
 	
-	gEnv->pRenderer->loadTextureFromFile(&test_texId, gEnv->getAssetpath() + "textures/segoeui40.ktx", VK_FORMAT_BC2_UNORM_BLOCK);
+	/*gEnv->pRenderer->loadTextureFromFile(&test_texId, gEnv->getAssetpath() + "textures/segoeui40.ktx", VK_FORMAT_BC2_UNORM_BLOCK);
 	test_imgDescriptor = 
 		vkTools::initializers::descriptorImageInfo(gEnv->pRenderer->getTexture(test_texId)->sampler, 
 			gEnv->pRenderer->getTexture(test_texId)->view,
-			gEnv->pRenderer->getTexture(test_texId)->imageLayout);
+			gEnv->pRenderer->getTexture(test_texId)->imageLayout);*/
 	
 	CFont* ft = gEnv->pRessourcesManager->getCFont(m_fontName, m_fontSize);
+
 
 	printf("GUI descriptorSetCreation");
 
 	std::vector<VkWriteDescriptorSet> writeDescriptor;
 
 	gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("color")->getDescriptorSetLayoutPtr(), 1, m_draw.descriptorSetId[0]);
-
 	writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[0]), 
 		m_draw.descriptorSetTypes[0], 
 		0, 
@@ -767,21 +768,22 @@ void GUI::loadDescriptorSets()
 
 	
 	gEnv->pRenderer->createDescriptorSet(gEnv->pRenderer->getDescriptorPool(0), gEnv->pRenderer->getShader("font")->getDescriptorSetLayoutPtr(), 1, m_draw.descriptorSetId[1]);
+	
 	writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[1]),
 		m_draw.descriptorSetTypes[0],
 		0,
 		&gEnv->pMemoryManager->getVirtualBufferPtr(gEnv->pMemoryManager->getUniformBufferId(m_draw.UBO_bufferId))->bufferInfo));
 		
 
+	/*writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[1]),
+		m_draw.descriptorSetTypes[1],
+		1,
+		&test_imgDescriptor));*/
+
 	writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(m_draw.descriptorSetId[1]),
 		m_draw.descriptorSetTypes[1],
 		1,
-		&test_imgDescriptor));
-
-	/*writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(gEnv->pRessourcesManager->getCFont(m_fontName, m_fontSize)->getDescriptorSetId()),
-		m_draw.descriptorSetTypes[1],
-		1,
-		gEnv->pRessourcesManager->getCFont(m_fontName, m_fontSize)->getDescriptorImageInfo()));*/
+		ft->getDescriptorImageInfo()));
 
 	/*writeDescriptor.push_back(vkTools::initializers::writeDescriptorSet(*gEnv->pRenderer->getDescriptorSet(ft->getDescriptorSetId()),
 		m_draw.descriptorSetTypes[1],
@@ -864,7 +866,7 @@ void GUI::creator_Panel(mxml_node_t * t)
 
 	size_t classId = helper::find("Panel", m_elementNames);
 	XMLWidget xw = getWidgetXMLInfo(t);
-	addWidget(new Panel("panel", rect2D(getNextPosition(), extent2D(guitools::getTextSize(xw.name, "./data/fonts/segoeui.ttf", 40).width, 20)), glm::uvec4(255,255,255,255), glm::uint(255), false, false));
+	addWidget(new Panel("panel", rect2D(getNextPosition(), extent2D(guitools::getTextSize(xw.name, "./data/fonts/segoeui.ttf", m_fontSize).width, 20)), glm::uvec4(255,255,255,255), glm::uint(255), false, false));
 	m_elementsCount[classId] += 1;
 
 	m_draw.vertClrSize += m_widgets.back()->gDataSize();
@@ -881,7 +883,7 @@ void GUI::creator_guilabel(mxml_node_t * t)
 	size_t classId = helper::find("Label", m_elementNames);
 	XMLWidget xw = getWidgetXMLInfo(t);
 
-	addWidget(new guilabel(xw.name, getNextPosition(), "segoeui", 40, false, false));
+	addWidget(new guilabel(xw.name, getNextPosition(), "segoeui", m_fontSize, false, false));
 
 	m_elementsCount[classId] += 1;
 
@@ -892,5 +894,39 @@ void GUI::creator_guilabel(mxml_node_t * t)
 	m_widgets.back()->setDepth(0.24);
 
 	
+
+}
+
+void GUI::creator_menu(mxml_node_t * t)
+{
+	size_t classId = helper::find("Menu", m_elementNames); 
+
+	float offx = 10.0f;
+	float offy = 5.0f;
+	
+
+	XMLWidget xw = getWidgetXMLInfo(t);
+	extent2D dim = guitools::getTextSize(xw.name, "./data/fonts/segoeui.ttf", m_fontSize);
+	rect2D bound = rect2D(getNextPosition(), dim);
+	rect2D panelBound = bound;
+	panelBound.extent.width += offx*2;
+	panelBound.extent.height += offy*2;
+	offset2D labelPos = bound.offset;
+	labelPos.x += offx;
+	labelPos.y += offy;
+	addWidget(new Panel("menu", panelBound,glm::uvec4(255,255,255,255),glm::uint(255), false, false));
+	m_draw.vertClrSize += m_widgets.back()->gDataSize();
+	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
+	addWidget(new guilabel(xw.name, rect2D(labelPos, bound.extent), m_fontName, m_fontSize, false, false));
+	m_draw.vertClrSize += m_widgets.back()->gDataSize();
+	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
+
+	m_elementsCount[classId] += 1;
+
+	m_draw.vertClrSize += m_widgets.back()->gDataSize();
+	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
+
+	m_widgets.back()->setName("menu" + std::to_string(m_elementsCount[classId]));
+	m_widgets.back()->setDepth(0.24);
 
 }
