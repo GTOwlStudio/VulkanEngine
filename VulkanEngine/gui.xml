@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <gui>
-  <Menu name="File"/>
+  <Menu name="File">
+    <Action name="Open"/>
+    <Action name="Save"/>
+    <Action name="Quit"/>
+  </Menu>
   <Menu name="Edit"/>
   <Menu name="Output"/>
+  <Label name="test"/>
+  <Panel name="iron"/>
+  <Label name="Bitch"/>
   <!--<Label name ="Trop trop bien"/>
   <Panel name="cool"/>
   <Label name =" Oui en effet !!!"/>

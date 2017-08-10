@@ -1053,7 +1053,7 @@ void CRenderer::addGraphicsPipeline(vkTools::CShader * shader, VkRenderPass rend
 	}
 }
 
-void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp)
+void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp colorLoadOp, VkAttachmentLoadOp depthLoadOp)
 {
 
 	VkAttachmentDescription attachments[2] = {};
@@ -1063,7 +1063,7 @@ void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp loa
 	attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
 	// Don't clear the framebuffer (like the renderpass from the example does)
 	//attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-	attachments[0].loadOp = loadOp;
+	attachments[0].loadOp = colorLoadOp;
 	attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -1079,9 +1079,10 @@ void CRenderer::addRenderPass(std::string renderPassName, VkAttachmentLoadOp loa
 	// Depth attachment
 	attachments[1].format = m_depthFormat;
 	attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments[1].loadOp = depthLoadOp;
 	attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	
 	attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	if (m_renderPasses.renderPasses.size() > 1) {

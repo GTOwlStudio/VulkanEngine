@@ -60,6 +60,11 @@ void Widget::setBufferId(size_t id)
 	m_bufferId = id;
 }
 
+void Widget::setState(WidgetState state)
+{
+	m_widgetState = state;
+}
+
 void Widget::addEvent(EventType type)
 {
 	m_events.push_back(Event(type));
@@ -131,6 +136,11 @@ rect2D Widget::getBoundary()
 std::vector<Widget*> Widget::getChilds()
 {
 	return m_childs;
+}
+
+WidgetState Widget::getState() const
+{
+	return m_widgetState;
 }
 
 void Widget::addDescriptors(VkDescriptorType type)

@@ -30,7 +30,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryManager.cpp" />
     <ClCompile Include="MeshHelper.cpp" />
-    <ClCompile Include="MiniGUI.cpp" />
     <ClCompile Include="nongraphicfont.cpp" />
     <ClCompile Include="OffscreenTarget.cpp" />
     <ClCompile Include="Panel.cpp" />
@@ -64,7 +63,6 @@
     <ClInclude Include="Log.h" />
     <ClInclude Include="MemoryManager.h" />
     <ClInclude Include="MeshHelper.h" />
-    <ClInclude Include="MiniGUI.h" />
     <ClInclude Include="nongraphicfont.h" />
     <ClInclude Include="OffscreenTarget.h" />
     <ClInclude Include="Panel.h" />

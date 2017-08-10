@@ -155,7 +155,7 @@ public:
 		VkPolygonMode polyMode = VK_POLYGON_MODE_FILL,
 		uint32_t shaderStagesCount = 2) = 0;
 
-	virtual void addRenderPass(std::string renderPassName, VkAttachmentLoadOp loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR) = 0;
+	virtual void addRenderPass(std::string renderPassName, VkAttachmentLoadOp colorLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR, VkAttachmentLoadOp depthLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR) = 0;
 	virtual void addRenderPass(std::string renderPassName, VkAttachmentDescription colorAttachmentDescription) = 0;
 	virtual void addShader(std::string vsPath, std::string fsPath, std::string *shaderName, std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings, std::vector<VkVertexInputBindingDescription> bindingDescription, std::vector<VkVertexInputAttributeDescription> attributeDescription)=0;
 	virtual VkDescriptorSet addDescriptorSet(VkDescriptorPool descriptorPool, VkDescriptorSetLayout* pDescriptorLayout, uint32_t descriptorLayoutCount) = 0;

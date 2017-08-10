@@ -68,16 +68,18 @@ GUI::~GUI()
 
 void GUI::load()
 {
-	if (m_renderPassName == "gui") {
-		gEnv->pRenderer->addRenderPass("gui", VK_ATTACHMENT_LOAD_OP_LOAD);
-	}
+	/*if (m_renderPassName == "gui") {
+		gEnv->pRenderer->addRenderPass("gui", VK_ATTACHMENT_LOAD_OP_LOAD, true);
+	}*/
+	gEnv->pRenderer->addRenderPass(m_renderPassName[0], VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_LOAD_OP_CLEAR);
+	gEnv->pRenderer->addRenderPass(m_renderPassName[1], VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_LOAD_OP_LOAD);
 	
 	/*m_draw.offscreen = gEnv->pRenderer->addOffscreen("gui");
 	m_draw.offscreen->load(gEnv->pSystem->getWidth(), gEnv->pSystem->getHeight(), gEnv->pRenderer->getRenderPass(m_renderPassName));
 	*///gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass("gui"), "gui");
 	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("tex"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_tex", true);
-	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("font"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_font", true);
-	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_col", true);
+	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("font"), gEnv->pRenderer->getRenderPass(m_renderPassName[1]), "gui_font", true);
+	gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("color"), gEnv->pRenderer->getRenderPass(m_renderPassName[0]), "gui_col", true);
 	//gEnv->pRenderer->addGraphicsPipeline(gEnv->pRenderer->getShader("font"), gEnv->pRenderer->getRenderPass(m_renderPassName), "gui_te", true);
 	printf("GUI renderPass and Graphics Pipeline Created");
 	printf("%i object to be load\n", static_cast<int>(m_widgets.size()));
@@ -116,14 +118,27 @@ std::string GUI::getNextName(std::string prefix)
 
 offset2D GUI::getNextPosition()
 {
+
 	offset2D np;
+	
+	for (size_t i = 0; i < m_logicWidgets.size(); i++) {
+		if (m_logicWidgets[i].parent!=m_xmlTop) {
+			continue;
+		}
+
+		if (np.x < m_logicWidgets[i].getPos().x + m_logicWidgets[i].getBounds().width) {
+			np.x = m_logicWidgets[i].getPos().x + m_logicWidgets[i].getBounds().width;
+		}
+	}
+
+	/*offset2D np;
 	for (size_t i = 0; i < m_widgets.size();i++) {
 		np.x = m_widgets[i]->getBoundary().offset.x + m_widgets[i]->getBoundary().extent.width;
 		if (static_cast<uint32_t>(np.x)>=gEnv->pSystem->getWidth()) {
 			np.x = 0;
 			np.y = m_widgets[i]->getBoundary().offset.y + m_widgets[i]->getBoundary().extent.height;
 		}
-	}
+	}*/
 	return np;
 }
 
@@ -133,6 +148,7 @@ void GUI::loadCreator()
 	addCreator("Panel", &GUI::creator_Panel);
 	addCreator("Label", &GUI::creator_guilabel);
 	addCreator("Menu", &GUI::creator_menu);
+	addCreator("Action", &GUI::creator_menu);
 	//addCreator("Panel", std::bind(&GUI::creator_Panel, this, std::placeholders::_1));
 	//addCreator("Panel", [](mxml_node_t *t) {printf("PanelConstructor %s\n"); });
 }
@@ -143,6 +159,8 @@ void GUI::loadFromXml(std::string file)
 
 	double top = static_cast<double>(gEnv->pSystem->getHeight());
 	mxml_node_t* node = parser.getTop();
+	m_xmlTop = node;
+	m_xmlBase = parser.getXData(node).elementName;
 	while (node!=nullptr) {
 		searchAndExecute(node);
 		node = parser.getNextElement(node);
@@ -193,6 +211,10 @@ void GUI::loadWidgets_dev() {
 	size_t tmp2ndPartPos = -1;
 
 	for (size_t i = 0; i < m_widgets.size(); i++) {
+		if (m_widgets[i]->getState()==WSTATE_UNACTIVE) {
+			continue;
+		}
+
 		if (m_widgets[i]->getClassName()=="Panel") {
 			printf("Panel");
 			Widget* tw = m_widgets[i]; //tmp widget
@@ -314,6 +336,9 @@ void GUI::loadWidgets_dev() {
 	for (size_t i = 0; i < indicesSizes.size(); i++) {
 		
 		//off = indicesPos[i];
+		if (m_widgets[i]->getState()==WSTATE_UNACTIVE) {
+			continue;
+		}
 		if (indicesPos[i]/* + indicesSizes[i]*/ == tmp2ndPartPos && mode == 0) {
 			mode = indicesPos[i];
 			off = 0;
@@ -326,6 +351,8 @@ void GUI::loadWidgets_dev() {
 		off += 4 * (indicesSizes[i] / 6);
 		
 	}
+
+
 
 	
 	gEnv->pRenderer->bufferSubData(gEnv->bbid, m_draw.indicesSize, gEnv->pMemoryManager->getVirtualBufferPtr(m_draw.indicesOffsetId)->bufferInfo.offset, indices.data());
@@ -350,7 +377,7 @@ void GUI::loadWidgets_dev() {
 																						  //drawInfo[groups[j].ids[0]];
 																						  //gEnv->pRenderer->addIndexedDraw(drawInfo[groups[j].ids[0]], gEnv->pRenderer->getRenderPass(m_renderPassName),"gui"); //#warninig unflexibility with m_renderPassName
 		
-		gEnv->pRenderer->addIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName), "gui"); //#warninig unflexibility with m_renderPassName
+		gEnv->pRenderer->addIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName[j]), m_renderPassName[j]); //#warninig unflexibility with m_renderPassName
 																											   //}
 		//gEnv->pRenderer->addOffscreenIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName), m_draw.offscreen->getFramebuffer());
 	}
@@ -691,7 +718,7 @@ void GUI::loadWidgets()
 			drawInfo[j].drawIndexed(groups[j].indicesCount, 1, groups[j].firstIndexPos, 0, 0);//#enchancement for better flexibility #done
 			//drawInfo[groups[j].ids[0]];
 			//gEnv->pRenderer->addIndexedDraw(drawInfo[groups[j].ids[0]], gEnv->pRenderer->getRenderPass(m_renderPassName),"gui"); //#warninig unflexibility with m_renderPassName
-			gEnv->pRenderer->addIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName), "gui"); //#warninig unflexibility with m_renderPassName
+			gEnv->pRenderer->addIndexedDraw(drawInfo[j], gEnv->pRenderer->getRenderPass(m_renderPassName[j]), m_renderPassName[j]); //#warninig unflexibility with m_renderPassName
 		//}
 	}
 
@@ -797,11 +824,14 @@ void GUI::loadDescriptorSets()
 
 }
 
-XMLWidget GUI::getWidgetXMLInfo(mxml_node_t * node)
+XMLWidget GUI::getXMLWidgetInfo(mxml_node_t * node)
 {
 	XMLWidget xw = {};
 	XMLParser parser(m_file);
 	size_t attribNameId = -1, attribWidthId = -1, attribHeightId = -1, attribPosXId = -1, attribPosYId = -1;
+	xw.node = node;
+	xw.parent = node->parent;
+	xw.parentName = parser.getXData(xw.parent).elementName;
 
 	for (size_t i = 0; i < parser.getXData(node).attributeName.size(); i++) {
 		if (parser.getXData(node).attributeName[i] == "name" && attribNameId==-1) {
@@ -827,6 +857,29 @@ XMLWidget GUI::getWidgetXMLInfo(mxml_node_t * node)
 	}
 
 	return xw;
+}
+
+XMLWidget GUI::fillXMLWidgetInfo(mxml_node_t * node, Widget * w)
+{
+	XMLWidget xw = getXMLWidgetInfo(node);
+	rect2D boundary = w->getBoundary();
+	xw.x = boundary.offset.x;
+	xw.y = boundary.offset.y;
+	xw.width = boundary.extent.width;
+	xw.height = boundary.extent.height;
+
+	return xw;
+}
+
+XMLWidget GUI::findXMLWidgetInfo(mxml_node_t * node)
+{
+	
+	for (size_t i = 0; i < m_logicWidgets.size(); i++) {
+		if (m_logicWidgets[i].node==node) {
+			return m_logicWidgets[i];
+		}
+	}
+	return XMLWidget();
 }
 
 void GUI::addDoubleSetting(std::string name, double value)
@@ -865,8 +918,10 @@ void GUI::creator_Panel(mxml_node_t * t)
 	printf("%f %f\n",getNextPosition().x, getNextPosition().y);
 
 	size_t classId = helper::find("Panel", m_elementNames);
-	XMLWidget xw = getWidgetXMLInfo(t);
+	XMLWidget xw = getXMLWidgetInfo(t);
 	addWidget(new Panel("panel", rect2D(getNextPosition(), extent2D(guitools::getTextSize(xw.name, "./data/fonts/segoeui.ttf", m_fontSize).width, 20)), glm::uvec4(255,255,255,255), glm::uint(255), false, false));
+	//m_logicWidgets.push_back(XML);
+	m_logicWidgets.push_back(fillXMLWidgetInfo(t, m_widgets.back()));
 	m_elementsCount[classId] += 1;
 
 	m_draw.vertClrSize += m_widgets.back()->gDataSize();
@@ -881,52 +936,86 @@ void GUI::creator_Panel(mxml_node_t * t)
 void GUI::creator_guilabel(mxml_node_t * t)
 {
 	size_t classId = helper::find("Label", m_elementNames);
-	XMLWidget xw = getWidgetXMLInfo(t);
+	XMLWidget xw = getXMLWidgetInfo(t);
 
 	addWidget(new guilabel(xw.name, getNextPosition(), "segoeui", m_fontSize, false, false));
-
+	m_logicWidgets.push_back(fillXMLWidgetInfo(t, m_widgets.back()));
 	m_elementsCount[classId] += 1;
 
 	m_draw.vertTexSize += m_widgets.back()->gDataSize();
 	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
 
 	m_widgets.back()->setName("guilabel" + std::to_string(m_elementsCount[classId]));
-	m_widgets.back()->setDepth(0.24);
-
+	m_widgets.back()->setDepth(0.20);
 	
 
 }
 
 void GUI::creator_menu(mxml_node_t * t)
 {
-	size_t classId = helper::find("Menu", m_elementNames); 
-
+	std::string elementName = t->value.element.name;
+	
+	size_t classId = helper::find(elementName, m_elementNames); 
+	std::transform(elementName.begin(), elementName.end(), elementName.begin(), ::tolower);
+	
 	float offx = 10.0f;
 	float offy = 5.0f;
 	
+	extent2D dim;
+	rect2D bound;
+	rect2D panelBound;
+	offset2D labelPos;
 
-	XMLWidget xw = getWidgetXMLInfo(t);
-	extent2D dim = guitools::getTextSize(xw.name, "./data/fonts/segoeui.ttf", m_fontSize);
-	rect2D bound = rect2D(getNextPosition(), dim);
-	rect2D panelBound = bound;
-	panelBound.extent.width += offx*2;
-	panelBound.extent.height += offy*2;
-	offset2D labelPos = bound.offset;
+	//XMLParser parser(m_file);
+	XMLWidget xw = getXMLWidgetInfo(t);
+	
+	dim = guitools::getTextSize(xw.name, "./data/fonts/segoeui.ttf", m_fontSize);
+	bound = rect2D(getNextPosition(), dim);
+	
+
+	if (xw.parent!=m_xmlTop) {
+		XMLWidget baseInfo = findXMLWidgetInfo(t->prev->prev);
+		if (xw.node->prev->prev==nullptr) {
+			printf("BITCH 2\n");
+			baseInfo = findXMLWidgetInfo(xw.parent);
+		}
+		bound.offset = baseInfo.getPos();
+		//labelPos.x += baseInfo.getBounds().width;
+		bound.offset.y += baseInfo.getBounds().height;
+		printf("BITCH %s\n", findXMLWidgetInfo(xw.parent).name.c_str());
+		offx = 5.0f;
+		offy = 5.0f;
+	}
+
+	panelBound = bound;
+	panelBound.extent.width += offx * 2;
+	panelBound.extent.height += offy * 2;
+	labelPos = bound.offset;
 	labelPos.x += offx;
 	labelPos.y += offy;
-	addWidget(new Panel("menu", panelBound,glm::uvec4(255,255,255,255),glm::uint(255), false, false));
+	
+	
+	addWidget(new Panel(elementName, panelBound,glm::uvec4(255,255,255,255),glm::uint(255), false, false));
 	m_draw.vertClrSize += m_widgets.back()->gDataSize();
 	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
 	addWidget(new guilabel(xw.name, rect2D(labelPos, bound.extent), m_fontName, m_fontSize, false, false));
 	m_draw.vertClrSize += m_widgets.back()->gDataSize();
 	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
 
+	m_logicWidgets.push_back(fillXMLWidgetInfo(t, m_widgets[m_widgets.size()-2]));
 	m_elementsCount[classId] += 1;
 
 	m_draw.vertClrSize += m_widgets.back()->gDataSize();
 	m_draw.indicesSize += m_widgets.back()->gIndicesSize();
 
-	m_widgets.back()->setName("menu" + std::to_string(m_elementsCount[classId]));
-	m_widgets.back()->setDepth(0.24);
+	if (elementName=="action") {
+		/*m_widgets.back()->setState(WSTATE_UNACTIVE);
+		m_widgets[m_widgets.size() - 2]->setState(WSTATE_UNACTIVE);*/
+	}
+	size_t id = m_widgets.size();
+	m_widgets[id-2]->setName(elementName + std::to_string(m_elementsCount[classId]));
+	m_widgets[id-2]->setDepth(0.24);
+	m_widgets[id-1]->setName(elementName + std::to_string(m_elementsCount[classId]));
+	m_widgets[id-1]->setDepth(0.20);
 
 }

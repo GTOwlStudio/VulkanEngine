@@ -46,9 +46,6 @@
     <Filter Include="Ressources">
       <UniqueIdentifier>{a882eadc-8abf-4eae-8448-b9b0aca8ca7a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Common\MiniGUI">
-      <UniqueIdentifier>{f03cfca2-261f-4245-8990-4f922cf099bd}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -122,9 +119,6 @@
     </ClCompile>
     <ClCompile Include="nongraphicfont.cpp">
       <Filter>Fichiers sources</Filter>
-    </ClCompile>
-    <ClCompile Include="MiniGUI.cpp">
-      <Filter>Common\MiniGUI</Filter>
     </ClCompile>
     <ClCompile Include="Scene.cpp">
       <Filter>Fichiers sources</Filter>
@@ -238,9 +232,6 @@
     </ClInclude>
     <ClInclude Include="fonttype.h">
       <Filter>Common\ThomasGui</Filter>
-    </ClInclude>
-    <ClInclude Include="MiniGUI.h">
-      <Filter>Common\MiniGUI</Filter>
     </ClInclude>
     <ClInclude Include="Scene.h">
       <Filter>Fichiers d%27en-tête</Filter>

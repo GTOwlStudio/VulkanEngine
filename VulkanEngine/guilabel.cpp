@@ -92,19 +92,19 @@ void guilabel::gData(void * arr)
 		tmpV[4 * i].pos = glm::vec3(
 			ci[charId].bx,
 			-ci[charId].by,
-			m_depth) + pos;
+			0.0f) + pos;
 		tmpV[4 * i + 1].pos = glm::vec3(
 			ci[charId].bx + ci[charId].w,
 			-ci[charId].by,
-			m_depth) + pos;
+			0.0f) + pos;
 		tmpV[4 * i + 2].pos = glm::vec3(
 			ci[charId].bx + ci[charId].w,
 			-ci[charId].by + ci[charId].h,
-			m_depth) + pos;
+			0.0f) + pos;
 		tmpV[4 * i +3].pos = glm::vec3(
 			ci[charId].bx,
 			-ci[charId].by + ci[charId].h,
-			m_depth) + pos;
+			0.0f) + pos;
 		pos += glm::vec3(ci[charId].bx + ci[charId].w, 0, 0);
 
 		tmpV[4 * i +3].tc = glm::vec2(ci[charId].tx, ci[charId].ty+(ci[charId].bh/s_height));

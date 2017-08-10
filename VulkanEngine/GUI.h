@@ -24,6 +24,32 @@ struct SGuiSettings
 	std::veto
 };*/
 
+
+struct XMLWidget { //XML Widget description
+	std::string name = "";
+	float x;
+	float y;
+	float width;
+	float height;
+	mxml_node_t* node = nullptr;
+	mxml_node_t* parent = nullptr;
+	std::string parentName = "";
+	XMLWidget() : name(""), x(-1), y(-1), width(-1), height(-1), parent(nullptr) {
+
+	}
+	XMLWidget(std::string param_name, float w, float h, float posx, float posy, mxml_node_t* param_parent = nullptr) : name(param_name), x(posx), y(posy), width(w), height(h), parent(param_parent) {
+	}
+
+	offset2D getPos() {
+		return offset2D(x,y);
+	}
+
+	extent2D getBounds() {
+		return extent2D(width, height);
+	}
+
+};
+
 class GUI
 {
 public:
@@ -46,7 +72,10 @@ protected:
 	void reorderWidgets();
 	void loadDescriptorSets();
 
-	XMLWidget getWidgetXMLInfo(mxml_node_t * node);
+	XMLWidget getXMLWidgetInfo(mxml_node_t * node);
+	XMLWidget fillXMLWidgetInfo(mxml_node_t * node, Widget* w); //Tools for logical representation
+
+	XMLWidget findXMLWidgetInfo(mxml_node_t* node);
 
 	void addDoubleSetting(std::string name, double value);
 	//void addCreator(std::string name, std::function<void(mxml_node_t* t)> creator);//void(GUI::*function)(mxml_node_t* t));// std::function<void(mxml_node_t* t)> creator);
@@ -59,9 +88,10 @@ protected:
 	void creator_menu(mxml_node_t *t);
 	//void checkNode();
 
-	std::string m_renderPassName = "gui";
+	std::string m_renderPassName[2] = {"gui_clear", "gui"}; //2 renderPasses, one for clearing the framebuffer and the other one just load the content of the first one
 
 	std::vector<Widget*> m_widgets;
+	std::vector<XMLWidget> m_logicWidgets; //Logical representtion of the widget
 
 	struct {
 		struct {
@@ -102,8 +132,11 @@ protected:
 	struct {
 		std::vector<double> doubleSettings;
 		std::vector<std::string> doubleSettingsName;
+		
 	} m_settings;
 
+	std::string m_xmlBase = "";
+	mxml_node_t* m_xmlTop = nullptr;
 
 	std::vector<std::string> m_elementNames;
 	std::vector<uint32_t> m_elementsCount;
